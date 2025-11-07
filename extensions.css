@@ -1,8 +1,9 @@
 .extensions-panel {
   flex: 7;
   overflow-y: auto;
-  max-height: 100%;
+  max-height: calc(90vh - 30px);
   padding-right: 5px; /* 防止滚动条遮挡内容 */
+  padding-bottom: 5px; /* 减少底部留白 */
 }
 
 .extensions-header {
@@ -91,7 +92,7 @@
   display: grid;
   grid-template-columns: repeat(5, 1fr);
   gap: 10px;
-  margin-bottom: 20px;
+  margin-bottom: 5px; /* 减少底部留白 */
 }
 
 .extension-item {

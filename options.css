@@ -3,7 +3,7 @@ body {
   max-width: 1200px;
   margin: 0 auto;
   padding: 20px;
-  min-height: 100vh;
+  min-height: 90vh;
   position: relative;
 }
 
@@ -39,6 +39,7 @@ body {
 .main-container {
   display: flex;
   gap: 20px;
+  padding-bottom: 5px; /* 减少底部留白 */
 }
 
 .settings-panel {
@@ -49,7 +50,6 @@ body {
 .extensions-panel {
   flex: 7;
   overflow-y: auto;
-  max-height: calc(100vh - 120px);
 }
 
 .section-divider {
