@@ -2,6 +2,7 @@
   flex: 7;
   overflow-y: auto;
   max-height: 100%;
+  padding-right: 5px; /* 防止滚动条遮挡内容 */
 }
 
 .extensions-header {
@@ -31,7 +32,7 @@
   padding: 0;
   border-bottom: none;
   padding-bottom: 0;
-  font-size: 24px;
+  font-size: 20px;
   font-weight: bold;
   color: #333;
 }

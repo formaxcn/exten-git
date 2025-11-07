@@ -204,7 +204,7 @@ h1 {
   margin-top: 0;
   margin-bottom: 15px;
   color: #333;
-  font-size: 18px;
+  font-size: 16px;
 }
 
 .panel-title-main {
@@ -238,8 +238,8 @@ h1 {
 
 .github-corner {
   position: fixed;
-  left: 20px;
-  bottom: 20px;
+  right: 20px;
+  top: 20px;
 }
 
 .github-corner a {
