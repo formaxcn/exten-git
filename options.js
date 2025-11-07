@@ -270,11 +270,7 @@ function displayExtensions(extensions) {
     // 限制标题最多20个字符
     if (extension.name.length > 20) {
       name.textContent = extension.name.substring(0, 20) + '...';
-      // 添加浮动提示显示完整名称
-      const tooltip = document.createElement('div');
-      tooltip.className = 'extension-name-tooltip';
-      tooltip.textContent = extension.name;
-      extensionItem.appendChild(tooltip);
+      name.title = extension.name; // 使用title属性作为tooltip
     } else {
       name.textContent = extension.name;
     }
@@ -307,11 +303,7 @@ function displayExtensions(extensions) {
     // 限制标题最多20个字符
     if (extension.name.length > 20) {
       name.textContent = extension.name.substring(0, 20) + '...';
-      // 添加浮动提示显示完整名称
-      const tooltip = document.createElement('div');
-      tooltip.className = 'extension-name-tooltip';
-      tooltip.textContent = extension.name;
-      extensionItem.appendChild(tooltip);
+      name.title = extension.name; // 使用title属性作为tooltip
     } else {
       name.textContent = extension.name;
     }
