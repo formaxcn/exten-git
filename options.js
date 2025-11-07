@@ -406,15 +406,7 @@ function displayExtensions(extensions) {
     storePageButton.className = 'extension-button';
     storePageButton.textContent = 'Store';
     storePageButton.addEventListener('click', function() {
-      if (extension.homepageUrl) {
-        chrome.tabs.create({ url: extension.homepageUrl });
-      } else if (extension.updateUrl && extension.updateUrl.includes('google.com')) {
-        // 对于Chrome Web Store扩展，构造URL
-        const webStoreUrl = `https://chrome.google.com/webstore/detail/${extension.id}`;
-        chrome.tabs.create({ url: webStoreUrl });
-      } else {
-        showStatus('No store page available for this extension', 'error');
-      }
+      chrome.tabs.create({ url: `https://chrome.google.com/webstore/detail/${extension.id}`});
     });
     
     // Options按钮
