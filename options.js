@@ -14,6 +14,9 @@ const syncIntervalOptions = [
   { value: 1440, label: '1 d' }
 ];
 
+// 存储所有扩展的变量
+let allExtensions = [];
+
 document.addEventListener('DOMContentLoaded', function() {
   // 加载保存的设置
   loadSettings();
@@ -44,6 +47,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const selectedOption = syncIntervalOptions[index];
     document.getElementById('syncIntervalValue').textContent = selectedOption.label;
   });
+  
+  // 搜索框事件
+  document.getElementById('extensionSearch').addEventListener('input', filterExtensions);
   
   // Popup功能
   loadExtensions();
@@ -229,80 +235,111 @@ function loadExtensions() {
   chrome.management.getAll(function(extensions) {
     popupStatusElement.textContent = '';
     
-    // 过滤掉主题类型的扩展，只保留普通扩展
-    const filteredExtensions = extensions.filter(ext => ext.type !== 'theme');
+    // 保存所有扩展到全局变量
+    allExtensions = extensions;
     
-    // 分离启用和未启用的扩展
-    const enabledExtensions = filteredExtensions.filter(ext => ext.enabled);
-    const disabledExtensions = filteredExtensions.filter(ext => !ext.enabled);
+    // 显示所有扩展
+    displayExtensions(extensions);
+  });
+}
+
+// 显示扩展列表
+function displayExtensions(extensions) {
+  extensionsGrid.innerHTML = '';
+  
+  // 过滤掉主题类型的扩展，只保留普通扩展
+  const filteredExtensions = extensions.filter(ext => ext.type !== 'theme');
+  
+  // 分离启用和未启用的扩展
+  const enabledExtensions = filteredExtensions.filter(ext => ext.enabled);
+  const disabledExtensions = filteredExtensions.filter(ext => !ext.enabled);
+  
+  // 先添加启用的扩展
+  enabledExtensions.forEach(function(extension) {
+    const extensionItem = document.createElement('div');
+    extensionItem.className = 'extension-item';
     
-    // 先添加启用的扩展
-    enabledExtensions.forEach(function(extension) {
-      const extensionItem = document.createElement('div');
-      extensionItem.className = 'extension-item';
-      
-      const icon = document.createElement('img');
-      icon.className = 'extension-icon';
-      icon.src = extension.icons ? extension.icons[extension.icons.length - 1].url : 'icons/default.png';
-      icon.alt = extension.name;
-      
-      const name = document.createElement('div');
-      name.className = 'extension-name';
-      
-      // 限制标题最多20个字符
-      if (extension.name.length > 20) {
-        name.textContent = extension.name.substring(0, 20) + '...';
-        // 添加浮动提示显示完整名称
-        const tooltip = document.createElement('div');
-        tooltip.className = 'extension-name-tooltip';
-        tooltip.textContent = extension.name;
-        extensionItem.appendChild(tooltip);
-      } else {
-        name.textContent = extension.name;
-      }
-      
-      extensionItem.appendChild(icon);
-      extensionItem.appendChild(name);
-      extensionsGrid.appendChild(extensionItem);
-    });
+    const icon = document.createElement('img');
+    icon.className = 'extension-icon';
+    icon.src = extension.icons ? extension.icons[extension.icons.length - 1].url : 'icons/default.png';
+    icon.alt = extension.name;
     
-    // 如果存在未启用的扩展，则添加分割线
-    if (disabledExtensions.length > 0 && enabledExtensions.length > 0) {
-      const divider = document.createElement('div');
-      divider.className = 'divider';
-      extensionsGrid.appendChild(divider);
+    const name = document.createElement('div');
+    name.className = 'extension-name';
+    
+    // 限制标题最多20个字符
+    if (extension.name.length > 20) {
+      name.textContent = extension.name.substring(0, 20) + '...';
+      // 添加浮动提示显示完整名称
+      const tooltip = document.createElement('div');
+      tooltip.className = 'extension-name-tooltip';
+      tooltip.textContent = extension.name;
+      extensionItem.appendChild(tooltip);
+    } else {
+      name.textContent = extension.name;
     }
     
-    // 再添加未启用的扩展
-    disabledExtensions.forEach(function(extension) {
-      const extensionItem = document.createElement('div');
-      extensionItem.className = 'extension-item disabled';
-      
-      const icon = document.createElement('img');
-      icon.className = 'extension-icon';
-      icon.src = extension.icons ? extension.icons[extension.icons.length - 1].url : 'icons/default.png';
-      icon.alt = extension.name;
-      
-      const name = document.createElement('div');
-      name.className = 'extension-name';
-      
-      // 限制标题最多20个字符
-      if (extension.name.length > 20) {
-        name.textContent = extension.name.substring(0, 20) + '...';
-        // 添加浮动提示显示完整名称
-        const tooltip = document.createElement('div');
-        tooltip.className = 'extension-name-tooltip';
-        tooltip.textContent = extension.name;
-        extensionItem.appendChild(tooltip);
-      } else {
-        name.textContent = extension.name;
-      }
-      
-      extensionItem.appendChild(icon);
-      extensionItem.appendChild(name);
-      extensionsGrid.appendChild(extensionItem);
-    });
+    extensionItem.appendChild(icon);
+    extensionItem.appendChild(name);
+    extensionsGrid.appendChild(extensionItem);
   });
+  
+  // 如果存在未启用的扩展，则添加分割线
+  if (disabledExtensions.length > 0 && enabledExtensions.length > 0) {
+    const divider = document.createElement('div');
+    divider.className = 'divider';
+    extensionsGrid.appendChild(divider);
+  }
+  
+  // 再添加未启用的扩展
+  disabledExtensions.forEach(function(extension) {
+    const extensionItem = document.createElement('div');
+    extensionItem.className = 'extension-item disabled';
+    
+    const icon = document.createElement('img');
+    icon.className = 'extension-icon';
+    icon.src = extension.icons ? extension.icons[extension.icons.length - 1].url : 'icons/default.png';
+    icon.alt = extension.name;
+    
+    const name = document.createElement('div');
+    name.className = 'extension-name';
+    
+    // 限制标题最多20个字符
+    if (extension.name.length > 20) {
+      name.textContent = extension.name.substring(0, 20) + '...';
+      // 添加浮动提示显示完整名称
+      const tooltip = document.createElement('div');
+      tooltip.className = 'extension-name-tooltip';
+      tooltip.textContent = extension.name;
+      extensionItem.appendChild(tooltip);
+    } else {
+      name.textContent = extension.name;
+    }
+    
+    extensionItem.appendChild(icon);
+    extensionItem.appendChild(name);
+    extensionsGrid.appendChild(extensionItem);
+  });
+}
+
+// 过滤扩展
+function filterExtensions() {
+  const searchTerm = document.getElementById('extensionSearch').value.toLowerCase();
+  
+  if (!searchTerm) {
+    // 如果搜索框为空，显示所有扩展
+    displayExtensions(allExtensions);
+    return;
+  }
+  
+  // 根据搜索词过滤扩展
+  const filteredExtensions = allExtensions.filter(ext => 
+    ext.name.toLowerCase().includes(searchTerm) || 
+    (ext.description && ext.description.toLowerCase().includes(searchTerm))
+  );
+  
+  // 显示过滤后的扩展
+  displayExtensions(filteredExtensions);
 }
 
 // Sync按钮事件
