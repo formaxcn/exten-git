@@ -221,10 +221,9 @@ input[type="text"], input[type="password"] {
   font-weight: normal;
 }
 
+/* 合并相同样式的按钮 */
 button {
   padding: 8px 16px;
-  background-color: #4CAF50;
-  color: white;
   border: none;
   border-radius: 4px;
   cursor: pointer;
@@ -234,31 +233,38 @@ button {
 }
 
 button:hover {
+  /* 通用悬停效果会在各按钮类型中覆盖 */
+  opacity: 0.9;
+}
+
+/* 主要按钮样式 */
+.primary-button, button:not(.secondary-button):not(.sync-button):not(.force-pull-button) {
+  background-color: #4CAF50;
+  color: white;
+}
+
+.primary-button:hover, button:not(.secondary-button):not(.sync-button):not(.force-pull-button):hover {
   background-color: #45a049;
 }
 
-.secondary-button {
+/* 次要按钮样式 */
+.secondary-button, .force-pull-button {
   background-color: #2196F3;
+  color: white;
 }
 
-.secondary-button:hover {
+.secondary-button:hover, .force-pull-button:hover {
   background-color: #1976D2;
 }
 
+/* 同步按钮样式 */
 .sync-button {
   background-color: #FF9800;
+  color: white;
 }
 
 .sync-button:hover {
   background-color: #F57C00;
-}
-
-.force-pull-button {
-  background-color: #2196F3;
-}
-
-.force-pull-button:hover {
-  background-color: #1976D2;
 }
 
 .success {
