@@ -7,7 +7,27 @@ body {
 
 .header {
   text-align: center;
-  margin-bottom: 20px;
+  margin-bottom: 10px;
+  padding: 10px 0;
+}
+
+.header h1 {
+  margin: 0;
+  font-size: 24px;
+}
+
+.project-info {
+  margin-top: 5px;
+}
+
+.project-info a {
+  color: #2196F3;
+  text-decoration: none;
+  font-size: 14px;
+}
+
+.project-info a:hover {
+  text-decoration: underline;
 }
 
 .main-container {
@@ -27,7 +47,7 @@ body {
 .section-divider {
   height: 1px;
   background-color: #ddd;
-  margin: 20px 0;
+  margin: 10px 0;
 }
 
 .status {
@@ -169,7 +189,7 @@ h1 {
 
 .section {
   margin-bottom: 0;
-  padding: 15px 0;
+  padding: 10px 0;
 }
 
 .section-title {
