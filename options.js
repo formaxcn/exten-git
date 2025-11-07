@@ -238,8 +238,18 @@ function loadExtensions() {
     // 保存所有扩展到全局变量
     allExtensions = extensions;
     
-    // 显示所有扩展
-    displayExtensions(extensions);
+    // 检查是否有搜索词，如果有则过滤，否则显示所有扩展
+    const searchTerm = document.getElementById('extensionSearch').value.toLowerCase();
+    if (searchTerm) {
+      const filteredExtensions = extensions.filter(ext => 
+        ext.name.toLowerCase().includes(searchTerm) || 
+        (ext.description && ext.description.toLowerCase().includes(searchTerm))
+      );
+      displayExtensions(filteredExtensions);
+    } else {
+      // 显示所有扩展
+      displayExtensions(extensions);
+    }
   });
 }
 
@@ -295,7 +305,7 @@ function displayExtensions(extensions) {
     storePageButton.addEventListener('click', function() {
       if (extension.updateUrl && extension.updateUrl.includes('google.com')) {
         // 对于Chrome Web Store扩展，构造URL
-        const webStoreUrl = `https://chrome.google.com/webstore/detail/${extension.id}`;
+        const webStoreUrl = `https://chromewebstore.google.com/detail/${extension.id}`;
         chrome.tabs.create({ url: webStoreUrl });
       } else {
         showStatus('No store page available for this extension', 'error');
