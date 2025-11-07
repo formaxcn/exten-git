@@ -51,6 +51,9 @@ document.addEventListener('DOMContentLoaded', function() {
   // 搜索框事件
   document.getElementById('extensionSearch').addEventListener('input', filterExtensions);
   
+  // 清除搜索按钮事件
+  document.getElementById('clearSearch').addEventListener('click', clearSearch);
+  
   // Popup功能
   loadExtensions();
 });
@@ -496,6 +499,13 @@ function filterExtensions() {
   
   // 显示过滤后的扩展
   displayExtensions(filteredExtensions);
+}
+
+// 清除搜索
+function clearSearch() {
+  document.getElementById('extensionSearch').value = '';
+  displayExtensions(allExtensions);
+  document.getElementById('extensionSearch').focus();
 }
 
 // Sync按钮事件
