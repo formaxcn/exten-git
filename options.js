@@ -258,6 +258,7 @@ function displayExtensions(extensions) {
   enabledExtensions.forEach(function(extension) {
     const extensionItem = document.createElement('div');
     extensionItem.className = 'extension-item';
+    extensionItem.dataset.extensionId = extension.id;
     
     const icon = document.createElement('img');
     icon.className = 'extension-icon';
@@ -275,8 +276,93 @@ function displayExtensions(extensions) {
       name.textContent = extension.name;
     }
     
+    // 创建按钮容器
+    const buttonContainer = document.createElement('div');
+    buttonContainer.className = 'extension-buttons';
+    
+    // 第一行按钮容器
+    const firstRow = document.createElement('div');
+    firstRow.className = 'button-row';
+    
+    // 第二行按钮容器
+    const secondRow = document.createElement('div');
+    secondRow.className = 'button-row';
+    
+    // Store按钮
+    const storePageButton = document.createElement('button');
+    storePageButton.className = 'extension-button';
+    storePageButton.textContent = 'Store';
+    storePageButton.addEventListener('click', function() {
+      if (extension.homepageUrl) {
+        chrome.tabs.create({ url: extension.homepageUrl });
+      } else if (extension.updateUrl && extension.updateUrl.includes('google.com')) {
+        // 对于Chrome Web Store扩展，构造URL
+        const webStoreUrl = `https://chrome.google.com/webstore/detail/${extension.id}`;
+        chrome.tabs.create({ url: webStoreUrl });
+      } else {
+        showStatus('No store page available for this extension', 'error');
+      }
+    });
+    
+    // Options按钮
+    const optionsButton = document.createElement('button');
+    optionsButton.className = 'extension-button';
+    optionsButton.textContent = 'Options';
+    optionsButton.addEventListener('click', function() {
+      if (extension.optionsUrl) {
+        chrome.tabs.create({ url: extension.optionsUrl });
+      } else {
+        showStatus('This extension has no options page', 'error');
+      }
+    });
+    
+    // 启用/禁用按钮
+    const toggleButton = document.createElement('button');
+    toggleButton.className = 'extension-button toggle-button';
+    toggleButton.textContent = 'Disable';
+    toggleButton.addEventListener('click', function() {
+      chrome.management.setEnabled(extension.id, false, function() {
+        if (chrome.runtime.lastError) {
+          showStatus('Error disabling extension: ' + chrome.runtime.lastError.message, 'error');
+        } else {
+          showStatus('Extension disabled successfully', 'success');
+          // 重新加载扩展列表
+          loadExtensions();
+        }
+      });
+    });
+    
+    // 卸载按钮
+    const uninstallButton = document.createElement('button');
+    uninstallButton.className = 'extension-button uninstall-button';
+    uninstallButton.textContent = 'Uninstall';
+    uninstallButton.addEventListener('click', function() {
+      if (confirm(`Are you sure you want to uninstall "${extension.name}"?`)) {
+        chrome.management.uninstall(extension.id, function() {
+          if (chrome.runtime.lastError) {
+            showStatus('Error uninstalling extension: ' + chrome.runtime.lastError.message, 'error');
+          } else {
+            showStatus('Extension uninstalled successfully', 'success');
+            // 重新加载扩展列表
+            loadExtensions();
+          }
+        });
+      }
+    });
+    
+    // 将按钮添加到行中
+    firstRow.appendChild(storePageButton);
+    firstRow.appendChild(optionsButton);
+    secondRow.appendChild(toggleButton);
+    secondRow.appendChild(uninstallButton);
+    
+    // 将行添加到按钮容器
+    buttonContainer.appendChild(firstRow);
+    buttonContainer.appendChild(secondRow);
+    
     extensionItem.appendChild(icon);
     extensionItem.appendChild(name);
+    extensionItem.appendChild(buttonContainer);
     extensionsGrid.appendChild(extensionItem);
   });
   
@@ -291,6 +377,7 @@ function displayExtensions(extensions) {
   disabledExtensions.forEach(function(extension) {
     const extensionItem = document.createElement('div');
     extensionItem.className = 'extension-item disabled';
+    extensionItem.dataset.extensionId = extension.id;
     
     const icon = document.createElement('img');
     icon.className = 'extension-icon';
@@ -308,8 +395,93 @@ function displayExtensions(extensions) {
       name.textContent = extension.name;
     }
     
+    // 创建按钮容器
+    const buttonContainer = document.createElement('div');
+    buttonContainer.className = 'extension-buttons';
+    
+    // 第一行按钮容器
+    const firstRow = document.createElement('div');
+    firstRow.className = 'button-row';
+    
+    // 第二行按钮容器
+    const secondRow = document.createElement('div');
+    secondRow.className = 'button-row';
+    
+    // Store按钮
+    const storePageButton = document.createElement('button');
+    storePageButton.className = 'extension-button';
+    storePageButton.textContent = 'Store';
+    storePageButton.addEventListener('click', function() {
+      if (extension.homepageUrl) {
+        chrome.tabs.create({ url: extension.homepageUrl });
+      } else if (extension.updateUrl && extension.updateUrl.includes('google.com')) {
+        // 对于Chrome Web Store扩展，构造URL
+        const webStoreUrl = `https://chrome.google.com/webstore/detail/${extension.id}`;
+        chrome.tabs.create({ url: webStoreUrl });
+      } else {
+        showStatus('No store page available for this extension', 'error');
+      }
+    });
+    
+    // Options按钮
+    const optionsButton = document.createElement('button');
+    optionsButton.className = 'extension-button';
+    optionsButton.textContent = 'Options';
+    optionsButton.addEventListener('click', function() {
+      if (extension.optionsUrl) {
+        chrome.tabs.create({ url: extension.optionsUrl });
+      } else {
+        showStatus('This extension has no options page', 'error');
+      }
+    });
+    
+    // 启用/禁用按钮 (对于已禁用的扩展是启用)
+    const toggleButton = document.createElement('button');
+    toggleButton.className = 'extension-button toggle-button';
+    toggleButton.textContent = 'Enable';
+    toggleButton.addEventListener('click', function() {
+      chrome.management.setEnabled(extension.id, true, function() {
+        if (chrome.runtime.lastError) {
+          showStatus('Error enabling extension: ' + chrome.runtime.lastError.message, 'error');
+        } else {
+          showStatus('Extension enabled successfully', 'success');
+          // 重新加载扩展列表
+          loadExtensions();
+        }
+      });
+    });
+    
+    // 卸载按钮
+    const uninstallButton = document.createElement('button');
+    uninstallButton.className = 'extension-button uninstall-button';
+    uninstallButton.textContent = 'Uninstall';
+    uninstallButton.addEventListener('click', function() {
+      if (confirm(`Are you sure you want to uninstall "${extension.name}"?`)) {
+        chrome.management.uninstall(extension.id, function() {
+          if (chrome.runtime.lastError) {
+            showStatus('Error uninstalling extension: ' + chrome.runtime.lastError.message, 'error');
+          } else {
+            showStatus('Extension uninstalled successfully', 'success');
+            // 重新加载扩展列表
+            loadExtensions();
+          }
+        });
+      }
+    });
+    
+    // 将按钮添加到行中
+    firstRow.appendChild(storePageButton);
+    firstRow.appendChild(optionsButton);
+    secondRow.appendChild(toggleButton);
+    secondRow.appendChild(uninstallButton);
+    
+    // 将行添加到按钮容器
+    buttonContainer.appendChild(firstRow);
+    buttonContainer.appendChild(secondRow);
+    
     extensionItem.appendChild(icon);
     extensionItem.appendChild(name);
+    extensionItem.appendChild(buttonContainer);
     extensionsGrid.appendChild(extensionItem);
   });
 }
