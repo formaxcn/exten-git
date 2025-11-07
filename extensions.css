@@ -1,7 +1,7 @@
 .extensions-panel {
   flex: 7;
   overflow-y: auto;
-  max-height: calc(90vh - 10px);
+  max-height: calc(90vh - 20px);
   padding-right: 5px; /* 防止滚动条遮挡内容 */
   padding-bottom: 5px; /* 减少底部留白 */
 }

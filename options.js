@@ -44,6 +44,11 @@ document.addEventListener('DOMContentLoaded', function() {
     const selectedOption = syncIntervalOptions[index];
     document.getElementById('syncIntervalValue').textContent = selectedOption.label;
   });
+  
+  // 自动同步开关事件
+  document.getElementById('autoSyncToggle').addEventListener('change', function() {
+    toggleAutoSync(this.checked);
+  });
 });
 
 // 加载设置
@@ -55,7 +60,8 @@ function loadSettings() {
     'password', 
     'branch', 
     'syncInterval',
-    'syncStrategy'
+    'syncStrategy',
+    'autoSyncEnabled'
   ], function(items) {
     document.getElementById('repoUrl').value = items.repoUrl || '';
     document.getElementById('filePath').value = items.filePath || '';
@@ -89,6 +95,11 @@ function loadSettings() {
     if (items.syncStrategy) {
       document.getElementById(items.syncStrategy + 'Strategy').checked = true;
     }
+    
+    // 设置自动同步开关
+    if (items.autoSyncEnabled !== undefined) {
+      document.getElementById('autoSyncToggle').checked = items.autoSyncEnabled;
+    }
   });
 }
 
@@ -102,6 +113,7 @@ function saveSettings() {
   const syncIntervalIndex = document.getElementById('syncInterval').value;
   const syncInterval = syncIntervalOptions[syncIntervalIndex].value;
   const syncStrategy = document.querySelector('input[name="syncStrategy"]:checked').value;
+  const autoSyncEnabled = document.getElementById('autoSyncToggle').checked;
   
   // 检查必填字段
   if (!repoUrl) {
@@ -116,7 +128,8 @@ function saveSettings() {
     password: password,
     branch: branch,
     syncInterval: syncInterval,
-    syncStrategy: syncStrategy
+    syncStrategy: syncStrategy,
+    autoSyncEnabled: autoSyncEnabled
   }, function() {
     showStatus('Settings saved successfully!', 'success');
   });
@@ -148,6 +161,12 @@ function pushChanges() {
   showStatus('Push functionality needs to be implemented', 'error');
 }
 
+// 切换自动同步
+function toggleAutoSync(enabled) {
+  // 这里可以添加实际的自动同步逻辑
+  // 例如设置定时器或与后台脚本通信
+}
+
 // 导出配置
 function exportConfig() {
   chrome.storage.sync.get([
@@ -157,7 +176,8 @@ function exportConfig() {
     'password', 
     'branch', 
     'syncInterval',
-    'syncStrategy'
+    'syncStrategy',
+    'autoSyncEnabled'
   ], function(items) {
     const configData = JSON.stringify(items, null, 2);
     const blob = new Blob([configData], { type: 'application/json' });
