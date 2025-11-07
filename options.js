@@ -427,7 +427,7 @@ function displayExtensions(extensions) {
     
     // 启用/禁用按钮 (对于已禁用的扩展是启用)
     const toggleButton = document.createElement('button');
-    toggleButton.className = 'extension-button toggle-button';
+    toggleButton.className = 'extension-button toggle-button yellow';
     toggleButton.textContent = 'Enable';
     toggleButton.addEventListener('click', function() {
       chrome.management.setEnabled(extension.id, true, function() {

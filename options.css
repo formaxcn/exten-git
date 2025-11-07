@@ -156,12 +156,12 @@ body {
   opacity: 0.9;
 }
 
-.toggle-button {
-  background-color: #FF9800;
+.toggle-button.extension-button {
+  background-color: #FF9800 !important;
 }
 
-.uninstall-button {
-  background-color: #F44336;
+.uninstall-button.extension-button {
+  background-color: #F44336 !important;
 }
 
 .extension-name-tooltip {
@@ -304,12 +304,12 @@ button:hover {
 }
 
 /* 主要按钮样式 */
-.primary-button, button:not(.secondary-button):not(.sync-button):not(.force-pull-button) {
+.primary-button, button:not(.secondary-button):not(.sync-button):not(.force-pull-button):not(.toggle-button):not(.uninstall-button) {
   background-color: #4CAF50;
   color: white;
 }
 
-.primary-button:hover, button:not(.secondary-button):not(.sync-button):not(.force-pull-button):hover {
+.primary-button:hover, button:not(.secondary-button):not(.sync-button):not(.force-pull-button):not(.toggle-button):not(.uninstall-button):hover {
   background-color: #45a049;
 }
 
