@@ -14,6 +14,16 @@ const syncIntervalOptions = [
   { value: 1440, label: '1 d' }
 ];
 
+// 更新上次同步时间显示
+function updateLastSyncTime() {
+  const now = new Date();
+  const timeString = now.toLocaleString();
+  const lastSyncElement = document.getElementById('lastSyncTime');
+  if (lastSyncElement) {
+    lastSyncElement.textContent = `上次同步: ${timeString}`;
+  }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
   // 加载保存的设置
   loadSettings();
@@ -25,12 +35,21 @@ document.addEventListener('DOMContentLoaded', function() {
   document.getElementById('testBtn').addEventListener('click', testConnection);
   
   // Sync操作
-  document.getElementById('syncBtn').addEventListener('click', syncChanges);
+  document.getElementById('syncBtn').addEventListener('click', function() {
+    syncChanges();
+    updateLastSyncTime();
+  });
   
   // Pull操作
-  document.getElementById('pullBtn').addEventListener('click', pullChanges);
+  document.getElementById('pullBtn').addEventListener('click', function() {
+    pullChanges();
+    updateLastSyncTime();
+  });
   // Push操作
-  document.getElementById('pushBtn').addEventListener('click', pushChanges);
+  document.getElementById('pushBtn').addEventListener('click', function() {
+    pushChanges();
+    updateLastSyncTime();
+  });
   
   // 导出配置
   document.getElementById('exportConfigBtn').addEventListener('click', exportConfig);
@@ -61,7 +80,8 @@ function loadSettings() {
     'branch', 
     'syncInterval',
     'syncStrategy',
-    'autoSyncEnabled'
+    'autoSyncEnabled',
+    'lastSyncTime'
   ], function(items) {
     document.getElementById('repoUrl').value = items.repoUrl || '';
     document.getElementById('filePath').value = items.filePath || '';
@@ -99,6 +119,15 @@ function loadSettings() {
     // 设置自动同步开关
     if (items.autoSyncEnabled !== undefined) {
       document.getElementById('autoSyncToggle').checked = items.autoSyncEnabled;
+    }
+    
+    // 显示上次同步时间
+    if (items.lastSyncTime) {
+      const lastSyncElement = document.getElementById('lastSyncTime');
+      if (lastSyncElement) {
+        const lastSyncDate = new Date(items.lastSyncTime);
+        lastSyncElement.textContent = `上次同步: ${lastSyncDate.toLocaleString()}`;
+      }
     }
   });
 }
@@ -148,16 +177,34 @@ function testConnection() {
 
 // Sync操作
 function syncChanges() {
+  // 保存同步时间
+  const now = new Date().getTime();
+  chrome.storage.sync.set({ lastSyncTime: now }, function() {
+    // 可以添加其他同步逻辑
+  });
+  
   showStatus('Sync functionality needs to be implemented', 'error');
 }
 
 // Pull操作
 function pullChanges() {
+  // 保存同步时间
+  const now = new Date().getTime();
+  chrome.storage.sync.set({ lastSyncTime: now }, function() {
+    // 可以添加其他pull逻辑
+  });
+  
   showStatus('Pull functionality needs to be implemented', 'error');
 }
 
 // Push操作
 function pushChanges() {
+  // 保存同步时间
+  const now = new Date().getTime();
+  chrome.storage.sync.set({ lastSyncTime: now }, function() {
+    // 可以添加其他push逻辑
+  });
+  
   showStatus('Push functionality needs to be implemented', 'error');
 }
 
