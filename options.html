@@ -8,10 +8,7 @@
 </head>
 <body>
   <div class="header">
-    <h1>Extension Git Sync</h1>
-    <div class="project-info">
-      <a href="https://github.com/formaxcn/exten-git" target="_blank" title="View on GitHub"><i class="fab fa-github"></i></a>
-    </div>
+    <h1>exten-git</h1>
   </div>
   
   <div class="main-container">
@@ -92,17 +89,23 @@
     
     <div class="extensions-panel">
       <div class="panel-title-header">
-        <h2 class="panel-title">Installed Extensions</h2>
+        <h2 class="panel-title">Extensions</h2>
         <div class="search-container">
           <input type="text" id="extensionSearch" class="search-input" placeholder="Search...">
           <button id="clearSearch" class="clear-search-button" title="Clear search">&times;</button>
         </div>
       </div>
       <div id="extensionsGrid" class="extensions-grid">
-        <!-- Extensions will be populated here -->
       </div>
-      <div class="status popup-status" id="popupStatus"></div>
+      <div id="popupStatus" class="popup-status"></div>
     </div>
+  </div>
+  
+  <!-- 将GitHub图标移至页面左下角 -->
+  <div class="github-corner">
+    <a href="https://github.com/formaxcn/exten-git" target="_blank" title="View on GitHub">
+      <i class="fab fa-github"></i>
+    </a>
   </div>
   
   <script src="options.js"></script>
