@@ -51,15 +51,17 @@ function loadSettings() {
   chrome.storage.sync.get([
     'repoUrl', 
     'filePath',
-    'accessToken', 
+    'userName',
+    'password', 
     'branch', 
     'syncInterval',
     'syncStrategy'
   ], function(items) {
     document.getElementById('repoUrl').value = items.repoUrl || '';
-    document.getElementById('filePath').value = items.filePath || 'extensions.json';
-    document.getElementById('accessToken').value = items.accessToken || '';
-    document.getElementById('branch').value = items.branch || 'main';
+    document.getElementById('filePath').value = items.filePath || '';
+    document.getElementById('userName').value = items.userName || '';
+    document.getElementById('password').value = items.password || '';
+    document.getElementById('branch').value = items.branch || '';
     
     // 设置同步间隔
     if (items.syncInterval) {
@@ -94,22 +96,24 @@ function loadSettings() {
 function saveSettings() {
   const repoUrl = document.getElementById('repoUrl').value;
   const filePath = document.getElementById('filePath').value;
-  const accessToken = document.getElementById('accessToken').value;
+  const userName = document.getElementById('userName').value;
+  const password = document.getElementById('password').value;
   const branch = document.getElementById('branch').value;
   const syncIntervalIndex = document.getElementById('syncInterval').value;
   const syncInterval = syncIntervalOptions[syncIntervalIndex].value;
   const syncStrategy = document.querySelector('input[name="syncStrategy"]:checked').value;
   
   // 检查必填字段
-  if (!filePath) {
-    showStatus('File Path is required', 'error');
+  if (!repoUrl) {
+    showStatus('Repository URL is required', 'error');
     return;
   }
   
   chrome.storage.sync.set({
     repoUrl: repoUrl,
     filePath: filePath,
-    accessToken: accessToken,
+    userName: userName,
+    password: password,
     branch: branch,
     syncInterval: syncInterval,
     syncStrategy: syncStrategy
@@ -149,7 +153,8 @@ function exportConfig() {
   chrome.storage.sync.get([
     'repoUrl', 
     'filePath',
-    'accessToken', 
+    'userName',
+    'password', 
     'branch', 
     'syncInterval',
     'syncStrategy'

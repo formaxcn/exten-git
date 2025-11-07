@@ -251,3 +251,12 @@ h1 {
 .github-corner a:hover {
   color: #0d47a1;
 }
+
+.inline-group {
+  display: flex;
+  gap: 10px;
+}
+
+.half-width {
+  flex: 1;
+}
