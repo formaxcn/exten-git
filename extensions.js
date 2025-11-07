@@ -90,7 +90,7 @@ function displayExtensions(extensions) {
     // Store按钮
     const storePageButton = document.createElement('button');
     storePageButton.className = 'extension-button';
-    storePageButton.textContent = 'Store';
+    storePageButton.innerHTML = '<i class="fas fa-store"></i> Store';
     storePageButton.addEventListener('click', function() {
       if (extension.updateUrl && extension.updateUrl.includes('google.com')) {
         // 对于Chrome Web Store扩展，构造URL
@@ -104,7 +104,7 @@ function displayExtensions(extensions) {
     // Options按钮
     const optionsButton = document.createElement('button');
     optionsButton.className = 'extension-button';
-    optionsButton.textContent = 'Options';
+    optionsButton.innerHTML = '<i class="fas fa-cog"></i> Options';
     optionsButton.addEventListener('click', function() {
       chrome.tabs.create({ url: 'chrome://extensions/?id=' + extension.id });
     });
@@ -112,7 +112,7 @@ function displayExtensions(extensions) {
     // 启用/禁用按钮
     const toggleButton = document.createElement('button');
     toggleButton.className = 'extension-button toggle-button';
-    toggleButton.textContent = 'Disable';
+    toggleButton.innerHTML = '<i class="fas fa-power-off"></i> Disable';
     toggleButton.addEventListener('click', function() {
       chrome.management.setEnabled(extension.id, false, function() {
         if (chrome.runtime.lastError) {
@@ -128,7 +128,7 @@ function displayExtensions(extensions) {
     // 卸载按钮
     const uninstallButton = document.createElement('button');
     uninstallButton.className = 'extension-button uninstall-button';
-    uninstallButton.textContent = 'Uninstall';
+    uninstallButton.innerHTML = '<i class="fas fa-trash-alt"></i> Uninstall';
     uninstallButton.addEventListener('click', function() {
       if (confirm(`Are you sure you want to uninstall "${extension.name}"?`)) {
         chrome.management.uninstall(extension.id, function() {
@@ -203,7 +203,7 @@ function displayExtensions(extensions) {
     // Store按钮
     const storePageButton = document.createElement('button');
     storePageButton.className = 'extension-button';
-    storePageButton.textContent = 'Store';
+    storePageButton.innerHTML = '<i class="fas fa-store"></i> Store';
     storePageButton.addEventListener('click', function() {
       chrome.tabs.create({ url: `https://chrome.google.com/webstore/detail/${extension.id}`});
     });
@@ -211,7 +211,7 @@ function displayExtensions(extensions) {
     // Options按钮
     const optionsButton = document.createElement('button');
     optionsButton.className = 'extension-button';
-    optionsButton.textContent = 'Options';
+    optionsButton.innerHTML = '<i class="fas fa-cog"></i> Options';
     optionsButton.addEventListener('click', function() {
       chrome.tabs.create({ url: 'chrome://extensions/?id=' + extension.id });
     });
@@ -219,7 +219,7 @@ function displayExtensions(extensions) {
     // 启用/禁用按钮 (对于已禁用的扩展是启用)
     const toggleButton = document.createElement('button');
     toggleButton.className = 'extension-button toggle-button yellow';
-    toggleButton.textContent = 'Enable';
+    toggleButton.innerHTML = '<i class="fas fa-power-off"></i> Enable';
     toggleButton.addEventListener('click', function() {
       chrome.management.setEnabled(extension.id, true, function() {
         if (chrome.runtime.lastError) {
@@ -235,7 +235,7 @@ function displayExtensions(extensions) {
     // 卸载按钮
     const uninstallButton = document.createElement('button');
     uninstallButton.className = 'extension-button uninstall-button';
-    uninstallButton.textContent = 'Uninstall';
+    uninstallButton.innerHTML = '<i class="fas fa-trash-alt"></i> Uninstall';
     uninstallButton.addEventListener('click', function() {
       if (confirm(`Are you sure you want to uninstall "${extension.name}"?`)) {
         chrome.management.uninstall(extension.id, function() {
