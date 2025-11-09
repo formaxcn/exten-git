@@ -70,9 +70,28 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('syncIntervalValue').textContent = selectedOption.label;
   });
   
+  // 同步间隔滑块变更后自动保存
+  document.getElementById('syncInterval').addEventListener('change', function() {
+    const index = parseInt(this.value);
+    const syncInterval = syncIntervalOptions[index].value;
+    chrome.storage.sync.set({syncInterval: syncInterval});
+  });
+  
   // 自动同步开关事件
   document.getElementById('autoSyncToggle').addEventListener('change', function() {
     toggleAutoSync(this.checked);
+    // 自动保存开关状态
+    chrome.storage.sync.set({autoSyncEnabled: this.checked});
+  });
+  
+  // 同步策略变更后自动保存
+  const syncStrategyInputs = document.querySelectorAll('input[name="syncStrategy"]');
+  syncStrategyInputs.forEach(input => {
+    input.addEventListener('change', function() {
+      if (this.checked) {
+        chrome.storage.sync.set({syncStrategy: this.value});
+      }
+    });
   });
 });
 
@@ -96,6 +115,7 @@ function loadSettings() {
     document.getElementById('branch').value = items.branch || '';
     
     // 设置同步间隔
+    let selectedIndex = 3; // 默认索引
     if (items.syncInterval) {
       // 找到最接近的预设值
       let closestIndex = 0;
@@ -109,13 +129,11 @@ function loadSettings() {
         }
       }
       
-      document.getElementById('syncInterval').value = closestIndex;
-      document.getElementById('syncIntervalValue').textContent = syncIntervalOptions[closestIndex].label;
-    } else {
-      // 默认值 30 分钟 (索引 3)
-      document.getElementById('syncInterval').value = 3;
-      document.getElementById('syncIntervalValue').textContent = syncIntervalOptions[3].label;
+      selectedIndex = closestIndex;
     }
+    
+    document.getElementById('syncInterval').value = selectedIndex;
+    document.getElementById('syncIntervalValue').textContent = syncIntervalOptions[selectedIndex].label;
     
     // 设置同步策略
     if (items.syncStrategy) {
@@ -135,6 +153,14 @@ function loadSettings() {
         lastSyncElement.textContent = `上次同步: ${lastSyncDate.toLocaleString()}`;
       }
     }
+    
+    // 保存默认值（如果尚未保存）
+    if (!items.syncInterval) {
+      const defaultSyncInterval = syncIntervalOptions[selectedIndex].value;
+      chrome.storage.sync.set({
+        syncInterval: defaultSyncInterval
+      });
+    }
   });
 }
 
@@ -145,10 +171,6 @@ function saveSettings() {
   const userName = document.getElementById('userName').value;
   const password = document.getElementById('password').value;
   const branch = document.getElementById('branch').value;
-  const syncIntervalIndex = document.getElementById('syncInterval').value;
-  const syncInterval = syncIntervalOptions[syncIntervalIndex].value;
-  const syncStrategy = document.querySelector('input[name="syncStrategy"]:checked').value;
-  const autoSyncEnabled = document.getElementById('autoSyncToggle').checked;
   
   // 检查必填字段
   if (!repoUrl) {
@@ -156,16 +178,15 @@ function saveSettings() {
     return;
   }
   
-  chrome.storage.sync.set({
+  const settings = {
     repoUrl: repoUrl,
     filePath: filePath,
     userName: userName,
     password: password,
-    branch: branch,
-    syncInterval: syncInterval,
-    syncStrategy: syncStrategy,
-    autoSyncEnabled: autoSyncEnabled
-  }, function() {
+    branch: branch
+  };
+  
+  chrome.storage.sync.set(settings, function() {
     showStatus('Settings saved successfully!', 'success');
   });
 }
@@ -230,9 +251,11 @@ function exportConfig() {
     'branch', 
     'syncInterval',
     'syncStrategy',
-    'autoSyncEnabled'
+    'autoSyncEnabled',
+    'lastSyncTime'
   ], function(items) {
-    const configData = JSON.stringify(items, null, 2);
+    // 即使是空对象也要导出
+    const configData = JSON.stringify(items || {}, null, 2);
     const blob = new Blob([configData], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     
@@ -266,7 +289,19 @@ function importConfig() {
     reader.onload = function(e) {
       try {
         const configData = JSON.parse(e.target.result);
-        chrome.storage.sync.set(configData, function() {
+        
+        // 只保留Git和Sync相关的配置项
+        const filteredConfig = {};
+        const configKeys = ['repoUrl', 'filePath', 'userName', 'password', 'branch', 
+                           'syncInterval', 'syncStrategy', 'autoSyncEnabled', 'lastSyncTime'];
+        
+        configKeys.forEach(key => {
+          if (configData.hasOwnProperty(key)) {
+            filteredConfig[key] = configData[key];
+          }
+        });
+        
+        chrome.storage.sync.set(filteredConfig, function() {
           loadSettings(); // 重新加载设置到表单
           showStatus('Configuration imported successfully!', 'success');
         });
