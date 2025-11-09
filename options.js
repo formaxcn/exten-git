@@ -407,12 +407,27 @@ function restoreExtensions() {
 
 // 显示状态信息
 function showStatus(message, type) {
-  const status = document.getElementById('status');
+  const status = document.getElementById('popupStatus');
+  
+  // 设置状态文本和类
   status.textContent = message;
-  status.className = 'status ' + type;
+  status.className = 'popup-status ' + type;
+  
+  // 显示元素
   status.style.display = 'block';
   
+  // 触发动画显示
   setTimeout(() => {
-    status.style.display = 'none';
-  }, 3000);
+    status.style.opacity = '1';
+    status.style.transform = 'translateX(-50%) translateY(0)';
+  }, 10);
+  
+  // 5秒后自动隐藏
+  setTimeout(() => {
+    status.style.opacity = '0';
+    status.style.transform = 'translateX(-50%) translateY(-100%)';
+    setTimeout(() => {
+      status.style.display = 'none';
+    }, 300);
+  }, 5000);
 }
