@@ -57,6 +57,12 @@ document.addEventListener('DOMContentLoaded', function() {
   // 导入配置
   document.getElementById('importConfigBtn').addEventListener('click', importConfig);
   
+  // 备份扩展列表
+  document.getElementById('backupBtn').addEventListener('click', backupExtensions);
+  
+  // 恢复扩展列表
+  document.getElementById('restoreBtn').addEventListener('click', restoreExtensions);
+  
   // 同步间隔滑块事件
   document.getElementById('syncInterval').addEventListener('input', function() {
     const index = parseInt(this.value);
@@ -266,6 +272,70 @@ function importConfig() {
         });
       } catch (error) {
         showStatus('Invalid configuration file', 'error');
+      }
+    };
+    reader.readAsText(file);
+  };
+  
+  input.click();
+}
+
+// 备份扩展列表到本地文件
+function backupExtensions() {
+  chrome.storage.local.get(['currentExtensions'], function(result) {
+    if (result.currentExtensions) {
+      const backupData = {
+        extensions: result.currentExtensions,
+        backupTime: new Date().toISOString(),
+        version: '1.0'
+      };
+      
+      const dataStr = JSON.stringify(backupData, null, 2);
+      const dataBlob = new Blob([dataStr], {type: 'application/json'});
+      
+      const url = URL.createObjectURL(dataBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `extensions-backup-${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      
+      setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }, 100);
+      
+      showStatus('Extensions backed up successfully!', 'success');
+    } else {
+      showStatus('No extensions data found to backup', 'error');
+    }
+  });
+}
+
+// 从本地文件恢复扩展列表
+function restoreExtensions() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.json';
+  
+  input.onchange = function(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      try {
+        const backupData = JSON.parse(e.target.result);
+        
+        if (backupData.extensions) {
+          chrome.storage.local.set({currentExtensions: backupData.extensions}, function() {
+            showStatus('Extensions restored successfully!', 'success');
+          });
+        } else {
+          showStatus('Invalid backup file format', 'error');
+        }
+      } catch (error) {
+        showStatus('Invalid backup file', 'error');
       }
     };
     reader.readAsText(file);
