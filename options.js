@@ -379,9 +379,10 @@ function restoreExtensions() {
         const backupData = JSON.parse(e.target.result);
         
         if (backupData.extensions) {
-          chrome.storage.local.set({currentExtensions: backupData.extensions}, function() {
-            showStatus('Extensions restored successfully!', 'success');
-          });
+          // chrome.storage.local.set({currentExtensions: backupData.extensions}, function() {
+          //   showStatus('Extensions restored successfully!', 'success');
+          // });
+          // TODO conflict resolution render
         } else {
           showStatus('Invalid backup file format', 'error');
         }
