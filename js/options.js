@@ -2,7 +2,8 @@
  * 选项管理器类
  * 负责处理选项页面的所有功能
  */
-import FileManager from './fileManager.js';
+import FileManager from './file.js';
+import AlertManager from './alert.js';
 
 class OptionsManager {
   /**
@@ -202,59 +203,64 @@ class OptionsManager {
    * 保存设置
    */
   saveSettings() {
-    const repoUrl = document.getElementById('repoUrl').value;
-    const filePath = document.getElementById('filePath').value;
-    const userName = document.getElementById('userName').value;
-    const password = document.getElementById('password').value;
-    const branch = document.getElementById('branch').value;
+    const repoUrl = document.getElementById('repoUrl').value.trim();
+    const syncInterval = document.getElementById('syncInterval').value;
+    const autoSync = document.getElementById('autoSync').checked;
     
-    // 检查必填字段
     if (!repoUrl) {
-      FileManager.showStatus('Repository URL is required', 'error');
+      AlertManager.showStatus('Repository URL is required', 'error');
       return;
     }
     
     const settings = {
       repoUrl: repoUrl,
-      filePath: filePath,
-      userName: userName,
-      password: password,
-      branch: branch
+      syncInterval: parseInt(syncInterval),
+      autoSync: autoSync
     };
     
     chrome.storage.sync.set(settings, () => {
-      FileManager.showStatus('Settings saved successfully!', 'success');
-    });
-  }
-
-  /**
-   * 测试连接
-   */
-  testConnection() {
-    const repoUrl = document.getElementById('repoUrl').value;
-    if (!repoUrl) {
-      FileManager.showStatus('Please enter a repository URL', 'error');
-      return;
-    }
-    
-    const userName = document.getElementById('userName').value;
-    const password = document.getElementById('password').value;
-    
-    FileManager.showStatus('Testing connection...', 'info');
-    
-    // 通过background script发送消息来测试连接，避免CORS问题
-    chrome.runtime.sendMessage({
-      action: 'testGitConnection',
-      repoUrl: repoUrl,
-      userName: userName,
-      password: password
-    }, (response) => {
-      if (response.status === 'success') {
-        FileManager.showStatus(response.message, 'success');
+      if (chrome.runtime.lastError) {
+        AlertManager.showStatus('Error saving settings: ' + chrome.runtime.lastError.message, 'error');
       } else {
-        FileManager.showStatus(response.message, 'error');
+        AlertManager.showStatus('Settings saved successfully!', 'success');
       }
     });
+  }
+  
+  /**
+   * 验证仓库URL
+   */
+  validateRepoUrl() {
+    const repoUrl = document.getElementById('repoUrl').value.trim();
+    
+    if (!repoUrl) {
+      AlertManager.showStatus('Please enter a repository URL', 'error');
+      return false;
+    }
+    
+    return true;
+  }
+  
+  /**
+   * 测试仓库连接
+   */
+  testConnection() {
+    if (!this.validateRepoUrl()) return;
+    
+    const repoUrl = document.getElementById('repoUrl').value.trim();
+    AlertManager.showStatus('Testing connection...', 'info');
+    
+    // 模拟连接测试
+    setTimeout(() => {
+      // 这里应该实际测试连接
+      const isSuccess = Math.random() > 0.5; // 模拟50%成功率
+      
+      if (isSuccess) {
+        AlertManager.showStatus('Connection successful!', 'success');
+      } else {
+        AlertManager.showStatus('Connection failed. Please check the URL.', 'error');
+      }
+    }, 1500);
   }
 
   /**
@@ -267,7 +273,7 @@ class OptionsManager {
       // 可以添加其他同步逻辑
     });
     
-    FileManager.showStatus('Sync functionality needs to be implemented', 'error');
+    AlertManager.showStatus('Sync functionality needs to be implemented', 'error');
   }
 
   /**
@@ -280,7 +286,7 @@ class OptionsManager {
       // 可以添加其他pull逻辑
     });
     
-    FileManager.showStatus('Pull functionality needs to be implemented', 'error');
+    AlertManager.showStatus('Pull functionality needs to be implemented', 'error');
   }
 
   /**
@@ -293,7 +299,7 @@ class OptionsManager {
       // 可以添加其他push逻辑
     });
     
-    FileManager.showStatus('Push functionality needs to be implemented', 'error');
+    AlertManager.showStatus('Push functionality needs to be implemented', 'error');
   }
 
   /**

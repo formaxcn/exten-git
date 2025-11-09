@@ -2,6 +2,8 @@
  * 文件管理器类
  * 负责处理文件的导入导出、扩展备份恢复等功能
  */
+import AlertManager from './alert.js';
+
 class FileManager {
   /**
    * 导出配置
@@ -33,9 +35,8 @@ class FileManager {
       setTimeout(() => {
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
+        AlertManager.showStatus('Configuration exported successfully!', 'success');
       }, 100);
-      
-      this.showStatus('Configuration exported successfully!', 'success');
     });
   }
 
@@ -73,7 +74,7 @@ class FileManager {
                 typeof window.optionsManager.loadSettings === 'function') {
               window.optionsManager.loadSettings(); 
             }
-            this.showStatus('Configuration imported successfully!', 'success');
+            AlertManager.showStatus('Configuration imported successfully!', 'success');
           });
         } catch (error) {
           this.showStatus('Invalid configuration file', 'error');
@@ -121,9 +122,8 @@ class FileManager {
       setTimeout(() => {
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
+        AlertManager.showStatus('Extensions exported successfully!', 'success');
       }, 100);
-      
-      this.showStatus('Extensions exported successfully!', 'success');
     });
   }
 
@@ -151,10 +151,10 @@ class FileManager {
             // TODO conflict resolution render
             this.showStatus('Extensions restored successfully!', 'success');
           } else {
-            this.showStatus('Invalid backup file format', 'error');
+            AlertManager.showStatus('Invalid backup file format', 'error');
           }
         } catch (error) {
-          this.showStatus('Invalid backup file', 'error');
+          AlertManager.showStatus('Invalid backup file', 'error');
         }
       };
       reader.readAsText(file);
@@ -164,28 +164,8 @@ class FileManager {
   }
 
   /**
-   * 显示状态信息
+   * 显示状态信息的方法已被移除，改用 AlertManager
    */
-  static showStatus(message, type) {
-    const status = document.getElementById('popupStatus');
-    
-    // 设置状态文本和类
-    status.textContent = message;
-    status.className = 'popup-status ' + type;
-    
-    // 触发动画显示
-    setTimeout(() => {
-      status.classList.add('show');
-    }, 10);
-    
-    // 5秒后自动隐藏
-    setTimeout(() => {
-      status.classList.remove('show');
-      setTimeout(() => {
-        status.textContent = '';
-      }, 300);
-    }, 5000);
-  }
 }
 
 // 导出 FileManager 类（用于 ES6 模块）
