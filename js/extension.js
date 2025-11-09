@@ -87,7 +87,7 @@ class ExtensionManager {
     if (this.todoExtensions.length > 0) {
       this.refreshInterval = setInterval(() => {
         this.loadExtensions();
-      }, 2000); // 每2秒刷新一次
+      }, 1000); // 每1秒刷新一次
     }
   }
 
@@ -211,6 +211,44 @@ class ExtensionManager {
     }
   }
 
+  // 检查待办事项中的扩展是否已完成安装或卸载
+  checkTodoExtensionsCompletion(currentExtensions) {
+    // 过滤掉主题类型扩展
+    const filteredCurrentExtensions = currentExtensions.filter(ext => ext.type !== 'theme');
+    
+    // 检查待办事项中的扩展是否已完成
+    const completedExtensions = [];
+    
+    this.todoExtensions.forEach(todoExt => {
+      if (todoExt.action === 'remove') {
+        // 检查需要删除的扩展是否还存在
+        const extensionExists = filteredCurrentExtensions.some(ext => ext.id === todoExt.id);
+        if (!extensionExists) {
+          // 扩展已被成功删除
+          completedExtensions.push(todoExt.id);
+        }
+      } else if (todoExt.action === 'add') {
+        // 检查需要添加的扩展是否已安装
+        const extensionExists = filteredCurrentExtensions.some(ext => ext.id === todoExt.id);
+        if (extensionExists) {
+          // 扩展已成功安装
+          completedExtensions.push(todoExt.id);
+        }
+      }
+    });
+    
+    // 从待办事项中移除已完成的扩展
+    if (completedExtensions.length > 0) {
+      this.todoExtensions = this.todoExtensions.filter(ext => !completedExtensions.includes(ext.id));
+      // 如果待办事项为空，停止刷新
+      if (this.todoExtensions.length === 0) {
+        this.stopRefreshInterval();
+      }
+      // 重新显示扩展列表
+      this.loadExtensions();
+    }
+  }
+
   // 标记为移除
   markForRemoval(extension) {
     // 这里应该实现实际的移除逻辑
@@ -246,6 +284,9 @@ class ExtensionManager {
     
     chrome.management.getAll((extensions) => {
       popupStatusElement.textContent = '';
+      
+      // 检查待办事项中的扩展是否已完成
+      this.checkTodoExtensionsCompletion(extensions);
       
       // 保存所有扩展到实例变量
       this.allExtensions = extensions;
