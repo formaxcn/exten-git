@@ -413,21 +413,16 @@ function showStatus(message, type) {
   status.textContent = message;
   status.className = 'popup-status ' + type;
   
-  // 显示元素
-  status.style.display = 'block';
-  
   // 触发动画显示
   setTimeout(() => {
-    status.style.opacity = '1';
-    status.style.transform = 'translateX(-50%) translateY(0)';
+    status.classList.add('show');
   }, 10);
   
   // 5秒后自动隐藏
   setTimeout(() => {
-    status.style.opacity = '0';
-    status.style.transform = 'translateX(-50%) translateY(-100%)';
+    status.classList.remove('show');
     setTimeout(() => {
-      status.style.display = 'none';
-    }, 30000);
-  }, 50000);
+      status.textContent = '';
+    }, 300);
+  }, 5000);
 }

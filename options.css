@@ -353,9 +353,8 @@ input:checked + .slider:before {
 /* 弹出状态消息样式 */
 .popup-status {
   position: fixed;
-  top: 20px;
-  left: 50%;
-  transform: translateX(-50%) translateY(-100%);
+  bottom: 20px;
+  right: 20px;
   z-index: 10000;
   padding: 12px 20px;
   border-radius: 4px;
@@ -364,6 +363,7 @@ input:checked + .slider:before {
   box-shadow: 0 2px 10px rgba(0,0,0,0.2);
   opacity: 0;
   transition: all 0.3s ease;
+  transform: translateX(150%);
 }
 
 .popup-status.success {
@@ -376,4 +376,9 @@ input:checked + .slider:before {
 
 .popup-status.info {
   background-color: #2196F3;
+}
+
+.popup-status.show {
+  opacity: 1;
+  transform: translateX(0);
 }

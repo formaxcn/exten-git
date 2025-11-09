@@ -298,11 +298,18 @@ function clearSearch() {
 function showStatus(message, type) {
   const popupStatusElement = document.getElementById('popupStatus');
   popupStatusElement.textContent = message;
-  popupStatusElement.className = 'status ' + type;
+  popupStatusElement.className = 'popup-status ' + type;
+  
+  // 触发动画显示
+  setTimeout(() => {
+    popupStatusElement.classList.add('show');
+  }, 10);
   
   setTimeout(() => {
-    popupStatusElement.textContent = '';
-    popupStatusElement.className = 'status popup-status';
+    popupStatusElement.classList.remove('show');
+    setTimeout(() => {
+      popupStatusElement.textContent = '';
+    }, 300);
   }, 3000);
 }
 
