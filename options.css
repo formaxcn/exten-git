@@ -151,12 +151,12 @@ button:hover {
 }
 
 /* 主要按钮样式 */
-.primary-button, button:not(.secondary-button):not(.sync-button):not(.force-pull-button):not(.toggle-button):not(.uninstall-button) {
+.primary-button, button:not(.secondary-button):not(.force-pull-button):not(.toggle-button):not(.uninstall-button) {
   background-color: #4CAF50;
   color: white;
 }
 
-.primary-button:hover, button:not(.secondary-button):not(.sync-button):not(.force-pull-button):not(.toggle-button):not(.uninstall-button):hover {
+.primary-button:hover, button:not(.secondary-button):not(.force-pull-button):not(.toggle-button):not(.uninstall-button):hover {
   background-color: #45a049;
 }
 
@@ -168,16 +168,6 @@ button:hover {
 
 .secondary-button:hover, .force-pull-button:hover {
   background-color: #1976D2;
-}
-
-/* 同步按钮样式 */
-.sync-button {
-  background-color: #FF9800;
-  color: white;
-}
-
-.sync-button:hover {
-  background-color: #F57C00;
 }
 
 .success {

@@ -306,24 +306,3 @@ function showStatus(message, type) {
   }, 3000);
 }
 
-// Sync按钮事件
-function syncExtensions() {
-  const popupStatusElement = document.getElementById('popupStatus');
-  popupStatusElement.textContent = 'Syncing extensions...';
-  chrome.management.getAll(function(extensions) {
-    // 保存扩展列表到存储
-    const extensionList = extensions.map(ext => ({
-      id: ext.id,
-      name: ext.name,
-      version: ext.version,
-      enabled: ext.enabled
-    }));
-    
-    chrome.storage.local.set({extensions: extensionList}, function() {
-      popupStatusElement.textContent = 'Extensions synced locally!';
-      setTimeout(() => {
-        popupStatusElement.textContent = '';
-      }, 2000);
-    });
-  });
-}
