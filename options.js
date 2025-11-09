@@ -34,6 +34,12 @@ document.addEventListener('DOMContentLoaded', function() {
   // 测试连接
   document.getElementById('testBtn').addEventListener('click', testConnection);
   
+  // Sync操作
+  document.getElementById('syncBtn').addEventListener('click', function() {
+    syncChanges();
+    updateLastSyncTime();
+  });
+  
   // Pull操作
   document.getElementById('pullBtn').addEventListener('click', function() {
     pullChanges();
