@@ -145,11 +145,13 @@ class FileManager {
           const backupData = JSON.parse(e.target.result);
           
           if (backupData.extensions) {
-            // chrome.storage.local.set({currentExtensions: backupData.extensions}, function() {
-            //   showStatus('Extensions restored successfully!', 'success');
-            // });
-            // TODO conflict resolution render
-            this.showStatus('Extensions restored successfully!', 'success');
+            // 触发自定义事件，通知ExtensionManager处理导入的扩展列表
+            const event = new CustomEvent('extensionsRestored', { 
+              detail: backupData 
+            });
+            document.dispatchEvent(event);
+            
+            AlertManager.showStatus('Extensions restored successfully! Conflict resolution needed.', 'success');
           } else {
             AlertManager.showStatus('Invalid backup file format', 'error');
           }
