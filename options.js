@@ -318,30 +318,22 @@ function importConfig() {
 // 备份扩展列表到本地文件
 function backupExtensions() {
   chrome.management.getAll(function(extensions) {
-    // 分离启用和禁用的扩展
-    const enabledExtensions = extensions.filter(ext => ext.enabled && ext.type !== 'theme');
-    const disabledExtensions = extensions.filter(ext => !ext.enabled && ext.type !== 'theme');
+    // 过滤掉主题类型的扩展
+    const filteredExtensions = extensions.filter(ext => ext.type !== 'theme');
     
     // 构造导出数据
     const exportData = {
-      enabled: enabledExtensions.map(ext => ({
+      version: '0.1',
+      extensions: filteredExtensions.map(ext => ({
         id: ext.id,
         name: ext.name,
         version: ext.version,
         description: ext.description,
         homepageUrl: ext.homepageUrl,
-        installType: ext.installType
+        installType: ext.installType,
+        enabled: ext.enabled
       })),
-      disabled: disabledExtensions.map(ext => ({
-        id: ext.id,
-        name: ext.name,
-        version: ext.version,
-        description: ext.description,
-        homepageUrl: ext.homepageUrl,
-        installType: ext.installType
-      })),
-      exportTime: new Date().toISOString(),
-      version: '1.0'
+      exportTime: new Date().toISOString()
     };
     
     const dataStr = JSON.stringify(exportData, null, 2);
