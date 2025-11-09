@@ -99,6 +99,21 @@ class ExtensionManager {
     }
   }
 
+  // 统一的卸载方法
+  uninstallExtension(extensionId, extensionName) {
+    chrome.management.uninstall(extensionId, { showConfirmDialog: true }, () => {
+      if (chrome.runtime.lastError) {
+        AlertManager.showStatus('Error uninstalling extension: ' + chrome.runtime.lastError.message, 'error');
+      } else {
+        AlertManager.showStatus('Extension uninstalled successfully', 'success');
+        // 从待办列表中移除该项（如果存在）
+        this.todoExtensions = this.todoExtensions.filter(ext => ext.id !== extensionId);
+        // 重新显示扩展列表
+        this.loadExtensions();
+      }
+    });
+  }
+
   // 显示待办扩展项
   displayTodoExtensions() {
     const extensionsGrid = document.getElementById('extensionsGrid');
@@ -156,9 +171,9 @@ class ExtensionManager {
         extensionItem.appendChild(overlay);
         extensionItem.appendChild(name);
         
-        // 添加点击事件
+        // 添加点击事件 - 直接卸载插件
         extensionItem.addEventListener('click', () => {
-          this.markForRemoval(extension);
+          this.uninstallExtension(extension.id, extension.name);
         });
       } else {
         // 对于需要添加的扩展，显示Chrome商店图标并在悬停时显示加号
@@ -185,9 +200,10 @@ class ExtensionManager {
         extensionItem.appendChild(iconPlaceholder);
         extensionItem.appendChild(name);
         
-        // 添加点击事件
+        // 添加点击事件 - 直接跳转到Chrome商店
         extensionItem.addEventListener('click', () => {
-          this.markForInstallation(extension);
+          const webStoreUrl = `https://chromewebstore.google.com/detail/${extension.id}`;
+          chrome.tabs.create({ url: webStoreUrl });
         });
       }
       
@@ -263,9 +279,12 @@ class ExtensionManager {
     // 先显示待办事项（如果有的话）
     this.displayTodoExtensions();
     
-    // 分离启用和未启用的扩展
-    const enabledExtensions = filteredExtensions.filter(ext => ext.enabled);
-    const disabledExtensions = filteredExtensions.filter(ext => !ext.enabled);
+    // 获取待办事项中的扩展ID列表
+    const todoExtensionIds = this.todoExtensions.map(ext => ext.id);
+    
+    // 分离启用和未启用的扩展，排除待办事项中的扩展
+    const enabledExtensions = filteredExtensions.filter(ext => ext.enabled && !todoExtensionIds.includes(ext.id));
+    const disabledExtensions = filteredExtensions.filter(ext => !ext.enabled && !todoExtensionIds.includes(ext.id));
     
     // 先添加启用的扩展
     if (enabledExtensions.length > 0) {
@@ -352,17 +371,7 @@ class ExtensionManager {
         uninstallButton.className = 'extension-button uninstall-button';
         uninstallButton.innerHTML = '<i class="fas fa-trash-alt"></i> Uninstall';
         uninstallButton.addEventListener('click', () => {
-          if (confirm(`Are you sure you want to uninstall "${extension.name}"?`)) {
-            chrome.management.uninstall(extension.id, () => {
-              if (chrome.runtime.lastError) {
-                AlertManager.showStatus('Error uninstalling extension: ' + chrome.runtime.lastError.message, 'error');
-              } else {
-                AlertManager.showStatus('Extension uninstalled successfully', 'success');
-                // 重新加载扩展列表
-                this.loadExtensions();
-              }
-            });
-          }
+          this.uninstallExtension(extension.id, extension.name);
         });
         
         // 将按钮添加到行中
@@ -468,17 +477,7 @@ class ExtensionManager {
         uninstallButton.className = 'extension-button uninstall-button';
         uninstallButton.innerHTML = '<i class="fas fa-trash-alt"></i> Uninstall';
         uninstallButton.addEventListener('click', () => {
-          if (confirm(`Are you sure you want to uninstall "${extension.name}"?`)) {
-            chrome.management.uninstall(extension.id, () => {
-              if (chrome.runtime.lastError) {
-                AlertManager.showStatus('Error uninstalling extension: ' + chrome.runtime.lastError.message, 'error');
-              } else {
-                AlertManager.showStatus('Extension uninstalled successfully', 'success');
-                // 重新加载扩展列表
-                this.loadExtensions();
-              }
-            });
-          }
+          this.uninstallExtension(extension.id, extension.name);
         });
         
         // 将按钮添加到行中
