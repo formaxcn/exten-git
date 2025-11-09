@@ -261,7 +261,7 @@ function exportConfig() {
     
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'extension-git-sync-config.json';
+    a.download = 'exten-git.config.json';
     document.body.appendChild(a);
     a.click();
     
@@ -317,33 +317,49 @@ function importConfig() {
 
 // 备份扩展列表到本地文件
 function backupExtensions() {
-  chrome.storage.local.get(['currentExtensions'], function(result) {
-    if (result.currentExtensions) {
-      const backupData = {
-        extensions: result.currentExtensions,
-        backupTime: new Date().toISOString(),
-        version: '1.0'
-      };
-      
-      const dataStr = JSON.stringify(backupData, null, 2);
-      const dataBlob = new Blob([dataStr], {type: 'application/json'});
-      
-      const url = URL.createObjectURL(dataBlob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `extensions-backup-${new Date().toISOString().slice(0, 10)}.json`;
-      document.body.appendChild(a);
-      a.click();
-      
-      setTimeout(() => {
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-      }, 100);
-      
-      showStatus('Extensions backed up successfully!', 'success');
-    } else {
-      showStatus('No extensions data found to backup', 'error');
-    }
+  chrome.management.getAll(function(extensions) {
+    // 分离启用和禁用的扩展
+    const enabledExtensions = extensions.filter(ext => ext.enabled && ext.type !== 'theme');
+    const disabledExtensions = extensions.filter(ext => !ext.enabled && ext.type !== 'theme');
+    
+    // 构造导出数据
+    const exportData = {
+      enabled: enabledExtensions.map(ext => ({
+        id: ext.id,
+        name: ext.name,
+        version: ext.version,
+        description: ext.description,
+        homepageUrl: ext.homepageUrl,
+        installType: ext.installType
+      })),
+      disabled: disabledExtensions.map(ext => ({
+        id: ext.id,
+        name: ext.name,
+        version: ext.version,
+        description: ext.description,
+        homepageUrl: ext.homepageUrl,
+        installType: ext.installType
+      })),
+      exportTime: new Date().toISOString(),
+      version: '1.0'
+    };
+    
+    const dataStr = JSON.stringify(exportData, null, 2);
+    const dataBlob = new Blob([dataStr], {type: 'application/json'});
+    
+    const url = URL.createObjectURL(dataBlob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `exten-git.extensions.${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(a);
+    a.click();
+    
+    setTimeout(() => {
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }, 100);
+    
+    showStatus('Extensions exported successfully!', 'success');
   });
 }
 
