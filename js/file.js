@@ -77,7 +77,7 @@ class FileManager {
             AlertManager.showStatus('Configuration imported successfully!', 'success');
           });
         } catch (error) {
-          this.showStatus('Invalid configuration file', 'error');
+          AlertManager.showStatus('Invalid configuration file', 'error');
         }
       };
       reader.readAsText(file);

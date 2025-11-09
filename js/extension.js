@@ -1,40 +1,5 @@
-/**
- * 警告消息管理器类
- * 用于显示和管理状态消息提示
- */
-class AlertManager {
-    static statusElement = null;
-
-    /**
-     * 显示状态信息
-     * @param {string} message - 要显示的消息
-     * @param {string} type - 消息类型 ('success', 'error')
-     */
-    static show(message, type) {
-        if (!this.statusElement) {
-            this.statusElement = document.getElementById('popupStatus');
-            if (!this.statusElement) return;
-        }
-        
-        this.statusElement.textContent = message;
-        this.statusElement.className = 'popup-status ' + type;
-        
-        // 触发动画显示
-        setTimeout(() => {
-            this.statusElement.classList.add('show');
-        }, 10);
-        
-        setTimeout(() => {
-            this.statusElement.classList.remove('show');
-            setTimeout(() => {
-                this.statusElement.textContent = '';
-            }, 300);
-        }, 3000);
-    }
-}
-
-// 导出 AlertManager 类
-export default AlertManager;
+// 从alert.js导入AlertManager
+import AlertManager from './alert.js';
 
 // 存储所有扩展的变量
 let allExtensions = [];
@@ -42,7 +7,6 @@ let allExtensions = [];
 class ExtensionManager {
   constructor() {
     this.allExtensions = [];
-    this.alertManager = new AlertManager();
     this.init();
   }
 
@@ -148,7 +112,7 @@ class ExtensionManager {
           const webStoreUrl = `https://chromewebstore.google.com/detail/${extension.id}`;
           chrome.tabs.create({ url: webStoreUrl });
         } else {
-          AlertManager.show('No store page available for this extension', 'error');
+          AlertManager.showStatus('No store page available for this extension', 'error');
         }
       });
       
@@ -167,9 +131,9 @@ class ExtensionManager {
       toggleButton.addEventListener('click', () => {
         chrome.management.setEnabled(extension.id, false, () => {
           if (chrome.runtime.lastError) {
-            AlertManager.show('Error disabling extension: ' + chrome.runtime.lastError.message, 'error');
+            AlertManager.showStatus('Error disabling extension: ' + chrome.runtime.lastError.message, 'error');
           } else {
-            AlertManager.show('Extension disabled successfully', 'success');
+            AlertManager.showStatus('Extension disabled successfully', 'success');
             // 重新加载扩展列表
             this.loadExtensions();
           }
@@ -184,9 +148,9 @@ class ExtensionManager {
         if (confirm(`Are you sure you want to uninstall "${extension.name}"?`)) {
           chrome.management.uninstall(extension.id, () => {
             if (chrome.runtime.lastError) {
-              AlertManager.show('Error uninstalling extension: ' + chrome.runtime.lastError.message, 'error');
+              AlertManager.showStatus('Error uninstalling extension: ' + chrome.runtime.lastError.message, 'error');
             } else {
-              AlertManager.show('Extension uninstalled successfully', 'success');
+              AlertManager.showStatus('Extension uninstalled successfully', 'success');
               // 重新加载扩展列表
               this.loadExtensions();
             }
@@ -274,9 +238,9 @@ class ExtensionManager {
       toggleButton.addEventListener('click', () => {
         chrome.management.setEnabled(extension.id, true, () => {
           if (chrome.runtime.lastError) {
-            AlertManager.show('Error enabling extension: ' + chrome.runtime.lastError.message, 'error');
+            AlertManager.showStatus('Error enabling extension: ' + chrome.runtime.lastError.message, 'error');
           } else {
-            AlertManager.show('Extension enabled successfully', 'success');
+            AlertManager.showStatus('Extension enabled successfully', 'success');
             // 重新加载扩展列表
             this.loadExtensions();
           }
@@ -291,9 +255,9 @@ class ExtensionManager {
         if (confirm(`Are you sure you want to uninstall "${extension.name}"?`)) {
           chrome.management.uninstall(extension.id, () => {
             if (chrome.runtime.lastError) {
-              AlertManager.show('Error uninstalling extension: ' + chrome.runtime.lastError.message, 'error');
+              AlertManager.showStatus('Error uninstalling extension: ' + chrome.runtime.lastError.message, 'error');
             } else {
-              AlertManager.show('Extension uninstalled successfully', 'success');
+              AlertManager.showStatus('Extension uninstalled successfully', 'success');
               // 重新加载扩展列表
               this.loadExtensions();
             }
