@@ -422,6 +422,6 @@ function showStatus(message, type) {
     status.style.transform = 'translateX(-50%) translateY(-100%)';
     setTimeout(() => {
       status.style.display = 'none';
-    }, 300);
-  }, 5000);
+    }, 30000);
+  }, 50000);
 }
