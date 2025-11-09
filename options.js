@@ -199,7 +199,24 @@ function testConnection() {
     return;
   }
   
-  showStatus('Connection test feature needs to be implemented', 'error');
+  const userName = document.getElementById('userName').value;
+  const password = document.getElementById('password').value;
+  
+  showStatus('Testing connection...', 'info');
+  
+  // 通过background script发送消息来测试连接，避免CORS问题
+  chrome.runtime.sendMessage({
+    action: 'testGitConnection',
+    repoUrl: repoUrl,
+    userName: userName,
+    password: password
+  }, function(response) {
+    if (response.status === 'success') {
+      showStatus(response.message, 'success');
+    } else {
+      showStatus(response.message, 'error');
+    }
+  });
 }
 
 // Sync操作

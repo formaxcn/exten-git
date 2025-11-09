@@ -5,7 +5,11 @@
   "description": "Sync your Chrome extensions with a Git repository",
   "permissions": [
     "management",
-    "storage"
+    "storage",
+    "declarativeNetRequest"
+  ],
+  "host_permissions": [
+    "<all_urls>"
   ],
   "options_page": "options.html",
   "background": {
