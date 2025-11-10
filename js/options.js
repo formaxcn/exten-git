@@ -242,25 +242,33 @@ class OptionsManager {
   }
   
   /**
-   * 测试仓库连接
+   * 测试连接
    */
   testConnection() {
-    if (!this.validateRepoUrl()) return;
-    
     const repoUrl = document.getElementById('repoUrl').value.trim();
+    if (!repoUrl) {
+      AlertManager.showStatus('Please enter a repository URL', 'error');
+      return;
+    }
+    
+    const userName = document.getElementById('userName').value.trim();
+    const password = document.getElementById('password').value.trim();
+    
     AlertManager.showStatus('Testing connection...', 'info');
     
-    // 模拟连接测试
-    setTimeout(() => {
-      // 这里应该实际测试连接
-      const isSuccess = Math.random() > 0.5; // 模拟50%成功率
-      
-      if (isSuccess) {
-        AlertManager.showStatus('Connection successful!', 'success');
+    // 通过background script发送消息来测试连接，避免CORS问题
+    chrome.runtime.sendMessage({
+      action: 'testGitConnection',
+      repoUrl: repoUrl,
+      userName: userName,
+      password: password
+    }, (response) => {
+      if (response.status === 'success') {
+        AlertManager.showStatus(response.message, 'success');
       } else {
-        AlertManager.showStatus('Connection failed. Please check the URL.', 'error');
+        AlertManager.showStatus(response.message, 'error');
       }
-    }, 1500);
+    });
   }
 
   /**
