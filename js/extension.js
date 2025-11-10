@@ -231,9 +231,6 @@ class ExtensionManager {
 
   // 获取所有扩展
   loadExtensions() {
-    
-    AlertManager.showStatus('Loading extensions...', 'info');
-    
     chrome.management.getAll((extensions) => {
       // popupStatusElement.textContent = '';
       
