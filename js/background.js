@@ -4,6 +4,7 @@ class BackgroundManager {
   constructor() {
     this.refreshInterval = null;
     this.todoExtensions = [];
+    this.currentInterval = 30000; // 默认30秒刷新一次
     this.init();
   }
 
@@ -55,6 +56,9 @@ class BackgroundManager {
 
     // 初始化时从存储中加载待办事项
     this.loadTodoExtensionsFromStorage();
+    
+    // 启动定期刷新
+    this.startRefreshInterval();
   }
 
   // 从存储中加载待办事项
@@ -62,10 +66,6 @@ class BackgroundManager {
     chrome.storage.local.get(['todoExtensions'], (result) => {
       if (result.todoExtensions) {
         this.todoExtensions = result.todoExtensions;
-        // 如果有待办事项，启动刷新
-        if (this.todoExtensions.length > 0) {
-          this.startRefreshInterval();
-        }
       }
     });
   }
@@ -76,7 +76,7 @@ class BackgroundManager {
     chrome.storage.local.set({todoExtensions: this.todoExtensions}, () => {
       console.log('Todo extensions saved to storage');
     });
-    this.startRefreshInterval();
+    this.adjustRefreshInterval();
   }
 
   // 清除待办事项
@@ -85,12 +85,24 @@ class BackgroundManager {
     chrome.storage.local.remove('todoExtensions', () => {
       console.log('Todo extensions cleared from storage');
     });
-    this.stopRefreshInterval();
+    this.adjustRefreshInterval();
   }
 
   // 通知popup刷新界面
   notifyPopupToRefresh() {
     chrome.runtime.sendMessage({action: 'refreshPopup'});
+  }
+
+  // 调整刷新间隔
+  adjustRefreshInterval() {
+    const newInterval = this.todoExtensions.length > 0 ? 1000 : 30000;
+    
+    // 只有当间隔发生变化时才重新设置定时器
+    if (newInterval !== this.currentInterval) {
+      this.currentInterval = newInterval;
+      this.stopRefreshInterval();
+      this.startRefreshInterval();
+    }
   }
 
   // 开始定期刷新
@@ -100,12 +112,10 @@ class BackgroundManager {
       clearInterval(this.refreshInterval);
     }
 
-    // 只有待办事项不为空时才启动定时刷新
-    if (this.todoExtensions.length > 0) {
-      this.refreshInterval = setInterval(() => {
-        this.checkTodoExtensionsCompletion();
-      }, 1000); // 每1秒刷新一次
-    }
+    // 根据是否有待办事项设置刷新频率
+    this.refreshInterval = setInterval(() => {
+      this.checkTodoExtensionsCompletion();
+    }, this.currentInterval);
   }
 
   // 停止定期刷新
@@ -155,11 +165,9 @@ class BackgroundManager {
         
         // 通知popup刷新
         this.notifyPopupToRefresh();
-
-        // 如果待办事项为空，停止刷新
-        if (this.todoExtensions.length === 0) {
-          this.stopRefreshInterval();
-        }
+        
+        // 调整刷新间隔
+        this.adjustRefreshInterval();
       }
     });
   }
