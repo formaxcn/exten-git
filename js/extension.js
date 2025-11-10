@@ -231,13 +231,11 @@ class ExtensionManager {
 
   // 获取所有扩展
   loadExtensions() {
-    const extensionsGrid = document.getElementById('extensionsGrid');
-    const popupStatusElement = document.getElementById('popupStatus');
     
-    popupStatusElement.textContent = 'Loading extensions...';
+    AlertManager.showStatus('Loading extensions...', 'info');
     
     chrome.management.getAll((extensions) => {
-      popupStatusElement.textContent = '';
+      // popupStatusElement.textContent = '';
       
       // 保存所有扩展到实例变量
       this.allExtensions = extensions;
