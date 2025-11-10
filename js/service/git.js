@@ -48,8 +48,8 @@
           throw new Error('Git repository not configured');
         }
 
-        // 获取扩展数据
-        const extensionsData = await this.getExtensionsData();
+        // 使用从options传入的数据，而不是通过消息获取
+        const extensionsData = options.data;
         const fileContent = JSON.stringify(extensionsData, null, 2);
         
         // 生成提交信息
@@ -129,6 +129,17 @@
         chrome.runtime.sendMessage(
           { action: 'getExtensionsData' }, 
           (response) => {
+            // 添加对response为undefined的检查
+            if (chrome.runtime.lastError) {
+              reject(new Error(chrome.runtime.lastError.message || 'Chrome runtime error'));
+              return;
+            }
+            
+            if (!response) {
+              reject(new Error('No response received from background script'));
+              return;
+            }
+            
             if (response.status === 'success') {
               resolve(response.data);
             } else {

@@ -91,7 +91,7 @@ class FileManager {
    */
   static backupExtensions() {
     // 发送消息到background script获取扩展数据
-    chrome.runtime.sendMessage({action: 'getExtensionsData'}, (response) => {
+    chrome.runtime.sendMessage({action: 'exportExtensionsData'}, (response) => {
       if (response.status === 'success') {
         const dataStr = JSON.stringify(response.data, null, 2);
         const dataBlob = new Blob([dataStr], {type: 'application/json'});

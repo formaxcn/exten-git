@@ -22,7 +22,7 @@
      * 获取扩展列表数据
      * @returns {Promise} Promise that resolves with the extensions data
      */
-    getExtensionsData() {
+    _getExtensionsData() {
       return new Promise((resolve, reject) => {
         chrome.management.getAll((extensions) => {
           if (chrome.runtime.lastError) {
@@ -46,27 +46,24 @@
      */
     async exportExtensionsData() {
       try {
-        const extensions = await this.getExtensionsData();
+        const extensions = await this._getExtensionsData();
         
         // 提取需要的信息
         const extensionsData = extensions.map(ext => ({
           id: ext.id,
           name: ext.name,
-          description: ext.description,
           version: ext.version,
-          enabled: ext.enabled,
-          type: ext.type,
+          description: ext.description,
           homepageUrl: ext.homepageUrl,
-          installType: ext.installType
+          installType: ext.installType,
+          enabled: ext.enabled
         }));
         
-        // 返回格式化的数据
+        // 返回格式化的数据，符合指定格式
         return {
-          meta: {
-            exportedAt: new Date().toISOString(),
-            extensionCount: extensionsData.length
-          },
-          extensions: extensionsData
+          version: "0.1",
+          extensions: extensionsData,
+          exportTime: new Date().toISOString()
         };
       } catch (error) {
         throw error;

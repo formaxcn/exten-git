@@ -377,29 +377,58 @@ class OptionsManager {
       // 可以添加其他push逻辑
     });
     
-    AlertManager.showStatus('Pushing data to Git repository...', 'info');
+    AlertManager.showStatus('Checking todo items...', 'info');
     
-    // 发送消息到background script执行push操作
-    chrome.runtime.sendMessage({
-      action: 'pushToGit',
-      message: `Update extensions data ${new Date().toISOString()}`
-    }, (response) => {
-      if (chrome.runtime.lastError) {
-        console.error('Runtime error:', chrome.runtime.lastError);
-        AlertManager.showStatus(`Runtime error: ${chrome.runtime.lastError.message}`, 'error');
+    // 检查待办事项是否为空
+    chrome.storage.local.get(['todoExtensions'], (result) => {
+      const todoExtensions = result.todoExtensions || [];
+      if (todoExtensions.length > 0) {
+        AlertManager.showStatus('Cannot push: there are pending operations that need to be resolved first', 'error');
         return;
       }
       
-      if (response && response.status === 'success') {
-        AlertManager.showStatus('Successfully pushed data to Git repository', 'success');
-      } else if (response && response.message) {
-        AlertManager.showStatus(`Push failed: ${response.message}`, 'error');
-      } else {
-        AlertManager.showStatus('Unknown error occurred during push operation', 'error');
-      }
+      AlertManager.showStatus('Loading extensions data...', 'info');
       
-      // 更新commit hash显示
-      this.updateCommitHashDisplay();
+      // 发送消息到background script获取扩展数据，参考persistence.js中的实现
+      chrome.runtime.sendMessage({action: 'exportExtensionsData'}, (response) => {
+        if (chrome.runtime.lastError) {
+          console.error('Runtime error:', chrome.runtime.lastError);
+          AlertManager.showStatus(`Runtime error: ${chrome.runtime.lastError.message}`, 'error');
+          return;
+        }
+        
+        if (response && response.status === 'success') {
+          AlertManager.showStatus('Pushing data to Git repository...', 'info');
+          
+          // 发送消息到background script执行push操作，传递扩展数据
+          chrome.runtime.sendMessage({
+            action: 'pushToGit',
+            message: `Update extensions data ${new Date().toISOString()}`,
+            data: response.data
+          }, (pushResponse) => {
+            if (chrome.runtime.lastError) {
+              console.error('Runtime error:', chrome.runtime.lastError);
+              AlertManager.showStatus(`Runtime error: ${chrome.runtime.lastError.message}`, 'error');
+              return;
+            }
+            
+            if (pushResponse && pushResponse.status === 'success') {
+              AlertManager.showStatus('Successfully pushed data to Git repository', 'success');
+            } else if (pushResponse && pushResponse.message) {
+              AlertManager.showStatus(`Push failed: ${pushResponse.message}`, 'error');
+            } else {
+              AlertManager.showStatus('Unknown error occurred during push operation', 'error');
+            }
+            
+            // 更新commit hash显示
+            this.updateCommitHashDisplay();
+          });
+        } else if (response && response.message) {
+          AlertManager.showStatus(`Failed to get extensions data: ${response.message}`, 'error');
+        } else {
+          AlertManager.showStatus('Unknown error occurred while getting extensions data', 'error');
+        }
+      });
     });
   }
 
