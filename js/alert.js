@@ -15,19 +15,13 @@ class AlertManager {
     // 设置状态文本和类
     status.textContent = message;
     status.className = 'popup-status ' + type;
-    
-    // 触发动画显示
-    setTimeout(() => {
-      status.classList.add('show');
-    }, 10);
+    status.classList.add('show');
     
     // 3秒后自动隐藏
     setTimeout(() => {
       status.classList.remove('show');
-      setTimeout(() => {
-        status.textContent = '';
-      }, 30000);
-    }, 50000);
+      status.textContent = '';
+    }, 3000); // 3秒后开始隐藏
   }
 }
 
