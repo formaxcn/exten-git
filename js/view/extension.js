@@ -136,26 +136,28 @@ class ExtensionManager {
       extensionItem.className = `extension-item todo-item ${extension.action}`;
       extensionItem.dataset.extensionId = extension.id;
       
+      // 创建左侧撤销部分（通用代码）
+      const overlay = document.createElement('div');
+      overlay.className = 'extension-overlay todo-overlay';
+      
+      // 左侧撤销部分
+      const undoPart = document.createElement('div');
+      undoPart.className = 'overlay-undo-part';
+      undoPart.innerHTML = '<i class="fas fa-undo"></i>';
+      undoPart.title = 'Undo';
+      undoPart.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.revertTodoAction(extension.id);
+      });
+      
+      overlay.appendChild(undoPart);
+      
       if (extension.action === 'remove') {
         // 对于需要删除的扩展，显示原始图标
         const icon = document.createElement('img');
         icon.className = 'extension-icon';
         icon.src = extension.icons ? extension.icons[extension.icons.length - 1].url : defaultIcon;
         icon.alt = extension.name;
-        
-        // 添加覆盖层，分为左右两部分
-        const overlay = document.createElement('div');
-        overlay.className = 'extension-overlay todo-overlay';
-        
-        // 左侧撤销部分
-        const undoPart = document.createElement('div');
-        undoPart.className = 'overlay-undo-part';
-        undoPart.innerHTML = '<i class="fas fa-undo"></i>';
-        undoPart.title = 'Undo';
-        undoPart.addEventListener('click', (e) => {
-          e.stopPropagation();
-          this.revertTodoAction(extension.id);
-        });
         
         // 右侧删除部分
         const actionPart = document.createElement('div');
@@ -167,7 +169,6 @@ class ExtensionManager {
           this.uninstallExtension(extension.id, extension.name);
         });
         
-        overlay.appendChild(undoPart);
         overlay.appendChild(actionPart);
         
         const name = document.createElement('div');
@@ -189,20 +190,6 @@ class ExtensionManager {
         const iconPlaceholder = document.createElement('div');
         iconPlaceholder.className = 'extension-icon-placeholder';
         
-        // 添加覆盖层，分为左右两部分
-        const overlay = document.createElement('div');
-        overlay.className = 'extension-overlay todo-overlay';
-        
-        // 左侧撤销部分
-        const undoPart = document.createElement('div');
-        undoPart.className = 'overlay-undo-part';
-        undoPart.innerHTML = '<i class="fas fa-undo"></i>';
-        undoPart.title = 'Undo';
-        undoPart.addEventListener('click', (e) => {
-          e.stopPropagation();
-          this.revertTodoAction(extension.id);
-        });
-        
         // 右侧添加部分
         const actionPart = document.createElement('div');
         actionPart.className = 'overlay-action-part add-part';
@@ -214,7 +201,6 @@ class ExtensionManager {
           chrome.tabs.create({ url: webStoreUrl });
         });
         
-        overlay.appendChild(undoPart);
         overlay.appendChild(actionPart);
         
         const name = document.createElement('div');
@@ -261,28 +247,6 @@ class ExtensionManager {
         this.loadExtensions();
       });
     }
-  }
-
-  // 从待办列表中移除
-  removeFromTodoList(extension) {
-    this.todoExtensions = this.todoExtensions.filter(ext => ext.id !== extension.id);
-    
-    // 更新background script中的待办列表
-    if (this.todoExtensions.length > 0) {
-      chrome.runtime.sendMessage({
-        action: 'setTodoExtensions',
-        todoExtensions: this.todoExtensions
-      });
-    } else {
-      chrome.runtime.sendMessage({
-        action: 'clearTodoExtensions'
-      });
-    }
-    
-    // 重新显示扩展列表
-    this.loadExtensions();
-    
-    AlertManager.showStatus(`Extension ${extension.name} removed from todo list`, 'info');
   }
 
   // 标记为移除
