@@ -204,6 +204,10 @@ class OptionsManager {
    */
   saveSettings() {
     const repoUrl = document.getElementById('repoUrl').value.trim();
+    const branch = document.getElementById('branch').value.trim();
+    const filePath = document.getElementById('filePath').value.trim();
+    const userName = document.getElementById('userName').value.trim();
+    const password = document.getElementById('password').value.trim();
     const syncInterval = document.getElementById('syncInterval').value;
     const autoSync = document.getElementById('autoSyncToggle').checked;
     
@@ -214,6 +218,10 @@ class OptionsManager {
     
     const settings = {
       repoUrl: repoUrl,
+      branch: branch,
+      filePath: filePath,
+      userName: userName,
+      password: password,
       syncInterval: parseInt(syncInterval),
       autoSync: autoSync
     };
