@@ -90,40 +90,27 @@ class FileManager {
    * 备份扩展列表到本地文件
    */
   static backupExtensions() {
-    chrome.management.getAll((extensions) => {
-      // 过滤掉主题类型的扩展
-      const filteredExtensions = extensions.filter(ext => ext.type !== 'theme');
-      
-      // 构造导出数据
-      const exportData = {
-        version: '0.1',
-        extensions: filteredExtensions.map(ext => ({
-          id: ext.id,
-          name: ext.name,
-          version: ext.version,
-          description: ext.description,
-          homepageUrl: ext.homepageUrl,
-          installType: ext.installType,
-          enabled: ext.enabled
-        })),
-        exportTime: new Date().toISOString()
-      };
-      
-      const dataStr = JSON.stringify(exportData, null, 2);
-      const dataBlob = new Blob([dataStr], {type: 'application/json'});
-      
-      const url = URL.createObjectURL(dataBlob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `exten-git.extensions.${new Date().toISOString().slice(0, 10)}.json`;
-      document.body.appendChild(a);
-      a.click();
-      
-      setTimeout(() => {
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-        AlertManager.showStatus('Extensions exported successfully!', 'success');
-      }, 100);
+    // 发送消息到background script获取扩展数据
+    chrome.runtime.sendMessage({action: 'getExtensionsData'}, (response) => {
+      if (response.status === 'success') {
+        const dataStr = JSON.stringify(response.data, null, 2);
+        const dataBlob = new Blob([dataStr], {type: 'application/json'});
+        
+        const url = URL.createObjectURL(dataBlob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `exten-git.extensions.${new Date().toISOString().slice(0, 10)}.json`;
+        document.body.appendChild(a);
+        a.click();
+        
+        setTimeout(() => {
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+          AlertManager.showStatus('Extensions exported successfully!', 'success');
+        }, 100);
+      } else {
+        AlertManager.showStatus(`Export failed: ${response.message}`, 'error');
+      }
     });
   }
 

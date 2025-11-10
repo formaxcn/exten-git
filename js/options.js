@@ -2,7 +2,7 @@
  * 选项管理器类
  * 负责处理选项页面的所有功能
  */
-import FileManager from './file.js';
+import FileManager from './persistence.js';
 import AlertManager from './alert.js';
 
 class OptionsManager {

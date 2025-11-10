@@ -5,7 +5,8 @@ try {
     'lib/buffer/polyfill.js',
     'lib/isomorphic-git/index.umd.min.js',
     'lib/isomorphic-git/http/web/index.umd.js',
-    'git.js'
+    'git.js',
+    'extensionData.js'
   );
 } catch (error) {
   console.error('Failed to load Git manager:', error);
@@ -63,6 +64,30 @@ class BackgroundManager {
         sendResponse({status: 'success'});
       } else if (request.action === 'getTodoExtensions') {
         sendResponse({todoExtensions: this.todoExtensions});
+      } else if (request.action === 'exportExtensionsData') {
+        // 处理扩展数据导出请求
+        extensionDataManager.generateExtensionDataBlob()
+          .then(result => {
+            // 创建对象 URL
+            const url = URL.createObjectURL(result.blob);
+            sendResponse({status: 'success', url: url, filename: result.filename});
+          })
+          .catch(error => {
+            sendResponse({status: 'error', message: error.message});
+          });
+        // 返回true以保持消息通道开放，因为我们正在使用异步操作
+        return true;
+      } else if (request.action === 'getExtensionsData') {
+        // 处理获取扩展数据请求（供Git push/pull使用）
+        extensionDataManager.getExtensionsData()
+          .then(data => {
+            sendResponse({status: 'success', data: data});
+          })
+          .catch(error => {
+            sendResponse({status: 'error', message: error.message});
+          });
+        // 返回true以保持消息通道开放，因为我们正在使用异步操作
+        return true;
       }
     });
 
