@@ -10,6 +10,7 @@ class AlertManager {
    */
   static showStatus(message, type) {
     const status = document.getElementById('popupStatus');
+    console.log('showStatus', message, type);
     
     // 设置状态文本和类
     status.textContent = message;
@@ -25,8 +26,8 @@ class AlertManager {
       status.classList.remove('show');
       setTimeout(() => {
         status.textContent = '';
-      }, 300);
-    }, 3000);
+      }, 30000);
+    }, 50000);
   }
 }
 

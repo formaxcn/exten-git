@@ -3,6 +3,7 @@ import AlertManager from './alert.js';
 
 // 存储所有扩展的变量
 let allExtensions = [];
+const defaultIcon = 'https://fonts.gstatic.com/s/i/productlogos/chrome_store/v7/192px.svg';
 
 class ExtensionManager {
   constructor() {
@@ -139,7 +140,7 @@ class ExtensionManager {
         // 对于需要删除的扩展，显示原始图标并在上面叠加减号
         const icon = document.createElement('img');
         icon.className = 'extension-icon';
-        icon.src = extension.icons ? extension.icons[extension.icons.length - 1].url : 'icons/default.png';
+        icon.src = extension.icons ? extension.icons[extension.icons.length - 1].url : defaultIcon;
         icon.alt = extension.name;
         
         // 添加减号覆盖层
@@ -265,10 +266,20 @@ class ExtensionManager {
 
   // 显示扩展列表
   displayExtensions(extensions) {
-    // 显示待办事项
-    this.displayTodoExtensions();
     const extensionsGrid = document.getElementById('extensionsGrid');
-    extensionsGrid.innerHTML = '';
+    
+    // 先显示待办事项
+    this.displayTodoExtensions();
+    
+    // 只清空普通扩展项目，保留待办事项
+    // 清除现有的普通扩展项目（不包括待办事项）
+    const regularItems = extensionsGrid.querySelectorAll('.extension-item:not(.todo-item)');
+    const sectionHeaders = extensionsGrid.querySelectorAll('.section-header');
+    const dividers = extensionsGrid.querySelectorAll('.divider');
+    
+    regularItems.forEach(item => item.remove());
+    sectionHeaders.forEach(header => header.remove());
+    dividers.forEach(divider => divider.remove());
     
     // 过滤掉主题类型的扩展，只保留普通扩展
     const filteredExtensions = extensions.filter(ext => ext.type !== 'theme');
@@ -296,7 +307,7 @@ class ExtensionManager {
         
         const icon = document.createElement('img');
         icon.className = 'extension-icon';
-        icon.src = extension.icons ? extension.icons[extension.icons.length - 1].url : 'icons/default.png';
+        icon.src = extension.icons ? extension.icons[extension.icons.length - 1].url : defaultIcon;
         icon.alt = extension.name;
         
         const name = document.createElement('div');
@@ -408,7 +419,7 @@ class ExtensionManager {
         
         const icon = document.createElement('img');
         icon.className = 'extension-icon';
-        icon.src = extension.icons ? extension.icons[extension.icons.length - 1].url : 'icons/default.png';
+        icon.src = extension.icons ? extension.icons[extension.icons.length - 1].url : defaultIcon;
         icon.alt = extension.name;
         
         const name = document.createElement('div');
