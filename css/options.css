@@ -343,6 +343,8 @@ input:checked + .slider:before {
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 200px;
+  display: block;
+  margin-bottom: 10px;
 }
 
 /* 弹出状态消息样式 */
