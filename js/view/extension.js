@@ -29,24 +29,11 @@ class ExtensionManager {
       
       // 监听文件导入事件
       this.setupImportListener();
-      
-      // 监听来自background的刷新消息
-      chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-        if (request.action === 'refreshPopup') {
-          this.loadExtensions();
-        }
-        // 不需要调用sendResponse，因为我们没有异步操作
-      });
     });
   }
 
   // 设置导入监听器
   setupImportListener() {
-    // 监听来自FileManager的导入事件
-    document.addEventListener('extensionsRestored', (event) => {
-      this.handleRestoredExtensions(event.detail);
-    });
-    
     // 监听来自background script的扩展差异事件
     chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       if (request.action === 'diffExtensions') {

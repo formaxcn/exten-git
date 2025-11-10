@@ -216,11 +216,6 @@ class BackgroundManager {
       this.notifyPopupToRefresh();
     });
 
-    // 监听来自popup或options的消息
-    chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-      return this.handleMessage(request, sender, sendResponse);
-    });
-
     // 初始化存储监听器
     chrome.storage.onChanged.addListener((changes, areaName) => {
       if (areaName === 'sync') {
@@ -233,77 +228,6 @@ class BackgroundManager {
     
     // 加载初始设置
     this.loadSettings();
-  }
-
-  /**
-   * 统一处理所有消息
-   * @param {Object} request - 请求对象
-   * @param {Object} sender - 发送者信息
-   * @param {Function} sendResponse - 响应函数
-   * @returns {boolean} 是否异步响应
-   */
-  handleMessage(request, sender, sendResponse) {
-    console.log('Received message:', request.action);
-    
-    switch (request.action) {
-      case 'saveExtensions':
-        this.saveExtensionsToList(request.extensions);
-        sendResponse({status: 'success'});
-        break;
-        
-      case 'pushToGit':
-        this.handlePushToGit(request, sendResponse);
-        return true; // 异步响应
-        
-      case 'pullFromGit':
-        this.handlePullFromGit(request, sendResponse);
-        return true; // 异步响应
-        
-      case 'testGitConnection':
-        this.handleTestGitConnection(request, sendResponse);
-        return true; // 异步响应
-        
-      // 扩展数据相关操作
-      case 'getExtensionsData':
-        this.handleGetExtensionsData(request, sendResponse);
-        return true; // 异步响应
-        
-      case 'exportExtensionsData':
-        this.handleExportExtensionsData(request, sendResponse);
-        return true; // 异步响应
-        
-      case 'diffExtensions':
-        this.handleDiffExtensions(request, sendResponse);
-        return true; // 异步响应
-        
-      // 待办事项相关操作
-      case 'setTodoExtensions':
-        this.handleSetTodoExtensions(request, sendResponse);
-        break;
-        
-      case 'clearTodoExtensions':
-        this.handleClearTodoExtensions(request, sendResponse);
-        break;
-        
-      case 'getTodoExtensions':
-        this.handleGetTodoExtensions(request, sendResponse);
-        break;
-        
-      // 其他操作
-      case 'refreshPopup':
-        this.handleRefreshPopup(request, sendResponse);
-        break;
-        
-      case 'gitDataPulled':
-        this.handleGitDataPulled(request, sendResponse);
-        break;
-        
-      default:
-        console.warn('Unknown message action:', request.action);
-        sendResponse({status: 'error', message: 'Unknown action'});
-    }
-    
-    return false; // 同步响应
   }
 
   /**
@@ -422,12 +346,11 @@ class BackgroundManager {
   }
 
   /**
-   * 处理刷新popup的消息
+   * 处理扩展差异比较的消息
    */
-  handleRefreshPopup(request, sendResponse) {
-    // 这个消息只需要转发给所有内容脚本
-    chrome.runtime.sendMessage({action: 'refreshPopup'});
-    if (sendResponse) sendResponse({status: 'success'});
+  async handleDiffExtensions(request, sendResponse) {
+    chrome.runtime.sendMessage({action: 'diffExtensions'});
+    if (sendResponse) sendResponse({ status: 'success' });
   }
 
   /**
@@ -515,7 +438,7 @@ class BackgroundManager {
 
   // 通知popup刷新界面
   notifyPopupToRefresh() {
-    chrome.runtime.sendMessage({action: 'refreshPopup'});
+    chrome.runtime.sendMessage({action: 'diffExtensions'});
   }
 
   // 调整刷新间隔
