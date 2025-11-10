@@ -318,7 +318,11 @@
           remote: 'origin',
           ref: branchName,
           ...auth,
-          singleBranch: true
+          singleBranch: true,
+          author: {
+            name: 'Extension Git Sync',
+            email: 'exten-git@local'
+          }
         });
 
         // 读取文件内容

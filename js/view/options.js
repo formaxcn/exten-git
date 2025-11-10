@@ -162,7 +162,7 @@ class OptionsManager {
       'filePath',
       'userName',
       'password', 
-      'branch', 
+      'branchName', 
       'syncInterval',
       'syncStrategy',
       'autoSyncEnabled',
@@ -172,7 +172,7 @@ class OptionsManager {
       document.getElementById('filePath').value = items.filePath || '';
       document.getElementById('userName').value = items.userName || '';
       document.getElementById('password').value = items.password || '';
-      document.getElementById('branch').value = items.branch || '';
+      document.getElementById('branch').value = items.branchName || '';
       
       // 设置同步间隔
       let selectedIndex = 3; // 默认索引
@@ -232,7 +232,7 @@ class OptionsManager {
    */
   saveSettings() {
     const repoUrl = document.getElementById('repoUrl').value.trim();
-    const branch = document.getElementById('branch').value.trim();
+    const branchName = document.getElementById('branch').value.trim();
     const filePath = document.getElementById('filePath').value.trim();
     const userName = document.getElementById('userName').value.trim();
     const password = document.getElementById('password').value.trim();
@@ -246,7 +246,7 @@ class OptionsManager {
     
     const settings = {
       repoUrl: repoUrl,
-      branch: branch,
+      branchName: branchName,
       filePath: filePath,
       userName: userName,
       password: password,
