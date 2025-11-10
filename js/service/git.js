@@ -16,6 +16,15 @@
 
   class GitManager {
     constructor() {
+      // 初始化文件系统
+      if (typeof LightningFS !== 'undefined') {
+        this.fs = new LightningFS('git-fs').promises;
+      } else if (typeof fs !== 'undefined') {
+        // 如果LightningFS不可用，尝试使用全局fs对象
+        this.fs = fs;
+      } else {
+        console.error('No file system implementation found');
+      }
     }
 
     /**
@@ -153,7 +162,7 @@
       try {
         // 初始化仓库（如果尚未初始化）
         try {
-          await git.init({ fs, dir });
+          await git.init({ fs: this.fs, dir });
         } catch (initError) {
           // 如果已经初始化，忽略错误
           console.log('Repository already initialized');
@@ -162,7 +171,7 @@
         // 添加远程仓库
         try {
           await git.addRemote({
-            fs,
+            fs: this.fs,
             dir,
             remote: 'origin',
             url: repoUrl,
@@ -175,7 +184,7 @@
 
         // 获取远程信息
         await git.fetch({
-          fs,
+          fs: this.fs,
           http: GitHttp,
           dir,
           remote: 'origin',
@@ -185,11 +194,11 @@
 
         // 检查本地分支是否存在
         try {
-          await git.currentBranch({ fs, dir, fullname: false });
+          await git.currentBranch({ fs: this.fs, dir, fullname: false });
         } catch (branchError) {
           // 如果分支不存在，创建并切换到该分支
           await git.branch({
-            fs,
+            fs: this.fs,
             dir,
             ref: branchName,
             checkout: true
@@ -197,14 +206,14 @@
         }
 
         // 写入文件
-        await fs.promises.writeFile(`${dir}/${filePath}`, fileContent);
+        await this.fs.writeFile(`${dir}/${filePath}`, fileContent);
 
         // 添加文件到暂存区
-        await git.add({ fs, dir, filepath: filePath });
+        await git.add({ fs: this.fs, dir, filepath: filePath });
 
         // 创建提交
         const sha = await git.commit({
-          fs,
+          fs: this.fs,
           dir,
           author: {
             name: 'Extension Git Sync',
@@ -217,7 +226,7 @@
 
         // 推送到远程仓库
         await git.push({
-          fs,
+          fs: this.fs,
           http: GitHttp,
           dir,
           remote: 'origin',
@@ -253,7 +262,7 @@
       try {
         // 初始化仓库（如果尚未初始化）
         try {
-          await git.init({ fs, dir });
+          await git.init({ fs: this.fs, dir });
         } catch (initError) {
           // 如果已经初始化，忽略错误
           console.log('Repository already initialized');
@@ -262,7 +271,7 @@
         // 添加远程仓库
         try {
           await git.addRemote({
-            fs,
+            fs: this.fs,
             dir,
             remote: 'origin',
             url: repoUrl,
@@ -275,7 +284,7 @@
 
         // 获取远程信息
         await git.fetch({
-          fs,
+          fs: this.fs,
           http: GitHttp,
           dir,
           remote: 'origin',
@@ -285,7 +294,7 @@
 
         // 获取远程最新的commit hash
         const remoteLog = await git.log({
-          fs,
+          fs: this.fs,
           dir,
           ref: `origin/${branchName}`,
           depth: 1
@@ -303,7 +312,7 @@
 
         // 拉取更改
         await git.pull({
-          fs,
+          fs: this.fs,
           http: GitHttp,
           dir,
           remote: 'origin',
@@ -315,7 +324,7 @@
         // 读取文件内容
         let fileContent = null;
         try {
-          const fileBuffer = await fs.promises.readFile(`${dir}/${filePath}`);
+          const fileBuffer = await this.fs.readFile(`${dir}/${filePath}`);
           fileContent = JSON.parse(fileBuffer.toString('utf8'));
         } catch (fileError) {
           // 如果文件不存在，返回空数据而不是抛出错误
@@ -420,15 +429,48 @@
       try {
         // 构造认证信息
         const auth = this.buildAuthObject(userName, password);
+        
+        // 仓库目录
+        const dir = '/repo';
+        
+        // 初始化临时仓库用于测试连接
+        try {
+          await git.init({ fs: this.fs, dir });
+        } catch (initError) {
+          // 如果已经初始化，忽略错误
+          console.log('Test repository already initialized');
+        }
+
+        // 添加远程仓库
+        try {
+          await git.addRemote({
+            fs: this.fs,
+            dir,
+            remote: 'origin',
+            url: repoUrl,
+            force: true
+          });
+        } catch (remoteError) {
+          // 如果远程已存在，忽略错误
+          console.log('Remote already exists in test');
+        }
 
         // 尝试获取远程信息来验证连接
-        const remoteInfo = await git.getRemoteInfo({
+        await git.fetch({
+          fs: this.fs,
           http: GitHttp,
-          url: repoUrl,
+          dir,
+          remote: 'origin',
           ...auth
         });
 
-        if (remoteInfo && remoteInfo.capabilities) {
+        // 获取远程引用信息
+        const remoteRefs = await git.listRemotes({
+          fs: this.fs,
+          dir
+        });
+
+        if (remoteRefs && remoteRefs.length > 0) {
           return {status: 'success', message: 'Connection successful! You have access to the repository.'};
         } else {
           return {status: 'error', message: 'Failed to retrieve repository information.'};
