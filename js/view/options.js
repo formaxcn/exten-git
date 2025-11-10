@@ -442,5 +442,7 @@ class OptionsManager {
 
 }
 
+export default OptionsManager;
+
 // 初始化OptionsManager
-const optionsManager = new OptionsManager();
+export const optionsManager = new OptionsManager();

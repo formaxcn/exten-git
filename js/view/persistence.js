@@ -3,6 +3,7 @@
  * 负责处理文件的导入导出、扩展备份恢复等功能
  */
 import AlertManager from './alert.js';
+import OptionsManager, { optionsManager } from './options.js';
 
 class FileManager {
   /**
@@ -69,11 +70,8 @@ class FileManager {
           });
           
           chrome.storage.sync.set(filteredConfig, () => {
-            // 重新加载设置到表单
-            if (typeof window.optionsManager !== 'undefined' && 
-                typeof window.optionsManager.loadSettings === 'function') {
-              window.optionsManager.loadSettings(); 
-            }
+            // 使用导入的optionsManager实例来加载设置
+            optionsManager.loadSettings();
             AlertManager.showStatus('Configuration imported successfully!', 'success');
           });
         } catch (error) {
