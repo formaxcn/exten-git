@@ -6,6 +6,7 @@
 class GitManager {
   constructor() {
     // Git管理器初始化
+    const fs = new FS('my-fs', { wipe: true });
   }
 
   /**
@@ -454,12 +455,3 @@ class GitManager {
 
 // 创建全局实例
 const gitManager = new GitManager();
-
-// 为Service Worker环境提供全局访问
-if (typeof importScripts !== 'undefined') {
-  self.GitManager = GitManager;
-  // 确保 Buffer 在全局作用域中可用
-  if (typeof self.Buffer === 'undefined' && typeof buffer !== 'undefined') {
-    self.Buffer = buffer.Buffer;
-  }
-}

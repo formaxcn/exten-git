@@ -2,9 +2,10 @@
 // 使用importScripts加载isomorphic-git库和git.js模块
 try {
   importScripts(
-    '../lib/buffer/polyfill.js',
-    '../lib/isomorphic-git/index.umd.min.js',
-    '../lib/isomorphic-git/http/web/index.umd.js',
+    '../lib/buffer.min.js',
+    '../lib/lightning-fs.min.js',
+    '../lib/isomorphic-git.index.umd.js',
+    '../lib/isomorphic-git-http-web.index.js',
     'git.js',
     'extensionData.js'
   );
