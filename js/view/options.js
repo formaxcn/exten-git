@@ -113,6 +113,31 @@ class OptionsManager {
           }
         });
       });
+      
+      // 定期更新commit hash显示
+      this.updateCommitHashDisplay();
+      setInterval(() => {
+        this.updateCommitHashDisplay();
+      }, 5000); // 每5秒更新一次
+    });
+  }
+
+  /**
+   * 更新commit hash显示
+   */
+  updateCommitHashDisplay() {
+    chrome.storage.local.get(['lastCommitHash'], (result) => {
+      const commitHashDisplay = document.getElementById('commitHashDisplay');
+      if (commitHashDisplay) {
+        if (result.lastCommitHash) {
+          // 显示前8位commit hash
+          commitHashDisplay.textContent = `last commit: ${result.lastCommitHash.substring(0, 8)}`;
+          commitHashDisplay.title = result.lastCommitHash; // 完整hash显示在title中
+        } else {
+          commitHashDisplay.textContent = 'last commit: Not available';
+          commitHashDisplay.title = '';
+        }
+      }
     });
   }
 
@@ -196,9 +221,11 @@ class OptionsManager {
           syncInterval: defaultSyncInterval
         });
       }
+      
+      // 更新commit hash显示
+      this.updateCommitHashDisplay();
     });
   }
-
 
   /**
    * 保存设置
@@ -232,6 +259,8 @@ class OptionsManager {
         AlertManager.showStatus('Error saving settings: ' + chrome.runtime.lastError.message, 'error');
       } else {
         AlertManager.showStatus('Settings saved successfully!', 'success');
+        // 更新commit hash显示
+        this.updateCommitHashDisplay();
       }
     });
   }
@@ -332,6 +361,9 @@ class OptionsManager {
       } else {
         AlertManager.showStatus('Unknown error occurred during pull operation', 'error');
       }
+      
+      // 更新commit hash显示
+      this.updateCommitHashDisplay();
     });
   }
 
@@ -365,6 +397,9 @@ class OptionsManager {
       } else {
         AlertManager.showStatus('Unknown error occurred during push operation', 'error');
       }
+      
+      // 更新commit hash显示
+      this.updateCommitHashDisplay();
     });
   }
 

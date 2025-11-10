@@ -37,11 +37,14 @@ class GitManager {
       const commitMessage = options.message || `Update extensions data ${new Date().toISOString()}`;
       
       // 执行Git操作
-      await this.performGitPush({
+      const commitHash = await this.performGitPush({
         ...settings,
         fileContent,
         commitMessage
       });
+      
+      // 保存最新的commit hash
+      await this.saveLastCommitHash(commitHash);
       
       return { status: 'success', message: 'Push completed successfully' };
     } catch (error) {
@@ -64,10 +67,18 @@ class GitManager {
       // 执行Git操作
       const result = await this.performGitPull(settings);
       
-      // 处理拉取到的数据，进行与导入相同的操作
-      await this.processPulledData(result);
+      // 如果没有新的commit，则跳过处理
+      if (!result.hasNewCommit) {
+        return { status: 'success', message: 'Already up to date', data: null };
+      }
       
-      return { status: 'success', message: 'Pull completed successfully', data: result };
+      // 处理拉取到的数据，进行与导入相同的操作
+      await this.processPulledData(result.data);
+      
+      // 保存最新的commit hash
+      await this.saveLastCommitHash(result.commitHash);
+      
+      return { status: 'success', message: 'Pull completed successfully', data: result.data };
     } catch (error) {
       console.error('Git pull error:', error);
       return { status: 'error', message: error.message };
@@ -205,6 +216,7 @@ class GitManager {
       });
 
       console.log('Push completed successfully');
+      return sha;
     } catch (error) {
       throw new Error(`Git push failed: ${error.message}`);
     }
@@ -261,6 +273,24 @@ class GitManager {
         ...auth
       });
 
+      // 获取远程最新的commit hash
+      const remoteLog = await git.log({
+        fs,
+        dir,
+        ref: `origin/${branchName}`,
+        depth: 1
+      });
+      
+      const remoteCommitHash = remoteLog[0]?.oid;
+      
+      // 获取本地最后一次同步的commit hash
+      const lastCommitHash = await this.getLastCommitHash();
+      
+      // 如果远程commit hash与上次记录的相同，则无需处理
+      if (remoteCommitHash && remoteCommitHash === lastCommitHash) {
+        return { hasNewCommit: false };
+      }
+
       // 拉取更改
       await git.pull({
         fs,
@@ -273,10 +303,21 @@ class GitManager {
       });
 
       // 读取文件内容
-      const fileContent = await fs.promises.readFile(`${dir}/${filePath}`, 'utf8');
-      const extensionsData = JSON.parse(fileContent);
+      let fileContent = null;
+      try {
+        const fileBuffer = await fs.promises.readFile(`${dir}/${filePath}`);
+        fileContent = JSON.parse(fileBuffer.toString('utf8'));
+      } catch (fileError) {
+        // 如果文件不存在，返回空数据而不是抛出错误
+        console.log('File does not exist in repository, treating as empty data');
+        fileContent = { extensions: [] };
+      }
       
-      return extensionsData;
+      return { 
+        hasNewCommit: true, 
+        data: fileContent, 
+        commitHash: remoteCommitHash 
+      };
     } catch (error) {
       throw new Error(`Git pull failed: ${error.message}`);
     }
@@ -338,6 +379,28 @@ class GitManager {
       chrome.storage.local.get(['todoExtensions'], (result) => {
         const todoExtensions = result.todoExtensions || [];
         resolve(todoExtensions.length === 0);
+      });
+    });
+  }
+
+  /**
+   * 获取上次同步的commit hash
+   */
+  getLastCommitHash() {
+    return new Promise((resolve) => {
+      chrome.storage.local.get(['lastCommitHash'], (result) => {
+        resolve(result.lastCommitHash || null);
+      });
+    });
+  }
+
+  /**
+   * 保存最新的commit hash
+   */
+  saveLastCommitHash(commitHash) {
+    return new Promise((resolve) => {
+      chrome.storage.local.set({ lastCommitHash: commitHash }, () => {
+        resolve();
       });
     });
   }
