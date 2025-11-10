@@ -154,7 +154,7 @@ class ExtensionManager {
         undoPart.title = 'Undo';
         undoPart.addEventListener('click', (e) => {
           e.stopPropagation();
-          this.removeFromTodoList(extension);
+          this.revertTodoAction(extension.id);
         });
         
         // 右侧删除部分
@@ -200,7 +200,7 @@ class ExtensionManager {
         undoPart.title = 'Undo';
         undoPart.addEventListener('click', (e) => {
           e.stopPropagation();
-          this.removeFromTodoList(extension);
+          this.revertTodoAction(extension.id);
         });
         
         // 右侧添加部分
@@ -234,6 +234,32 @@ class ExtensionManager {
       }
       
       extensionsGrid.insertBefore(extensionItem, extensionsGrid.firstChild.nextSibling);
+    }
+  }
+
+  // 撤销待办操作
+  revertTodoAction(extensionId) {
+    // 从待办列表中移除该项
+    this.todoExtensions = this.todoExtensions.filter(ext => ext.id !== extensionId);
+    
+    // 通知background script更新待办事项列表
+    if (this.todoExtensions.length > 0) {
+      chrome.runtime.sendMessage({
+        action: 'setTodoExtensions',
+        todoExtensions: this.todoExtensions
+      }, () => {
+        AlertManager.showStatus('Action reverted', 'info');
+        // 重新显示扩展列表
+        this.loadExtensions();
+      });
+    } else {
+      chrome.runtime.sendMessage({
+        action: 'clearTodoExtensions'
+      }, () => {
+        AlertManager.showStatus('Action reverted', 'info');
+        // 重新显示扩展列表
+        this.loadExtensions();
+      });
     }
   }
 
