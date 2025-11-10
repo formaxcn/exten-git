@@ -5,8 +5,6 @@
 
 class GitManager {
   constructor() {
-    // Git管理器初始化
-    const fs = new FS('my-fs', { wipe: true });
   }
 
   /**
