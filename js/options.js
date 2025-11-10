@@ -124,7 +124,7 @@ class OptionsManager {
     const timeString = now.toLocaleString();
     const lastSyncElement = document.getElementById('lastSyncTime');
     if (lastSyncElement) {
-      lastSyncElement.textContent = `上次同步: ${timeString}`;
+      lastSyncElement.textContent = `last sync: ${timeString}`;
     }
   }
 
@@ -185,7 +185,7 @@ class OptionsManager {
         const lastSyncElement = document.getElementById('lastSyncTime');
         if (lastSyncElement) {
           const lastSyncDate = new Date(items.lastSyncTime);
-          lastSyncElement.textContent = `上次同步: ${lastSyncDate.toLocaleString()}`;
+          lastSyncElement.textContent = `last sync time: ${lastSyncDate.toLocaleString()}`;
         }
       }
       
