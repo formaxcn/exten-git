@@ -13,7 +13,7 @@
   ],
   "options_page": "options.html",
   "background": {
-    "service_worker": "js/background.js"
+    "service_worker": "js/service/background.js"
   },
   "action": {
     "default_title": "Extension Git Sync"
@@ -22,8 +22,5 @@
     "16": "icons/icon.png",
     "48": "icons/icon.png",
     "128": "icons/icon.png"
-  },
-  "content_security_policy": {
-    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'"
   }
 }
