@@ -46,11 +46,21 @@ class BackgroundManager {
         this.saveExtensionsToList(request.extensions);
         sendResponse({status: 'success'});
       } else if (request.action === 'pushToGit') {
-        gitManager.pushToGit(request.data);
-        sendResponse({status: 'success'});
+        gitManager.pushToGit({message: request.message})
+          .then(result => sendResponse(result));
+        // 返回true以保持消息通道开放，因为我们在使用异步操作
+        return true;
       } else if (request.action === 'pullFromGit') {
-        gitManager.pullFromGit();
-        sendResponse({status: 'success'});
+        gitManager.pullFromGit()
+          .then(result => {
+            if (result.status === 'success') {
+              // 处理拉取到的数据
+              this.processPulledData(result.data);
+            }
+            sendResponse(result);
+          });
+        // 返回true以保持消息通道开放，因为我们在使用异步操作
+        return true;
       } else if (request.action === 'testGitConnection') {
         gitManager.testGitConnection(request.repoUrl, request.userName, request.password)
           .then(result => sendResponse(result));
@@ -103,6 +113,20 @@ class BackgroundManager {
     
     // 加载初始设置
     this.loadSettings();
+  }
+
+  // 处理从Git拉取的数据
+  processPulledData(data) {
+    if (!data || !data.extensions) {
+      console.warn('No valid extensions data in pulled data');
+      return;
+    }
+
+    // 发送消息通知popup或其他组件更新数据
+    chrome.runtime.sendMessage({
+      action: 'gitDataPulled',
+      data: data
+    });
   }
 
   // 从存储中加载待办事项

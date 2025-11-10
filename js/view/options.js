@@ -199,6 +199,7 @@ class OptionsManager {
     });
   }
 
+
   /**
    * 保存设置
    */
@@ -303,7 +304,7 @@ class OptionsManager {
   }
 
   /**
-   * Pull操作
+   * Pull操作 - 从Git仓库拉取扩展数据
    */
   pullChanges() {
     // 保存同步时间
@@ -312,11 +313,30 @@ class OptionsManager {
       // 可以添加其他pull逻辑
     });
     
-    AlertManager.showStatus('Pull functionality needs to be implemented', 'error');
+    AlertManager.showStatus('Pulling data from Git repository...', 'info');
+    
+    // 发送消息到background script执行pull操作
+    chrome.runtime.sendMessage({
+      action: 'pullFromGit'
+    }, (response) => {
+      if (chrome.runtime.lastError) {
+        console.error('Runtime error:', chrome.runtime.lastError);
+        AlertManager.showStatus(`Runtime error: ${chrome.runtime.lastError.message}`, 'error');
+        return;
+      }
+      
+      if (response && response.status === 'success') {
+        AlertManager.showStatus('Successfully pulled data from Git repository', 'success');
+      } else if (response && response.message) {
+        AlertManager.showStatus(`Pull failed: ${response.message}`, 'error');
+      } else {
+        AlertManager.showStatus('Unknown error occurred during pull operation', 'error');
+      }
+    });
   }
 
   /**
-   * Push操作
+   * Push操作 - 将扩展数据推送到Git仓库
    */
   pushChanges() {
     // 保存同步时间
@@ -325,7 +345,27 @@ class OptionsManager {
       // 可以添加其他push逻辑
     });
     
-    AlertManager.showStatus('Push functionality needs to be implemented', 'error');
+    AlertManager.showStatus('Pushing data to Git repository...', 'info');
+    
+    // 发送消息到background script执行push操作
+    chrome.runtime.sendMessage({
+      action: 'pushToGit',
+      message: `Update extensions data ${new Date().toISOString()}`
+    }, (response) => {
+      if (chrome.runtime.lastError) {
+        console.error('Runtime error:', chrome.runtime.lastError);
+        AlertManager.showStatus(`Runtime error: ${chrome.runtime.lastError.message}`, 'error');
+        return;
+      }
+      
+      if (response && response.status === 'success') {
+        AlertManager.showStatus('Successfully pushed data to Git repository', 'success');
+      } else if (response && response.message) {
+        AlertManager.showStatus(`Push failed: ${response.message}`, 'error');
+      } else {
+        AlertManager.showStatus('Unknown error occurred during push operation', 'error');
+      }
+    });
   }
 
   /**
