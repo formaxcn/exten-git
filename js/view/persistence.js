@@ -92,30 +92,40 @@ class FileManager {
   static backupExtensions() {
     // 发送消息到background script获取扩展数据
     chrome.runtime.sendMessage({action: 'exportExtensionsData'}, (response) => {
-      if (response.status === 'success') {
+      // 检查是否有运行时错误
+      if (chrome.runtime.lastError) {
+        console.error('Runtime error:', chrome.runtime.lastError);
+        AlertManager.showStatus(`Runtime error: ${chrome.runtime.lastError.message}`, 'error');
+        return;
+      }
+      
+      if (response && response.status === 'success') {
         const dataStr = JSON.stringify(response.data, null, 2);
         const dataBlob = new Blob([dataStr], {type: 'application/json'});
         
         const url = URL.createObjectURL(dataBlob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `exten-git.extensions.${new Date().toISOString().slice(0, 10)}.json`;
+        a.download = 'extensions-backup.json';
         document.body.appendChild(a);
         a.click();
         
+        // 清理
         setTimeout(() => {
           document.body.removeChild(a);
           URL.revokeObjectURL(url);
-          AlertManager.showStatus('Extensions exported successfully!', 'success');
+          AlertManager.showStatus('Extensions backed up successfully!', 'success');
         }, 100);
+      } else if (response && response.message) {
+        AlertManager.showStatus(response.message, 'error');
       } else {
-        AlertManager.showStatus(`Export failed: ${response.message}`, 'error');
+        AlertManager.showStatus('Unknown error occurred during backup', 'error');
       }
     });
   }
 
   /**
-   * 从本地文件恢复扩展列表
+   * 恢复扩展列表
    */
   static restoreExtensions() {
     const input = document.createElement('input');
@@ -132,13 +142,26 @@ class FileManager {
           const backupData = JSON.parse(e.target.result);
           
           if (backupData.extensions) {
-            // 触发自定义事件，通知ExtensionManager处理导入的扩展列表
-            const event = new CustomEvent('extensionsRestored', { 
-              detail: backupData 
+            // 发送消息到background script处理扩展恢复
+            chrome.runtime.sendMessage({
+              action: 'diffExtensions',
+              data: backupData
+            }, (response) => {
+              // 检查是否有运行时错误
+              if (chrome.runtime.lastError) {
+                console.error('Runtime error:', chrome.runtime.lastError);
+                AlertManager.showStatus(`Runtime error: ${chrome.runtime.lastError.message}`, 'error');
+                return;
+              }
+              
+              if (response && response.status === 'success') {
+                AlertManager.showStatus('Extensions restored successfully! Conflict resolution needed.', 'success');
+              } else if (response && response.message) {
+                AlertManager.showStatus(response.message, 'error');
+              } else {
+                AlertManager.showStatus('Unknown error occurred during restore', 'error');
+              }
             });
-            document.dispatchEvent(event);
-            
-            AlertManager.showStatus('Extensions restored successfully! Conflict resolution needed.', 'success');
           } else {
             AlertManager.showStatus('Invalid backup file format', 'error');
           }

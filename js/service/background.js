@@ -1,137 +1,100 @@
-// background.js
-// 使用importScripts加载isomorphic-git库和git.js模块
-try {
-  importScripts(
-    '../lib/buffer.js',
-    '../lib/lightning-fs.min.js',
-    '../lib/isomorphic-git.index.umd.min.js',
-    '../lib/isomorphic-git-http-web.index.js',
-    'git.js',
-    'extensionData.js'
-  );
-} catch (error) {
-  console.error('Failed to load Git manager:', error);
-}
-
-class BackgroundManager {
-  constructor() {
-    this.refreshInterval = null;
+/**
+ * 统一消息处理器
+ * 处理来自popup和options页面的所有消息请求
+ */
+class MessageHandler {
+  constructor(gitManager, extensionDataManager) {
+    this.gitManager = gitManager;
+    this.extensionDataManager = extensionDataManager;
     this.todoExtensions = [];
-    this.currentInterval = 30000; // 默认30秒刷新一次
-    this.settings = {};
     this.init();
   }
 
   init() {
-    chrome.runtime.onInstalled.addListener(() => {
-      console.log('Extension Git Sync installed');
-    });
-
-    // 监听图标点击事件，打开选项页面
-    chrome.action.onClicked.addListener((tab) => {
-      chrome.runtime.openOptionsPage();
-    });
-
-    // 监听扩展管理事件
-    chrome.management.onInstalled.addListener(() => {
-      this.notifyPopupToRefresh();
-    });
-
-    chrome.management.onUninstalled.addListener(() => {
-      this.notifyPopupToRefresh();
-    });
-
     // 监听来自popup或options的消息
     chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-      if (request.action === 'saveExtensions') {
-        this.saveExtensionsToList(request.extensions);
-        sendResponse({status: 'success'});
-      } else if (request.action === 'pushToGit') {
-        gitManager.pushToGit({message: request.message})
-          .then(result => sendResponse(result));
-        // 返回true以保持消息通道开放，因为我们在使用异步操作
-        return true;
-      } else if (request.action === 'pullFromGit') {
-        gitManager.pullFromGit()
-          .then(result => {
-            if (result.status === 'success') {
-              // 处理拉取到的数据
-              this.processPulledData(result.data);
-            }
-            sendResponse(result);
-          })
-          .catch(error => {
-            console.error('Pull from Git error:', error);
-            sendResponse({status: 'error', message: error.message});
-          });
-        // 返回true以保持消息通道开放，因为我们在使用异步操作
-        return true;
-      } else if (request.action === 'processPulledExtensions') {
-        this.processPulledExtensions(request.data)
-          .then(result => sendResponse(result));
-        return true;
-      } else if (request.action === 'testGitConnection') {
-        gitManager.testGitConnection(request.repoUrl, request.userName, request.password)
-          .then(result => sendResponse(result));
-        // 返回true以保持消息通道开放，因为我们在使用异步操作
-        return true;
-      } else if (request.action === 'setTodoExtensions') {
-        this.setTodoExtensions(request.todoExtensions);
-        sendResponse({status: 'success'});
-      } else if (request.action === 'clearTodoExtensions') {
-        this.clearTodoExtensions();
-        sendResponse({status: 'success'});
-      } else if (request.action === 'getTodoExtensions') {
-        sendResponse({todoExtensions: this.todoExtensions});
-      } else if (request.action === 'getExtensionsData') {
-        // 处理获取扩展数据请求（供Git push/pull使用）
-        extensionDataManager._getExtensionsData()
-          .then(data => {
-            sendResponse({status: 'success', data: data});
-          })
-          .catch(error => {
-            console.error('Get extensions data error:', error);
-            sendResponse({status: 'error', message: error.message});
-          });
-        // 返回true以保持消息通道开放，因为我们正在使用异步操作
-        return true;
-      } else if (request.action === 'exportExtensionsData') {
-        // 处理导出扩展数据请求
-        extensionDataManager.exportExtensionsData()
-          .then(data => {
-            sendResponse({status: 'success', data: data});
-          })
-          .catch(error => {
-            console.error('Export extensions data error:', error);
-            sendResponse({status: 'error', message: error.message});
-          });
-        // 返回true以保持消息通道开放，因为我们正在使用异步操作
-        return true;
-      } else if (request.action === 'listRemoteBranches') {
-        // 处理列出远程分支请求
-        gitManager.listRemoteBranches(request.settings)
-          .then(result => sendResponse(result))
-          .catch(error => {
-            console.error('List remote branches error:', error);
-            sendResponse({status: 'error', message: error.message});
-          });
-        // 返回true以保持消息通道开放，因为我们正在使用异步操作
-        return true;
-      }
+      this.handleMessage(request, sender, sendResponse);
+      // 返回true以保持消息通道开放，因为我们在使用异步操作
+      return true;
     });
+  }
 
-    // 初始化存储监听器
-    chrome.storage.onChanged.addListener((changes, areaName) => {
-      if (areaName === 'sync') {
-        this.handleStorageChange(changes);
+  setTodoExtensions(todoExtensions) {
+    this.todoExtensions = todoExtensions || [];
+  }
+
+  async handleMessage(request, sender, sendResponse) {
+    try {
+      switch (request.action) {
+        case 'saveExtensions':
+          this.saveExtensionsToList(request.extensions);
+          sendResponse({status: 'success'});
+          break;
+          
+        case 'pushToGit':
+          const pushResult = await this.gitManager.pushToGit({message: request.message});
+          sendResponse(pushResult);
+          break;
+          
+        case 'pullFromGit':
+          const pullResult = await this.gitManager.pullFromGit();
+          if (pullResult.status === 'success') {
+            // 处理拉取到的数据
+            this.processPulledData(pullResult.data);
+          }
+          sendResponse(pullResult);
+          break;
+          
+        case 'processPulledExtensions':
+          const processResult = await this.processPulledExtensions(request.data);
+          sendResponse(processResult);
+          break;
+          
+        case 'testGitConnection':
+          const testResult = await this.gitManager.testGitConnection(
+            request.repoUrl, 
+            request.userName, 
+            request.password
+          );
+          sendResponse(testResult);
+          break;
+          
+        case 'setTodoExtensions':
+          this.setTodoExtensions(request.todoExtensions);
+          sendResponse({status: 'success'});
+          break;
+          
+        case 'clearTodoExtensions':
+          this.clearTodoExtensions();
+          sendResponse({status: 'success'});
+          break;
+          
+        case 'getTodoExtensions':
+          sendResponse({todoExtensions: this.todoExtensions});
+          break;
+          
+        case 'getExtensionsData':
+          const dataResult = await this.extensionDataManager._getExtensionsData();
+          sendResponse({status: 'success', data: dataResult});
+          break;
+          
+        case 'exportExtensionsData':
+          const exportResult = await this.extensionDataManager.exportExtensionsData();
+          sendResponse({status: 'success', data: exportResult});
+          break;
+          
+        case 'listRemoteBranches':
+          const branchesResult = await this.gitManager.listRemoteBranches(request.settings);
+          sendResponse(branchesResult);
+          break;
+          
+        default:
+          sendResponse({status: 'error', message: 'Unknown action'});
       }
-    });
-
-    // 初始化时从存储中加载待办事项
-    this.loadTodoExtensionsFromStorage();
-    
-    // 加载初始设置
-    this.loadSettings();
+    } catch (error) {
+      console.error(`Error handling message ${request.action}:`, error);
+      sendResponse({status: 'error', message: error.message});
+    }
   }
 
   // 处理从Git拉取的数据
@@ -196,11 +159,301 @@ class BackgroundManager {
     });
   }
 
+  // 保存扩展列表到本地存储
+  saveExtensionsToList(extensions) {
+    chrome.storage.local.set({currentExtensions: extensions}, function() {
+      console.log('Extensions list saved');
+    });
+  }
+
+  // 清除待办事项
+  clearTodoExtensions() {
+    chrome.storage.local.remove('todoExtensions', () => {
+      console.log('Todo extensions cleared from storage');
+    });
+  }
+}
+// background.js
+// 使用importScripts加载isomorphic-git库和git.js模块
+try {
+  importScripts(
+    '../lib/buffer.js',
+    '../lib/lightning-fs.min.js',
+    '../lib/isomorphic-git.index.umd.min.js',
+    '../lib/isomorphic-git-http-web.index.js',
+    'git.js',
+    'extensionData.js'
+  );
+} catch (error) {
+  console.error('Failed to load Git manager:', error);
+}
+
+// 导入MessageHandler类
+importScripts('MessageHandler.js');
+
+class BackgroundManager {
+  constructor() {
+    this.refreshInterval = null;
+    this.todoExtensions = [];
+    this.currentInterval = 30000; // 默认30秒刷新一次
+    this.settings = {};
+    this.init();
+  }
+
+  init() {
+    chrome.runtime.onInstalled.addListener(() => {
+      console.log('Extension Git Sync installed');
+    });
+
+    // 监听图标点击事件，打开选项页面
+    chrome.action.onClicked.addListener((tab) => {
+      chrome.runtime.openOptionsPage();
+    });
+
+    // 监听扩展管理事件
+    chrome.management.onInstalled.addListener(() => {
+      this.notifyPopupToRefresh();
+    });
+
+    chrome.management.onUninstalled.addListener(() => {
+      this.notifyPopupToRefresh();
+    });
+
+    // 监听来自popup或options的消息
+    chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+      return this.handleMessage(request, sender, sendResponse);
+    });
+
+    // 初始化存储监听器
+    chrome.storage.onChanged.addListener((changes, areaName) => {
+      if (areaName === 'sync') {
+        this.handleStorageChange(changes);
+      }
+    });
+
+    // 初始化时从存储中加载待办事项
+    this.loadTodoExtensionsFromStorage();
+    
+    // 加载初始设置
+    this.loadSettings();
+  }
+
+  /**
+   * 统一处理所有消息
+   * @param {Object} request - 请求对象
+   * @param {Object} sender - 发送者信息
+   * @param {Function} sendResponse - 响应函数
+   * @returns {boolean} 是否异步响应
+   */
+  handleMessage(request, sender, sendResponse) {
+    console.log('Received message:', request.action);
+    
+    switch (request.action) {
+      case 'saveExtensions':
+        this.saveExtensionsToList(request.extensions);
+        sendResponse({status: 'success'});
+        break;
+        
+      case 'pushToGit':
+        this.handlePushToGit(request, sendResponse);
+        return true; // 异步响应
+        
+      case 'pullFromGit':
+        this.handlePullFromGit(request, sendResponse);
+        return true; // 异步响应
+        
+      case 'testGitConnection':
+        this.handleTestGitConnection(request, sendResponse);
+        return true; // 异步响应
+        
+      // 扩展数据相关操作
+      case 'getExtensionsData':
+        this.handleGetExtensionsData(request, sendResponse);
+        return true; // 异步响应
+        
+      case 'exportExtensionsData':
+        this.handleExportExtensionsData(request, sendResponse);
+        return true; // 异步响应
+        
+      case 'diffExtensions':
+        this.handleDiffExtensions(request, sendResponse);
+        return true; // 异步响应
+        
+      // 待办事项相关操作
+      case 'setTodoExtensions':
+        this.handleSetTodoExtensions(request, sendResponse);
+        break;
+        
+      case 'clearTodoExtensions':
+        this.handleClearTodoExtensions(request, sendResponse);
+        break;
+        
+      case 'getTodoExtensions':
+        this.handleGetTodoExtensions(request, sendResponse);
+        break;
+        
+      // 其他操作
+      case 'refreshPopup':
+        this.handleRefreshPopup(request, sendResponse);
+        break;
+        
+      case 'gitDataPulled':
+        this.handleGitDataPulled(request, sendResponse);
+        break;
+        
+      default:
+        console.warn('Unknown message action:', request.action);
+        sendResponse({status: 'error', message: 'Unknown action'});
+    }
+    
+    return false; // 同步响应
+  }
+
+  /**
+   * 处理推送至Git的消息
+   */
+  async handlePushToGit(request, sendResponse) {
+    try {
+      const result = await gitManager.pushToGit({message: request.message, data: request.data});
+      sendResponse(result);
+    } catch (error) {
+      console.error('Push to Git error:', error);
+      sendResponse({status: 'error', message: error.message});
+    }
+  }
+
+  /**
+   * 处理从Git拉取的消息
+   */
+  async handlePullFromGit(request, sendResponse) {
+    try {
+      const result = await gitManager.pullFromGit();
+      if (result.status === 'success') {
+        // 处理拉取到的数据
+        this.processPulledData(result.data);
+      }
+      sendResponse(result);
+    } catch (error) {
+      console.error('Pull from Git error:', error);
+      sendResponse({status: 'error', message: error.message});
+    }
+  }
+
+  /**
+   * 处理测试Git连接的消息
+   */
+  async handleTestGitConnection(request, sendResponse) {
+    try {
+      const result = await gitManager.testGitConnection(
+        request.repoUrl, 
+        request.userName, 
+        request.password
+      );
+      sendResponse(result);
+    } catch (error) {
+      console.error('Test Git connection error:', error);
+      sendResponse({status: 'error', message: error.message});
+    }
+  }
+
+  /**
+   * 处理获取扩展数据的消息
+   */
+  async handleGetExtensionsData(request, sendResponse) {
+    try {
+      const data = await extensionDataManager._getExtensionsData();
+      sendResponse({status: 'success', data: data});
+    } catch (error) {
+      console.error('Get extensions data error:', error);
+      sendResponse({status: 'error', message: error.message});
+    }
+  }
+
+  /**
+   * 处理导出扩展数据的消息
+   */
+  async handleExportExtensionsData(request, sendResponse) {
+    try {
+      const data = await extensionDataManager.exportExtensionsData();
+      sendResponse({status: 'success', data: data});
+    } catch (error) {
+      console.error('Export extensions data error:', error);
+      sendResponse({status: 'error', message: error.message});
+    }
+  }
+
+  /**
+   * 处理扩展差异比较的消息
+   */
+  async handleDiffExtensions(request, sendResponse) {
+    try {
+      const result = await this.processPulledExtensions(request.data);
+      sendResponse(result);
+    } catch (error) {
+      console.error('Diff extensions error:', error);
+      sendResponse({status: 'error', message: error.message});
+    }
+  }
+
+  /**
+   * 处理设置待办事项的消息
+   */
+  handleSetTodoExtensions(request, sendResponse) {
+    this.todoExtensions = request.todoExtensions || [];
+    chrome.storage.local.set({todoExtensions: this.todoExtensions}, () => {
+      console.log('Todo extensions saved to storage');
+    });
+    sendResponse({status: 'success'});
+  }
+
+  /**
+   * 处理清除待办事项的消息
+   */
+  handleClearTodoExtensions(request, sendResponse) {
+    this.todoExtensions = [];
+    chrome.storage.local.remove('todoExtensions', () => {
+      console.log('Todo extensions cleared from storage');
+    });
+    sendResponse({status: 'success'});
+  }
+
+  /**
+   * 处理获取待办事项的消息
+   */
+  handleGetTodoExtensions(request, sendResponse) {
+    sendResponse({todoExtensions: this.todoExtensions});
+  }
+
+  /**
+   * 处理刷新popup的消息
+   */
+  handleRefreshPopup(request, sendResponse) {
+    // 这个消息只需要转发给所有内容脚本
+    chrome.runtime.sendMessage({action: 'refreshPopup'});
+    if (sendResponse) sendResponse({status: 'success'});
+  }
+
+  /**
+   * 处理Git数据拉取完成的消息
+   */
+  handleGitDataPulled(request, sendResponse) {
+    // 通知所有监听者更新数据
+    chrome.runtime.sendMessage({
+      action: 'gitDataPulled',
+      data: request.data
+    });
+    if (sendResponse) sendResponse({status: 'success'});
+  }
+
   // 从存储中加载待办事项
   loadTodoExtensionsFromStorage() {
     chrome.storage.local.get(['todoExtensions'], (result) => {
       if (result.todoExtensions) {
         this.todoExtensions = result.todoExtensions;
+        // 更新消息处理器中的待办事项
+        if (this.messageHandler) {
+          this.messageHandler.setTodoExtensions(this.todoExtensions);
+        }
       }
     });
   }
@@ -281,23 +534,15 @@ class BackgroundManager {
   }
 
   startRefreshInterval() {
+    // 如果已经有定时器在运行，先清除它
     if (this.refreshInterval) {
       clearInterval(this.refreshInterval);
     }
 
-    // 使用默认值30秒或用户设置的间隔
-    const interval = this.settings.refreshInterval || 30000;
-    this.currentInterval = interval;
-
+    // 根据是否有待办事项设置刷新频率
     this.refreshInterval = setInterval(() => {
-      if (this.settings.autoPush) {
-        gitManager.pushToGit({message: 'Auto-push at ' + new Date().toISOString()});
-      }
-      
-      if (this.settings.autoPull) {
-        gitManager.pullFromGit();
-      }
-    }, interval);
+      this.checkTodoExtensionsCompletion();
+    }, this.currentInterval);
   }
 
   stopRefreshInterval() {
@@ -313,27 +558,6 @@ class BackgroundManager {
     // 如果启用自动推送或拉取，则重新启动定时器
     if (this.settings.autoPush || this.settings.autoPull) {
       this.startRefreshInterval();
-    }
-  }
-
-  // 开始定期刷新
-  startRefreshInterval() {
-    // 如果已经有定时器在运行，先清除它
-    if (this.refreshInterval) {
-      clearInterval(this.refreshInterval);
-    }
-
-    // 根据是否有待办事项设置刷新频率
-    this.refreshInterval = setInterval(() => {
-      this.checkTodoExtensionsCompletion();
-    }, this.currentInterval);
-  }
-
-  // 停止定期刷新
-  stopRefreshInterval() {
-    if (this.refreshInterval) {
-      clearInterval(this.refreshInterval);
-      this.refreshInterval = null;
     }
   }
 

@@ -283,14 +283,14 @@ class OptionsManager {
    * 测试连接
    */
   testConnection() {
-    const repoUrl = document.getElementById('repoUrl').value.trim();
+    const repoUrl = document.getElementById('repoUrl').value;
     if (!repoUrl) {
       AlertManager.showStatus('Please enter a repository URL', 'error');
       return;
     }
     
-    const userName = document.getElementById('userName').value.trim();
-    const password = document.getElementById('password').value.trim();
+    const userName = document.getElementById('userName').value;
+    const password = document.getElementById('password').value;
     
     AlertManager.showStatus('Testing connection...', 'info');
     

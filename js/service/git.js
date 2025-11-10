@@ -461,18 +461,8 @@
      * 处理从Git拉取的数据，执行与导入相同的操作
      */
     async processPulledData(pulledData) {
-      return new Promise((resolve) => {
-        // 发送消息到background script，触发扩展比较操作
-        chrome.runtime.sendMessage(
-          { 
-            action: 'processPulledExtensions',
-            data: pulledData
-          },
-          (response) => {
-            resolve(response);
-          }
-        );
-      });
+      // 直接返回数据而不是通过消息发送
+      return { status: 'success', data: pulledData };
     }
 
     /**
@@ -580,52 +570,6 @@
       }
     }
 
-    /**
-     * 列出远程分支
-     */
-    async listRemoteBranches(settings) {
-      const { repoUrl, userName, password, branchName } = settings;
-      
-      try {
-        await this.initFs();
-        const dir = '/git';
-        
-        // 设置认证信息
-        const auth = this.getAuthInfo(userName, password);
-
-        // 先测试连接
-        await git.fetch({
-          fs: this.fs,
-          http: GitHttp,
-          dir,
-          remote: 'origin',
-          ref: branchName,
-          ...auth
-        });
-
-        // 获取远程信息
-        const remoteInfo = await git.getRemoteInfo2({
-          http: GitHttp,
-          url: repoUrl,
-          ...auth
-        });
-
-        // 从远程信息中提取分支列表
-        const branches = [];
-        if (remoteInfo && remoteInfo.refs) {
-          for (const ref in remoteInfo.refs) {
-            if (ref.startsWith('refs/heads/')) {
-              branches.push(ref.substring(11)); // 移除 "refs/heads/" 前缀
-            }
-          }
-        }
-
-        return { status: 'success', branches: branches };
-      } catch (error) {
-        console.error('List remote branches error:', error);
-        return { status: 'error', message: error.message };
-      }
-    }
   }
 
   // 创建全局实例
