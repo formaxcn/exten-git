@@ -205,7 +205,7 @@ class OptionsManager {
   saveSettings() {
     const repoUrl = document.getElementById('repoUrl').value.trim();
     const syncInterval = document.getElementById('syncInterval').value;
-    const autoSync = document.getElementById('autoSync').checked;
+    const autoSync = document.getElementById('autoSyncToggle').checked;
     
     if (!repoUrl) {
       AlertManager.showStatus('Repository URL is required', 'error');
