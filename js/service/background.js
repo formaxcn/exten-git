@@ -103,6 +103,16 @@ class BackgroundManager {
           });
         // 返回true以保持消息通道开放，因为我们正在使用异步操作
         return true;
+      } else if (request.action === 'listRemoteBranches') {
+        // 处理列出远程分支请求
+        gitManager.listRemoteBranches(request.settings)
+          .then(result => sendResponse(result))
+          .catch(error => {
+            console.error('List remote branches error:', error);
+            sendResponse({status: 'error', message: error.message});
+          });
+        // 返回true以保持消息通道开放，因为我们正在使用异步操作
+        return true;
       }
     });
 

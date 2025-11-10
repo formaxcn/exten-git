@@ -217,7 +217,7 @@
           dir,
           author: {
             name: 'Extension Git Sync',
-            email: 'extension@local'
+            email: 'exten.git@local'
           },
           message: commitMessage
         });
@@ -292,18 +292,49 @@
           ...auth
         });
 
+        // 检查远程分支是否存在
+        let remoteBranchExists = false;
+        let remoteBranches = [];
+        try {
+          remoteBranches = await git.listBranches({
+            fs: this.fs,
+            dir,
+            remote: 'origin'
+          });
+          
+          // 检查我们要的分支是否在远程分支列表中
+          remoteBranchExists = remoteBranches.includes(branchName);
+        } catch (listError) {
+          console.log('Could not list remote branches:', listError);
+        }
+
+        // 如果远程分支不存在，则返回无新提交
+        if (!remoteBranchExists) {
+          console.log(`Remote branch '${branchName}' does not exist`);
+          return { hasNewCommit: false };
+        }
+
         // 获取远程最新的commit hash
-        const remoteLog = await git.log({
-          fs: this.fs,
-          dir,
-          ref: `origin/${branchName}`,
-          depth: 1
-        });
+        let remoteLog = [];
+        try {
+          remoteLog = await git.log({
+            fs: this.fs,
+            dir,
+            ref: `origin/${branchName}`,
+            depth: 1
+          });
+        } catch (logError) {
+          console.log(`Could not get log for branch 'origin/${branchName}':`, logError);
+          // 如果无法获取日志，也认为没有新提交
+          return { hasNewCommit: false };
+        }
         
         const remoteCommitHash = remoteLog[0]?.oid;
+        console.log(`Remote commit hash: ${remoteCommitHash}`);
         
         // 获取本地最后一次同步的commit hash
         const lastCommitHash = await this.getLastCommitHash();
+        console.log(`Last commit hash: ${lastCommitHash}`);
         
         // 如果远程commit hash与上次记录的相同，则无需处理
         if (remoteCommitHash && remoteCommitHash === lastCommitHash) {
@@ -311,6 +342,41 @@
         }
 
         // 拉取更改
+        // 确保本地分支存在并正确设置
+        try {
+          // 检查当前分支
+          const currentBranch = await git.currentBranch({ fs: this.fs, dir });
+          console.log('Current branch:', currentBranch);
+          
+          // 如果当前分支不是目标分支，则切换或创建
+          if (currentBranch !== branchName) {
+            try {
+              await git.checkout({ 
+                fs: this.fs, 
+                dir, 
+                ref: branchName 
+              });
+            } catch (checkoutError) {
+              // 如果分支不存在，先创建再切换
+              await git.branch({
+                fs: this.fs,
+                dir,
+                ref: branchName,
+                checkout: true
+              });
+            }
+          }
+        } catch (branchError) {
+          console.log('Branch setup error, creating/checking out branch:', branchError);
+          // 如果有任何分支错误，尝试创建并切换到该分支
+          await git.branch({
+            fs: this.fs,
+            dir,
+            ref: branchName,
+            checkout: true
+          });
+        }
+
         await git.pull({
           fs: this.fs,
           http: GitHttp,
@@ -321,7 +387,7 @@
           singleBranch: true,
           author: {
             name: 'Extension Git Sync',
-            email: 'exten-git@local'
+            email: 'exten.git@local'
           }
         });
 
@@ -468,13 +534,14 @@
           ...auth
         });
 
-        // 获取远程引用信息
-        const remoteRefs = await git.listRemotes({
+        // 获取远程分支列表来验证连接
+        const remoteBranches = await git.listBranches({
           fs: this.fs,
-          dir
+          dir,
+          remote: 'origin'
         });
 
-        if (remoteRefs && remoteRefs.length > 0) {
+        if (remoteBranches && remoteBranches.length > 0) {
           return {status: 'success', message: 'Connection successful! You have access to the repository.'};
         } else {
           return {status: 'error', message: 'Failed to retrieve repository information.'};
@@ -504,6 +571,70 @@
           const errorMessage = error.message || 'Unknown error occurred';
           return {status: 'error', message: `Connection test failed: ${errorMessage}`};
         }
+      }
+    }
+
+    /**
+     * 列出所有远程分支
+     */
+    async listRemoteBranches(settings) {
+      const {
+        repoUrl,
+        userName,
+        password,
+        branchName = 'main'
+      } = settings;
+
+      // 构造认证信息
+      const auth = this.buildAuthObject(userName, password);
+      
+      // 仓库目录
+      const dir = '/repo';
+      
+      try {
+        // 初始化仓库（如果尚未初始化）
+        try {
+          await git.init({ fs: this.fs, dir });
+        } catch (initError) {
+          // 如果已经初始化，忽略错误
+          console.log('Repository already initialized');
+        }
+
+        // 添加远程仓库
+        try {
+          await git.addRemote({
+            fs: this.fs,
+            dir,
+            remote: 'origin',
+            url: repoUrl,
+            force: true
+          });
+        } catch (remoteError) {
+          // 如果远程已存在，忽略错误
+          console.log('Remote already exists');
+        }
+
+        // 获取远程信息
+        await git.fetch({
+          fs: this.fs,
+          http: GitHttp,
+          dir,
+          remote: 'origin',
+          ref: branchName,
+          ...auth
+        });
+
+        // 获取所有远程分支
+        const branches = await git.listBranches({
+          fs: this.fs,
+          dir,
+          remote: 'origin'
+        });
+
+        return { status: 'success', branches: branches };
+      } catch (error) {
+        console.error('List remote branches error:', error);
+        return { status: 'error', message: error.message };
       }
     }
   }
