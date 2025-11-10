@@ -16,6 +16,13 @@ class GitManager {
    */
   async pushToGit(options = {}) {
     try {
+      // 检查本地待办事项是否为空
+      const isTodoEmpty = await this.checkTodoIsEmpty();
+      
+      if (!isTodoEmpty) {
+        throw new Error('Cannot push: there are pending operations that need to be resolved first');
+      }
+      
       // 获取仓库配置
       const settings = await this.getGitSettings();
       if (!settings || !settings.repoUrl) {
@@ -56,6 +63,9 @@ class GitManager {
 
       // 执行Git操作
       const result = await this.performGitPull(settings);
+      
+      // 处理拉取到的数据，进行与导入相同的操作
+      await this.processPulledData(result);
       
       return { status: 'success', message: 'Pull completed successfully', data: result };
     } catch (error) {
@@ -300,6 +310,36 @@ class GitManager {
     }
     
     return auth;
+  }
+
+  /**
+   * 处理从Git拉取的数据，执行与导入相同的操作
+   */
+  async processPulledData(pulledData) {
+    return new Promise((resolve) => {
+      // 发送消息到background script，触发扩展比较操作
+      chrome.runtime.sendMessage(
+        { 
+          action: 'processPulledExtensions',
+          data: pulledData
+        },
+        (response) => {
+          resolve(response);
+        }
+      );
+    });
+  }
+
+  /**
+   * 检查待办事项是否为空
+   */
+  checkTodoIsEmpty() {
+    return new Promise((resolve) => {
+      chrome.storage.local.get(['todoExtensions'], (result) => {
+        const todoExtensions = result.todoExtensions || [];
+        resolve(todoExtensions.length === 0);
+      });
+    });
   }
 
   // 测试Git连接
