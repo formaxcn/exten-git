@@ -137,16 +137,38 @@ class ExtensionManager {
       extensionItem.dataset.extensionId = extension.id;
       
       if (extension.action === 'remove') {
-        // 对于需要删除的扩展，显示原始图标并在上面叠加减号
+        // 对于需要删除的扩展，显示原始图标
         const icon = document.createElement('img');
         icon.className = 'extension-icon';
         icon.src = extension.icons ? extension.icons[extension.icons.length - 1].url : defaultIcon;
         icon.alt = extension.name;
         
-        // 添加减号覆盖层
+        // 添加覆盖层，分为左右两部分
         const overlay = document.createElement('div');
-        overlay.className = 'extension-overlay';
-        overlay.innerHTML = '<i class="fas fa-minus"></i>';
+        overlay.className = 'extension-overlay todo-overlay';
+        
+        // 左侧撤销部分
+        const undoPart = document.createElement('div');
+        undoPart.className = 'overlay-undo-part';
+        undoPart.innerHTML = '<i class="fas fa-undo"></i>';
+        undoPart.title = 'Undo';
+        undoPart.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.removeFromTodoList(extension);
+        });
+        
+        // 右侧删除部分
+        const actionPart = document.createElement('div');
+        actionPart.className = 'overlay-action-part remove-part';
+        actionPart.innerHTML = '<i class="fas fa-minus"></i>';
+        actionPart.title = 'Uninstall Extension';
+        actionPart.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.uninstallExtension(extension.id, extension.name);
+        });
+        
+        overlay.appendChild(undoPart);
+        overlay.appendChild(actionPart);
         
         const name = document.createElement('div');
         name.className = 'extension-name';
@@ -162,21 +184,38 @@ class ExtensionManager {
         extensionItem.appendChild(icon);
         extensionItem.appendChild(overlay);
         extensionItem.appendChild(name);
-        
-        // 添加点击事件 - 直接卸载插件
-        extensionItem.addEventListener('click', () => {
-          this.uninstallExtension(extension.id, extension.name);
-        });
       } else {
-        // 对于需要添加的扩展，显示Chrome商店图标并在悬停时显示加号
+        // 对于需要添加的扩展，显示Chrome商店图标
         const iconPlaceholder = document.createElement('div');
         iconPlaceholder.className = 'extension-icon-placeholder';
         
-        // 添加加号覆盖层
-        const plusOverlay = document.createElement('div');
-        plusOverlay.className = 'plus-overlay';
-        plusOverlay.innerHTML = '<i class="fas fa-plus"></i>';
-        iconPlaceholder.appendChild(plusOverlay);
+        // 添加覆盖层，分为左右两部分
+        const overlay = document.createElement('div');
+        overlay.className = 'extension-overlay todo-overlay';
+        
+        // 左侧撤销部分
+        const undoPart = document.createElement('div');
+        undoPart.className = 'overlay-undo-part';
+        undoPart.innerHTML = '<i class="fas fa-undo"></i>';
+        undoPart.title = 'Undo';
+        undoPart.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.removeFromTodoList(extension);
+        });
+        
+        // 右侧添加部分
+        const actionPart = document.createElement('div');
+        actionPart.className = 'overlay-action-part add-part';
+        actionPart.innerHTML = '<i class="fas fa-plus"></i>';
+        actionPart.title = 'Install Extension';
+        actionPart.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const webStoreUrl = `https://chromewebstore.google.com/detail/${extension.id}`;
+          chrome.tabs.create({ url: webStoreUrl });
+        });
+        
+        overlay.appendChild(undoPart);
+        overlay.appendChild(actionPart);
         
         const name = document.createElement('div');
         name.className = 'extension-name';
@@ -190,17 +229,34 @@ class ExtensionManager {
         }
         
         extensionItem.appendChild(iconPlaceholder);
+        extensionItem.appendChild(overlay);
         extensionItem.appendChild(name);
-        
-        // 添加点击事件 - 直接跳转到Chrome商店
-        extensionItem.addEventListener('click', () => {
-          const webStoreUrl = `https://chromewebstore.google.com/detail/${extension.id}`;
-          chrome.tabs.create({ url: webStoreUrl });
-        });
       }
       
       extensionsGrid.insertBefore(extensionItem, extensionsGrid.firstChild.nextSibling);
     }
+  }
+
+  // 从待办列表中移除
+  removeFromTodoList(extension) {
+    this.todoExtensions = this.todoExtensions.filter(ext => ext.id !== extension.id);
+    
+    // 更新background script中的待办列表
+    if (this.todoExtensions.length > 0) {
+      chrome.runtime.sendMessage({
+        action: 'setTodoExtensions',
+        todoExtensions: this.todoExtensions
+      });
+    } else {
+      chrome.runtime.sendMessage({
+        action: 'clearTodoExtensions'
+      });
+    }
+    
+    // 重新显示扩展列表
+    this.loadExtensions();
+    
+    AlertManager.showStatus(`Extension ${extension.name} removed from todo list`, 'info');
   }
 
   // 标记为移除

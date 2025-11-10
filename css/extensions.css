@@ -204,6 +204,57 @@
   display: flex;
 }
 
+.todo-overlay {
+  display: none;
+}
+
+.extension-item.todo-item:hover .todo-overlay {
+  display: flex;
+}
+
+.overlay-undo-part, .overlay-action-part {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: white;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.overlay-undo-part {
+  background-color: rgba(158, 158, 158, 0.7); /* 灰色半透明 */
+}
+
+.overlay-action-part {
+  background-color: rgba(33, 150, 243, 0.7); /* 蓝色半透明 */
+}
+
+.remove-part {
+  background-color: rgba(244, 67, 54, 0.7); /* 红色半透明 */
+}
+
+.add-part {
+  background-color: rgba(76, 175, 80, 0.7); /* 绿色半透明 */
+}
+
+.overlay-undo-part:hover {
+  background-color: rgba(97, 97, 97, 0.7); /* 更深的灰色 */
+}
+
+.overlay-action-part:hover {
+  background-color: rgba(25, 118, 210, 0.7); /* 更深的蓝色 */
+}
+
+.remove-part:hover {
+  background-color: rgba(211, 47, 47, 0.7); /* 更深的红色 */
+}
+
+.add-part:hover {
+  background-color: rgba(56, 142, 60, 0.7); /* 更深的绿色 */
+}
+
 .button-row {
   display: flex;
   width: 100%;
