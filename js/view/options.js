@@ -45,11 +45,6 @@ class OptionsManager {
         this.testConnection();
       });
       
-      // 列出分支
-      document.getElementById('listBranchesBtn').addEventListener('click', () => {
-        this.listRemoteBranches();
-      });
-      
       // Sync操作
       document.getElementById('syncBtn').addEventListener('click', () => {
         this.syncChanges();
@@ -416,53 +411,6 @@ class OptionsManager {
     // 例如设置定时器或与后台脚本通信
   }
 
-  /**
-   * 列出远程分支
-   */
-  listRemoteBranches() {
-    // 获取当前设置
-    const repoUrl = document.getElementById('repoUrl').value.trim();
-    if (!repoUrl) {
-      AlertManager.showStatus('Please enter a repository URL first', 'error');
-      return;
-    }
-
-    const userName = document.getElementById('userName').value.trim();
-    const password = document.getElementById('password').value.trim();
-    const branchName = document.getElementById('branch').value.trim() || 'main';
-
-    AlertManager.showStatus('Fetching remote branches...', 'info');
-
-    // 发送消息到background script执行分支列表操作
-    chrome.runtime.sendMessage({
-      action: 'listRemoteBranches',
-      settings: {
-        repoUrl: repoUrl,
-        userName: userName,
-        password: password,
-        branchName: branchName
-      }
-    }, (response) => {
-      if (chrome.runtime.lastError) {
-        console.error('Runtime error:', chrome.runtime.lastError);
-        AlertManager.showStatus(`Runtime error: ${chrome.runtime.lastError.message}`, 'error');
-        return;
-      }
-
-      if (response && response.status === 'success') {
-        if (response.branches && response.branches.length > 0) {
-          const branchList = response.branches.join(', ');
-          AlertManager.showStatus(`Remote branches: ${branchList}`, 'success');
-        } else {
-          AlertManager.showStatus('No remote branches found', 'info');
-        }
-      } else if (response && response.message) {
-        AlertManager.showStatus(`Failed to list branches: ${response.message}`, 'error');
-      } else {
-        AlertManager.showStatus('Unknown error occurred while listing branches', 'error');
-      }
-    });
-  }
 }
 
 // 初始化OptionsManager

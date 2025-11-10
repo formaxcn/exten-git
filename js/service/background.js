@@ -59,6 +59,10 @@ class BackgroundManager {
               this.processPulledData(result.data);
             }
             sendResponse(result);
+          })
+          .catch(error => {
+            console.error('Pull from Git error:', error);
+            sendResponse({status: 'error', message: error.message});
           });
         // 返回true以保持消息通道开放，因为我们在使用异步操作
         return true;

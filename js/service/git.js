@@ -293,19 +293,21 @@
         });
 
         // 检查远程分支是否存在
-        let remoteBranchExists = false;
-        let remoteBranches = [];
+        let remoteBranchExists = true; // 默认假设分支存在
         try {
-          remoteBranches = await git.listBranches({
+          // 尝试直接获取远程日志，如果失败则说明分支不存在
+          await git.log({
             fs: this.fs,
             dir,
-            remote: 'origin'
+            http: GitHttp,
+            remote: 'origin',
+            ref: `origin/${branchName}`,
+            ...auth,
+            depth: 1
           });
-          
-          // 检查我们要的分支是否在远程分支列表中
-          remoteBranchExists = remoteBranches.includes(branchName);
-        } catch (listError) {
-          console.log('Could not list remote branches:', listError);
+        } catch (logError) {
+          console.log(`Could not access remote branch '${branchName}':`, logError);
+          remoteBranchExists = false;
         }
 
         // 如果远程分支不存在，则返回无新提交
@@ -320,13 +322,15 @@
           remoteLog = await git.log({
             fs: this.fs,
             dir,
+            http: GitHttp,
+            remote: 'origin',
             ref: `origin/${branchName}`,
+            ...auth,
             depth: 1
           });
-        } catch (logError) {
-          console.log(`Could not get log for branch 'origin/${branchName}':`, logError);
-          // 如果无法获取日志，也认为没有新提交
-          return { hasNewCommit: false };
+        } catch (error) {
+          console.error('Error getting remote log:', error);
+          // 即使无法获取远程日志，也继续执行pull操作
         }
         
         const remoteCommitHash = remoteLog[0]?.oid;
@@ -525,23 +529,14 @@
           console.log('Remote already exists in test');
         }
 
-        // 尝试获取远程信息来验证连接
-        await git.fetch({
-          fs: this.fs,
+        // 尝试获取仓库信息来验证连接
+        const remoteInfo = await git.getRemoteInfo({
           http: GitHttp,
-          dir,
-          remote: 'origin',
+          url: repoUrl,
           ...auth
         });
 
-        // 获取远程分支列表来验证连接
-        const remoteBranches = await git.listBranches({
-          fs: this.fs,
-          dir,
-          remote: 'origin'
-        });
-
-        if (remoteBranches && remoteBranches.length > 0) {
+        if (remoteInfo && remoteInfo.refs) {
           return {status: 'success', message: 'Connection successful! You have access to the repository.'};
         } else {
           return {status: 'error', message: 'Failed to retrieve repository information.'};
@@ -575,46 +570,19 @@
     }
 
     /**
-     * 列出所有远程分支
+     * 列出远程分支
      */
     async listRemoteBranches(settings) {
-      const {
-        repoUrl,
-        userName,
-        password,
-        branchName = 'main'
-      } = settings;
-
-      // 构造认证信息
-      const auth = this.buildAuthObject(userName, password);
-      
-      // 仓库目录
-      const dir = '/repo';
+      const { repoUrl, userName, password, branchName } = settings;
       
       try {
-        // 初始化仓库（如果尚未初始化）
-        try {
-          await git.init({ fs: this.fs, dir });
-        } catch (initError) {
-          // 如果已经初始化，忽略错误
-          console.log('Repository already initialized');
-        }
+        await this.initFs();
+        const dir = '/git';
+        
+        // 设置认证信息
+        const auth = this.getAuthInfo(userName, password);
 
-        // 添加远程仓库
-        try {
-          await git.addRemote({
-            fs: this.fs,
-            dir,
-            remote: 'origin',
-            url: repoUrl,
-            force: true
-          });
-        } catch (remoteError) {
-          // 如果远程已存在，忽略错误
-          console.log('Remote already exists');
-        }
-
-        // 获取远程信息
+        // 先测试连接
         await git.fetch({
           fs: this.fs,
           http: GitHttp,
@@ -624,12 +592,22 @@
           ...auth
         });
 
-        // 获取所有远程分支
-        const branches = await git.listBranches({
-          fs: this.fs,
-          dir,
-          remote: 'origin'
+        // 获取远程信息
+        const remoteInfo = await git.getRemoteInfo2({
+          http: GitHttp,
+          url: repoUrl,
+          ...auth
         });
+
+        // 从远程信息中提取分支列表
+        const branches = [];
+        if (remoteInfo && remoteInfo.refs) {
+          for (const ref in remoteInfo.refs) {
+            if (ref.startsWith('refs/heads/')) {
+              branches.push(ref.substring(11)); // 移除 "refs/heads/" 前缀
+            }
+          }
+        }
 
         return { status: 'success', branches: branches };
       } catch (error) {
