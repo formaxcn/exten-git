@@ -1,5 +1,8 @@
 // git.js - Git功能模块
 
+// 注意：在Service Worker环境中不能使用ES6 import语句
+// isomorphic-git库通过全局变量方式使用
+
 class GitManager {
   constructor() {
     // Git管理器初始化
@@ -19,70 +22,67 @@ class GitManager {
 
   // 测试Git连接
   async testGitConnection(repoUrl, userName, password) {
-    // 尝试访问仓库的info/refs端点来测试连接
-    let testUrl = repoUrl;
-    // 移除 .git 后缀（如果存在）
-    if (testUrl.endsWith('.git')) {
-      testUrl = testUrl.slice(0, -4);
-    }
-    
-    // 构建info/refs URL
-    let infoRefsUrl;
     try {
-      const url = new URL(testUrl);
-      infoRefsUrl = `${url.origin}${url.pathname}/info/refs?service=git-upload-pack`;
-    } catch (error) {
-      return {status: 'error', message: 'Invalid repository URL. Please check the URL format.'};
-    }
-    
-    // 使用fetch API发送请求（在扩展的background script中应该可以绕过CORS）
-    const headers = new Headers();
-    if (userName && password) {
-      const credentials = btoa(`${userName}:${password}`);
-      headers.append('Authorization', `Basic ${credentials}`);
-    }
-    
-    try {
-      const response = await fetch(infoRefsUrl, {
-        method: 'GET',
-        headers: headers
-      });
+      // 构造认证信息
+      let auth = {};
       
-      if (response.ok) {
-        return {status: 'success', message: 'Connection successful! You have read access to the repository.'};
-      } else if (response.status === 401) {
-        return {status: 'error', message: 'Authentication failed. Please check your username and password.'};
-      } else if (response.status === 403) {
-        return {status: 'error', message: 'Access denied. You may not have the required permissions.'};
-      } else if (response.status === 404) {
-        return {status: 'error', message: 'Repository not found. Please check the repository URL.'};
+      // 处理不同类型的认证
+      if (userName && password) {
+        // 如果同时提供了用户名和密码
+        if (userName.includes(':')) {
+          // 用户名包含冒号，可能是token形式
+          auth.headers = {
+            'Authorization': `Basic ${btoa(userName)}`
+          };
+        } else {
+          // 标准用户名/密码形式
+          auth.headers = {
+            'Authorization': `Basic ${btoa(`${userName}:${password}`)}`
+          };
+        }
+      } else if (password && !userName) {
+        // 只提供了密码，可能是token
+        auth.headers = {
+          'Authorization': `Bearer ${password}`
+        };
+      }
+
+      // 尝试获取远程信息来验证连接
+      const remoteInfo = await git.getRemoteInfo({
+        http: GitHttp,
+        url: repoUrl,
+        ...auth
+      });
+
+      if (remoteInfo && remoteInfo.capabilities) {
+        return {status: 'success', message: 'Connection successful! You have access to the repository.'};
       } else {
-        return {status: 'error', message: `HTTP Error: ${response.status} ${response.statusText}`};
+        return {status: 'error', message: 'Failed to retrieve repository information.'};
       }
     } catch (error) {
-      // 如果直接请求失败，尝试使用HEAD请求
-      try {
-        const url = new URL(testUrl);
-        const headUrl = `${url.origin}${url.pathname}`;
-        
-        const headResponse = await fetch(headUrl, {
-          method: 'HEAD',
-          headers: headers
-        });
-        
-        if (headResponse.ok) {
-          return {status: 'success', message: 'Connection successful! Repository is accessible.'};
-        } else if (headResponse.status === 401) {
-          return {status: 'error', message: 'Authentication failed. Please check your username and password.'};
-        } else if (headResponse.status === 403) {
+      console.error('Git connection test error:', error);
+      
+      // 根据错误类型返回相应的消息
+      if (error.code === 'HttpError') {
+        if (error.statusCode === 401) {
+          return {status: 'error', message: 'Authentication failed. Please check your username and password or token.'};
+        } else if (error.statusCode === 403) {
           return {status: 'error', message: 'Access denied. You may not have the required permissions.'};
-        } else if (headResponse.status === 404) {
+        } else if (error.statusCode === 404) {
           return {status: 'error', message: 'Repository not found. Please check the repository URL.'};
         } else {
-          return {status: 'error', message: `HTTP Error: ${headResponse.status} ${headResponse.statusText}`};
+          // 特别处理错误信息，避免显示undefined
+          const errorMessage = error.message || 'Unknown error';
+          return {status: 'error', message: `HTTP Error: ${error.statusCode} ${errorMessage}`};
         }
-      } catch (headError) {
-        return {status: 'error', message: `Connection test failed: ${error.message}`};
+      } else if (error.code === 'NotFoundError') {
+        return {status: 'error', message: 'Repository not found. Please check the repository URL.'};
+      } else if (error.code === 'GitUrlParseError') {
+        return {status: 'error', message: 'Invalid repository URL. Please check the URL format.'};
+      } else {
+        // 特别处理错误信息，避免显示undefined
+        const errorMessage = error.message || 'Unknown error occurred';
+        return {status: 'error', message: `Connection test failed: ${errorMessage}`};
       }
     }
   }
@@ -94,10 +94,4 @@ const gitManager = new GitManager();
 // 为Service Worker环境提供全局访问
 if (typeof importScripts !== 'undefined') {
   self.GitManager = GitManager;
-  self.gitManager = gitManager;
-}
-
-// 为ES6模块环境提供导出
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { GitManager, gitManager };
 }

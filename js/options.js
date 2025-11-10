@@ -271,10 +271,20 @@ class OptionsManager {
       userName: userName,
       password: password
     }, (response) => {
-      if (response.status === 'success') {
+      // 检查是否有运行时错误
+      if (chrome.runtime.lastError) {
+        console.error('Runtime error:', chrome.runtime.lastError);
+        AlertManager.showStatus(`Runtime error: ${chrome.runtime.lastError.message}`, 'error');
+        return;
+      }
+      
+      // 处理响应
+      if (response && response.status === 'success') {
         AlertManager.showStatus(response.message, 'success');
-      } else {
+      } else if (response && response.message) {
         AlertManager.showStatus(response.message, 'error');
+      } else {
+        AlertManager.showStatus('Unknown error occurred during connection test', 'error');
       }
     });
   }

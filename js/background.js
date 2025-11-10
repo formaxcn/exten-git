@@ -1,8 +1,11 @@
 // background.js
-
-// 使用importScripts加载git.js模块
+// 使用importScripts加载isomorphic-git库和git.js模块
 try {
-  importScripts('git.js');
+  importScripts(
+    'lib/isomorphic-git/index.umd.min.js',
+    'lib/isomorphic-git/http/web/index.umd.js',
+    'git.js'
+  );
 } catch (error) {
   console.error('Failed to load Git manager:', error);
 }
@@ -12,6 +15,7 @@ class BackgroundManager {
     this.refreshInterval = null;
     this.todoExtensions = [];
     this.currentInterval = 30000; // 默认30秒刷新一次
+    this.settings = {};
     this.init();
   }
 
@@ -40,16 +44,16 @@ class BackgroundManager {
         this.saveExtensionsToList(request.extensions);
         sendResponse({status: 'success'});
       } else if (request.action === 'pushToGit') {
-        this.pushToGit(request.data);
-        sendResponse({status: 'initiated'});
+        gitManager.pushToGit(request.data);
+        sendResponse({status: 'success'});
       } else if (request.action === 'pullFromGit') {
-        this.pullFromGit();
-        sendResponse({status: 'initiated'});
+        gitManager.pullFromGit();
+        sendResponse({status: 'success'});
       } else if (request.action === 'testGitConnection') {
-        this.testGitConnection(request.repoUrl, request.userName, request.password)
-          .then(result => sendResponse(result))
-          .catch(error => sendResponse({status: 'error', message: error.message}));
-        return true; // 保持消息通道开放以进行异步响应
+        gitManager.testGitConnection(request.repoUrl, request.userName, request.password)
+          .then(result => sendResponse(result));
+        // 返回true以保持消息通道开放，因为我们在使用异步操作
+        return true;
       } else if (request.action === 'setTodoExtensions') {
         this.setTodoExtensions(request.todoExtensions);
         sendResponse({status: 'success'});
@@ -61,11 +65,18 @@ class BackgroundManager {
       }
     });
 
+    // 初始化存储监听器
+    chrome.storage.onChanged.addListener((changes, areaName) => {
+      if (areaName === 'sync') {
+        this.handleStorageChange(changes);
+      }
+    });
+
     // 初始化时从存储中加载待办事项
     this.loadTodoExtensionsFromStorage();
     
-    // 启动定期刷新
-    this.startRefreshInterval();
+    // 加载初始设置
+    this.loadSettings();
   }
 
   // 从存储中加载待办事项
@@ -75,6 +86,46 @@ class BackgroundManager {
         this.todoExtensions = result.todoExtensions;
       }
     });
+  }
+
+  async loadSettings() {
+    try {
+      const result = await chrome.storage.sync.get([
+        'repoUrl', 
+        'userName', 
+        'password', 
+        'branchName', 
+        'commitPrefix',
+        'autoPush',
+        'autoPull'
+      ]);
+      
+      this.settings = result;
+      
+      // 如果启用了自动推送或拉取，则设置定时器
+      if (result.autoPush || result.autoPull) {
+        this.startRefreshInterval();
+      }
+    } catch (error) {
+      console.error('Error loading settings:', error);
+    }
+  }
+
+  handleStorageChange(changes) {
+    let needsRestart = false;
+    
+    // 检查是否有影响定时器的设置变化
+    ['autoPush', 'autoPull', 'refreshInterval'].forEach(key => {
+      if (changes[key]) {
+        this.settings[key] = changes[key].newValue;
+        needsRestart = true;
+      }
+    });
+
+    // 如果设置发生变化，重启定时器
+    if (needsRestart) {
+      this.restartRefreshInterval();
+    }
   }
 
   // 设置待办事项并保存到存储
@@ -108,6 +159,42 @@ class BackgroundManager {
     if (newInterval !== this.currentInterval) {
       this.currentInterval = newInterval;
       this.stopRefreshInterval();
+      this.startRefreshInterval();
+    }
+  }
+
+  startRefreshInterval() {
+    if (this.refreshInterval) {
+      clearInterval(this.refreshInterval);
+    }
+
+    // 使用默认值30秒或用户设置的间隔
+    const interval = this.settings.refreshInterval || 30000;
+    this.currentInterval = interval;
+
+    this.refreshInterval = setInterval(() => {
+      if (this.settings.autoPush) {
+        gitManager.pushToGit({message: 'Auto-push at ' + new Date().toISOString()});
+      }
+      
+      if (this.settings.autoPull) {
+        gitManager.pullFromGit();
+      }
+    }, interval);
+  }
+
+  stopRefreshInterval() {
+    if (this.refreshInterval) {
+      clearInterval(this.refreshInterval);
+      this.refreshInterval = null;
+    }
+  }
+
+  restartRefreshInterval() {
+    this.stopRefreshInterval();
+    
+    // 如果启用自动推送或拉取，则重新启动定时器
+    if (this.settings.autoPush || this.settings.autoPull) {
       this.startRefreshInterval();
     }
   }
@@ -185,34 +272,7 @@ class BackgroundManager {
       console.log('Extensions list saved');
     });
   }
-
-  // 推送到Git
-  pushToGit(data) {
-    if (typeof gitManager !== 'undefined') {
-      gitManager.pushToGit(data);
-    } else {
-      console.warn('Git manager not available');
-    }
-  }
-
-  // 从Git拉取
-  pullFromGit() {
-    if (typeof gitManager !== 'undefined') {
-      gitManager.pullFromGit();
-    } else {
-      console.warn('Git manager not available');
-    }
-  }
-
-  // 测试Git连接
-  async testGitConnection(repoUrl, userName, password) {
-    if (typeof gitManager !== 'undefined') {
-      return await gitManager.testGitConnection(repoUrl, userName, password);
-    } else {
-      return {status: 'error', message: 'Git manager not available'};
-    }
-  }
 }
 
-// 初始化BackgroundManager
-new BackgroundManager();
+// 创建后台管理器实例
+const backgroundManager = new BackgroundManager();
