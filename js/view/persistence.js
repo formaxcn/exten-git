@@ -104,7 +104,7 @@ class FileManager {
         const url = URL.createObjectURL(dataBlob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = 'extensions-backup.json';
+        a.download = 'exten-git.extensions.json';
         document.body.appendChild(a);
         a.click();
         
