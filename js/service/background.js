@@ -188,9 +188,6 @@ try {
   console.error('Failed to load Git manager:', error);
 }
 
-// 导入MessageHandler类
-importScripts('MessageHandler.js');
-
 class BackgroundManager {
   constructor() {
     this.refreshInterval = null;
