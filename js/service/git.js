@@ -28,7 +28,7 @@
     }
 
     /**
-     * 推送到Git仓库
+     * 推送到Git仓库 (公共方法)
      * @param {Object} options - 推送选项
      * @param {string} options.message - 提交信息
      * @param {Object} options.data - 要推送的数据
@@ -36,14 +36,14 @@
     async pushToGit(options = {}) {
       try {
         // 检查本地待办事项是否为空
-        const isTodoEmpty = await this.checkTodoIsEmpty();
+        const isTodoEmpty = await this._checkTodoIsEmpty();
         
         if (!isTodoEmpty) {
           throw new Error('Cannot push: there are pending operations that need to be resolved first');
         }
         
         // 获取仓库配置
-        const settings = await this.getGitSettings();
+        const settings = await this._getGitSettings();
         if (!settings || !settings.repoUrl) {
           throw new Error('Git repository not configured');
         }
@@ -56,14 +56,14 @@
         const commitMessage = options.message || `Update extensions data ${new Date().toISOString()}`;
         
         // 执行Git操作
-        const commitHash = await this.performGitPush({
+        const commitHash = await this._performGitPush({
           ...settings,
           fileContent,
           commitMessage
         });
         
         // 保存最新的commit hash
-        await this.saveLastCommitHash(commitHash);
+        await this._saveLastCommitHash(commitHash);
         
         return { status: 'success', message: 'Push completed successfully' };
       } catch (error) {
@@ -73,18 +73,18 @@
     }
 
     /**
-     * 从Git仓库拉取
+     * 从Git仓库拉取 (公共方法)
      */
     async pullFromGit() {
       try {
         // 获取仓库配置
-        const settings = await this.getGitSettings();
+        const settings = await this._getGitSettings();
         if (!settings || !settings.repoUrl) {
           throw new Error('Git repository not configured');
         }
 
         // 执行Git操作
-        const result = await this.performGitPull(settings);
+        const result = await this._performGitPull(settings);
         
         // 如果没有新的commit，则跳过处理
         if (!result.hasNewCommit) {
@@ -92,10 +92,10 @@
         }
         
         // 处理拉取到的数据，进行与导入相同的操作
-        await this.processPulledData(result.data);
+        await this._processPulledData(result.data);
         
         // 保存最新的commit hash
-        await this.saveLastCommitHash(result.commitHash);
+        await this._saveLastCommitHash(result.commitHash);
         
         return { status: 'success', message: 'Pull completed successfully', data: result.data };
       } catch (error) {
@@ -105,9 +105,82 @@
     }
 
     /**
-     * 获取Git设置
+     * 测试Git连接 (公共方法)
      */
-    getGitSettings() {
+    async testGitConnection(repoUrl, userName, password) {
+      try {
+        // 构造认证信息
+        const auth = this._buildAuthObject(userName, password);
+        
+        // 仓库目录
+        const dir = '/repo';
+        
+        // 初始化临时仓库用于测试连接
+        try {
+          await git.init({ fs: this.fs, dir });
+        } catch (initError) {
+          // 如果已经初始化，忽略错误
+          console.log('Test repository already initialized');
+        }
+
+        // 添加远程仓库
+        try {
+          await git.addRemote({
+            fs: this.fs,
+            dir,
+            remote: 'origin',
+            url: repoUrl,
+            force: true
+          });
+        } catch (remoteError) {
+          // 如果远程已存在，忽略错误
+          console.log('Remote already exists in test');
+        }
+
+        // 尝试获取仓库信息来验证连接
+        const remoteInfo = await git.getRemoteInfo({
+          http: GitHttp,
+          url: repoUrl,
+          ...auth
+        });
+
+        if (remoteInfo && remoteInfo.refs) {
+          return {status: 'success', message: 'Connection successful! You have access to the repository.'};
+        } else {
+          return {status: 'error', message: 'Failed to retrieve repository information.'};
+        }
+      } catch (error) {
+        console.error('Git connection test error:', error);
+        
+        // 根据错误类型返回相应的消息
+        if (error.code === 'HttpError') {
+          if (error.statusCode === 401) {
+            return {status: 'error', message: 'Authentication failed. Please check your username and password or token.'};
+          } else if (error.statusCode === 403) {
+            return {status: 'error', message: 'Access denied. You may not have the required permissions.'};
+          } else if (error.statusCode === 404) {
+            return {status: 'error', message: 'Repository not found. Please check the repository URL.'};
+          } else {
+            // 特别处理错误信息，避免显示undefined
+            const errorMessage = error.message || 'Unknown error';
+            return {status: 'error', message: `HTTP Error: ${error.statusCode} ${errorMessage}`};
+          }
+        } else if (error.code === 'NotFoundError') {
+          return {status: 'error', message: 'Repository not found. Please check the repository URL.'};
+        } else if (error.code === 'GitUrlParseError') {
+          return {status: 'error', message: 'Invalid repository URL. Please check the URL format.'};
+        } else {
+          // 特别处理错误信息，避免显示undefined
+          const errorMessage = error.message || 'Unknown error occurred';
+          return {status: 'error', message: `Connection test failed: ${errorMessage}`};
+        }
+      }
+    }
+
+    /**
+     * 获取Git设置 (私有方法)
+     */
+    _getGitSettings() {
       return new Promise((resolve) => {
         chrome.storage.sync.get([
           'repoUrl', 
@@ -122,38 +195,9 @@
     }
 
     /**
-     * 获取扩展数据
+     * 执行Git推送操作 (私有方法)
      */
-    getExtensionsData() {
-      return new Promise((resolve, reject) => {
-        chrome.runtime.sendMessage(
-          { action: 'getExtensionsData' }, 
-          (response) => {
-            // 添加对response为undefined的检查
-            if (chrome.runtime.lastError) {
-              reject(new Error(chrome.runtime.lastError.message || 'Chrome runtime error'));
-              return;
-            }
-            
-            if (!response) {
-              reject(new Error('No response received from background script'));
-              return;
-            }
-            
-            if (response.status === 'success') {
-              resolve(response.data);
-            } else {
-              reject(new Error(response.message || 'Failed to get extensions data'));
-            }
-          }
-        );
-      });
-    }
-
-    /**
-     * 执行Git推送操作
-     */
-    async performGitPush(settings) {
+    async _performGitPush(settings) {
       const {
         repoUrl,
         userName,
@@ -165,7 +209,7 @@
       } = settings;
 
       // 构造认证信息
-      const auth = this.buildAuthObject(userName, password);
+      const auth = this._buildAuthObject(userName, password);
       
       // 仓库目录
       const dir = '/repo';
@@ -253,9 +297,9 @@
     }
 
     /**
-     * 执行Git拉取操作
+     * 执行Git拉取操作 (私有方法)
      */
-    async performGitPull(settings) {
+    async _performGitPull(settings) {
       const {
         repoUrl,
         userName,
@@ -265,7 +309,7 @@
       } = settings;
 
       // 构造认证信息
-      const auth = this.buildAuthObject(userName, password);
+      const auth = this._buildAuthObject(userName, password);
       
       // 仓库目录
       const dir = '/repo';
@@ -348,7 +392,7 @@
         console.log(`Remote commit hash: ${remoteCommitHash}`);
         
         // 获取本地最后一次同步的commit hash
-        const lastCommitHash = await this.getLastCommitHash();
+        const lastCommitHash = await this._getLastCommitHash();
         console.log(`Last commit hash: ${lastCommitHash}`);
         
         // 如果远程commit hash与上次记录的相同，则无需处理
@@ -428,9 +472,9 @@
     }
 
     /**
-     * 构建认证对象
+     * 构建认证对象 (私有方法)
      */
-    buildAuthObject(userName, password) {
+    _buildAuthObject(userName, password) {
       let auth = {};
       
       // 处理不同类型的认证
@@ -458,17 +502,17 @@
     }
 
     /**
-     * 处理从Git拉取的数据，执行与导入相同的操作
+     * 处理从Git拉取的数据，执行与导入相同的操作 (私有方法)
      */
-    async processPulledData(pulledData) {
+    async _processPulledData(pulledData) {
       // 直接返回数据而不是通过消息发送
       return { status: 'success', data: pulledData };
     }
 
     /**
-     * 检查待办事项是否为空
+     * 检查待办事项是否为空 (私有方法)
      */
-    checkTodoIsEmpty() {
+    _checkTodoIsEmpty() {
       return new Promise((resolve) => {
         chrome.storage.local.get(['todoExtensions'], (result) => {
           const todoExtensions = result.todoExtensions || [];
@@ -478,9 +522,9 @@
     }
 
     /**
-     * 获取上次同步的commit hash
+     * 获取上次同步的commit hash (私有方法)
      */
-    getLastCommitHash() {
+    _getLastCommitHash() {
       return new Promise((resolve) => {
         chrome.storage.local.get(['lastCommitHash'], (result) => {
           resolve(result.lastCommitHash || null);
@@ -489,87 +533,15 @@
     }
 
     /**
-     * 保存最新的commit hash
+     * 保存最新的commit hash (私有方法)
      */
-    saveLastCommitHash(commitHash) {
+    _saveLastCommitHash(commitHash) {
       return new Promise((resolve) => {
         chrome.storage.local.set({ lastCommitHash: commitHash }, () => {
           resolve();
         });
       });
     }
-
-    // 测试Git连接
-    async testGitConnection(repoUrl, userName, password) {
-      try {
-        // 构造认证信息
-        const auth = this.buildAuthObject(userName, password);
-        
-        // 仓库目录
-        const dir = '/repo';
-        
-        // 初始化临时仓库用于测试连接
-        try {
-          await git.init({ fs: this.fs, dir });
-        } catch (initError) {
-          // 如果已经初始化，忽略错误
-          console.log('Test repository already initialized');
-        }
-
-        // 添加远程仓库
-        try {
-          await git.addRemote({
-            fs: this.fs,
-            dir,
-            remote: 'origin',
-            url: repoUrl,
-            force: true
-          });
-        } catch (remoteError) {
-          // 如果远程已存在，忽略错误
-          console.log('Remote already exists in test');
-        }
-
-        // 尝试获取仓库信息来验证连接
-        const remoteInfo = await git.getRemoteInfo({
-          http: GitHttp,
-          url: repoUrl,
-          ...auth
-        });
-
-        if (remoteInfo && remoteInfo.refs) {
-          return {status: 'success', message: 'Connection successful! You have access to the repository.'};
-        } else {
-          return {status: 'error', message: 'Failed to retrieve repository information.'};
-        }
-      } catch (error) {
-        console.error('Git connection test error:', error);
-        
-        // 根据错误类型返回相应的消息
-        if (error.code === 'HttpError') {
-          if (error.statusCode === 401) {
-            return {status: 'error', message: 'Authentication failed. Please check your username and password or token.'};
-          } else if (error.statusCode === 403) {
-            return {status: 'error', message: 'Access denied. You may not have the required permissions.'};
-          } else if (error.statusCode === 404) {
-            return {status: 'error', message: 'Repository not found. Please check the repository URL.'};
-          } else {
-            // 特别处理错误信息，避免显示undefined
-            const errorMessage = error.message || 'Unknown error';
-            return {status: 'error', message: `HTTP Error: ${error.statusCode} ${errorMessage}`};
-          }
-        } else if (error.code === 'NotFoundError') {
-          return {status: 'error', message: 'Repository not found. Please check the repository URL.'};
-        } else if (error.code === 'GitUrlParseError') {
-          return {status: 'error', message: 'Invalid repository URL. Please check the URL format.'};
-        } else {
-          // 特别处理错误信息，避免显示undefined
-          const errorMessage = error.message || 'Unknown error occurred';
-          return {status: 'error', message: `Connection test failed: ${errorMessage}`};
-        }
-      }
-    }
-
   }
 
   // 创建全局实例

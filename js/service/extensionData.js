@@ -19,7 +19,7 @@
     }
 
     /**
-     * 获取扩展列表数据
+     * 获取扩展列表数据 (公共方法)
      * @returns {Promise} Promise that resolves with the extensions data
      */
     _getExtensionsData() {
@@ -41,7 +41,7 @@
     }
 
     /**
-     * 导出扩展数据为JSON格式
+     * 导出扩展数据为JSON格式 (公共方法)
      * @returns {Promise} Promise that resolves with the extensions data in JSON format
      */
     async exportExtensionsData() {

@@ -23,7 +23,7 @@
     init() {
       // 监听来自popup或options的消息
       chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-        this.handleMessage(request, sender, sendResponse);
+        this._handleMessage(request, sender, sendResponse);
         // 返回true以保持消息通道开放，因为我们在使用异步操作
         return true;
       });
@@ -33,11 +33,14 @@
       this.todoExtensions = todoExtensions || [];
     }
 
-    async handleMessage(request, sender, sendResponse) {
+    /**
+     * 处理消息 (私有方法)
+     */
+    async _handleMessage(request, sender, sendResponse) {
       try {
         switch (request.action) {
           case MESSAGE_EVENTS.SAVE_EXTENSIONS:
-            this.saveExtensionsToList(request.extensions);
+            this._saveExtensionsToList(request.extensions);
             sendResponse({status: 'success'});
             break;
             
@@ -50,13 +53,13 @@
             const pullResult = await this.gitManager.pullFromGit();
             if (pullResult.status === 'success') {
               // 处理拉取到的数据
-              this.processPulledData(pullResult.data);
+              this._processPulledData(pullResult.data);
             }
             sendResponse(pullResult);
             break;
             
           case MESSAGE_EVENTS.PROCESS_PULLED_EXTENSIONS:
-            const processResult = await this.processPulledExtensions(request.data);
+            const processResult = await this._processPulledExtensions(request.data);
             sendResponse(processResult);
             break;
             
@@ -75,7 +78,7 @@
             break;
             
           case MESSAGE_EVENTS.CLEAR_TODO_EXTENSIONS:
-            this.clearTodoExtensions();
+            this._clearTodoExtensions();
             sendResponse({status: 'success'});
             break;
             
@@ -84,7 +87,7 @@
             break;
             
           case MESSAGE_EVENTS.GET_EXTENSIONS_DATA:
-            const dataResult = await this.extensionDataManager._getExtensionsData();
+            const dataResult = await this.extensionDataManager.getExtensionsData();
             sendResponse({status: 'success', data: dataResult});
             break;
             
@@ -99,11 +102,11 @@
             break;
             
           case MESSAGE_EVENTS.DIFF_EXTENSIONS:
-            this.handleDiffExtensions(request, sendResponse);
+            this._handleDiffExtensions(request, sendResponse);
             break;
             
           case MESSAGE_EVENTS.GIT_DATA_PULLED:
-            this.handleGitDataPulled(request, sendResponse);
+            this._handleGitDataPulled(request, sendResponse);
             break;
             
           default:
@@ -115,8 +118,10 @@
       }
     }
 
-    // 处理从Git拉取的数据
-    processPulledData(data) {
+    /**
+     * 处理从Git拉取的数据 (私有方法)
+     */
+    _processPulledData(data) {
       if (!data || !data.extensions) {
         console.warn('No valid extensions data in pulled data');
         return;
@@ -129,8 +134,10 @@
       });
     }
 
-    // 处理从Git拉取的扩展数据，执行与导入相同的操作
-    async processPulledExtensions(pulledData) {
+    /**
+     * 处理从Git拉取的扩展数据，执行与导入相同的操作 (私有方法)
+     */
+    async _processPulledExtensions(pulledData) {
       return new Promise((resolve) => {
         if (!pulledData || !pulledData.extensions) {
           resolve({ status: 'error', message: 'Invalid pulled data' });
@@ -177,32 +184,36 @@
       });
     }
 
-    // 保存扩展列表到本地存储
-    saveExtensionsToList(extensions) {
+    /**
+     * 保存扩展列表到本地存储 (私有方法)
+     */
+    _saveExtensionsToList(extensions) {
       chrome.storage.local.set({currentExtensions: extensions}, function() {
         console.log('Extensions list saved');
       });
     }
 
-    // 清除待办事项
-    clearTodoExtensions() {
+    /**
+     * 清除待办事项 (私有方法)
+     */
+    _clearTodoExtensions() {
       chrome.storage.local.remove('todoExtensions', () => {
         console.log('Todo extensions cleared from storage');
       });
     }
     
     /**
-     * 处理扩展差异比较的消息
+     * 处理扩展差异比较的消息 (私有方法)
      */
-    handleDiffExtensions(request, sendResponse) {
+    _handleDiffExtensions(request, sendResponse) {
       chrome.runtime.sendMessage({action: MESSAGE_EVENTS.DIFF_EXTENSIONS});
       if (sendResponse) sendResponse({ status: 'success' });
     }
 
     /**
-     * 处理Git数据拉取完成的消息
+     * 处理Git数据拉取完成的消息 (私有方法)
      */
-    handleGitDataPulled(request, sendResponse) {
+    _handleGitDataPulled(request, sendResponse) {
       // 通知所有监听者更新数据
       chrome.runtime.sendMessage({
         action: MESSAGE_EVENTS.GIT_DATA_PULLED,

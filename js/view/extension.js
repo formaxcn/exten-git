@@ -5,33 +5,8 @@ import AlertManager from './alert.js';
 let allExtensions = [];
 const defaultIcon = 'https://fonts.gstatic.com/s/i/productlogos/chrome_store/v7/192px.svg';
 
-// 由于在Service Worker环境中不能使用ES6模块，我们需要在全局作用域中定义常量
-try {
-  // 通过importScripts引入常量
-  importScripts('../util/constants.js');
-} catch (e) {
-  // 如果importScripts失败，定义本地常量（向后兼容）
-  var MESSAGE_EVENTS = {
-    SAVE_EXTENSIONS: 'saveExtensions',
-    PUSH_TO_GIT: 'pushToGit',
-    PULL_FROM_GIT: 'pullFromGit',
-    PROCESS_PULLED_EXTENSIONS: 'processPulledExtensions',
-    TEST_GIT_CONNECTION: 'testGitConnection',
-    SET_TODO_EXTENSIONS: 'setTodoExtensions',
-    CLEAR_TODO_EXTENSIONS: 'clearTodoExtensions',
-    GET_TODO_EXTENSIONS: 'getTodoExtensions',
-    GET_EXTENSIONS_DATA: 'getExtensionsData',
-    EXPORT_EXTENSIONS_DATA: 'exportExtensionsData',
-    LIST_REMOTE_BRANCHES: 'listRemoteBranches',
-    DIFF_EXTENSIONS: 'diffExtensions',
-    GIT_DATA_PULLED: 'gitDataPulled'
-  };
-
-  var EXTENSION_ACTIONS = {
-    ADD: 'add',
-    REMOVE: 'remove'
-  };
-}
+// 通过importScripts引入常量
+importScripts('../util/constants.js');
 
 class ExtensionManager {
   constructor() {
