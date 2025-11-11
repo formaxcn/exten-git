@@ -599,36 +599,6 @@ class ExtensionManager {
       });
     });
   }
-
-  // 备份扩展列表
-  backupExtensions() {
-    // 发送消息到background script处理扩展数据导出
-    chrome.runtime.sendMessage({action: 'exportExtensionsData'}, (response) => {
-      if (chrome.runtime.lastError) {
-        AlertManager.showStatus(`Export failed: ${chrome.runtime.lastError.message}`, STATUS_TYPES.ERROR);
-        return;
-      }
-      
-      if (response && response.status === 'success') {
-        // 创建临时的下载链接
-        const a = document.createElement('a');
-        a.href = response.url;
-        a.download = response.filename;
-        document.body.appendChild(a);
-        a.click();
-        
-        // 清理
-        setTimeout(() => {
-          document.body.removeChild(a);
-          URL.revokeObjectURL(response.url);
-          AlertManager.showStatus('Extensions exported successfully!', STATUS_TYPES.SUCCESS);
-        }, 100);
-      } else {
-        const errorMessage = response ? response.message : 'Unknown error';
-        AlertManager.showStatus(`Export failed: ${errorMessage}`, STATUS_TYPES.ERROR);
-      }
-    });
-  }
 }
 
 // 初始化ExtensionManager

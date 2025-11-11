@@ -32,11 +32,11 @@ class BackgroundManager {
 
     // 监听扩展管理事件
     chrome.management.onInstalled.addListener(() => {
-      this._notifyViewToRefresh();
+      chrome.runtime.sendMessage({ action: MESSAGE_EVENTS.DIFF_EXTENSIONS_VIEW });
     });
 
     chrome.management.onUninstalled.addListener(() => {
-      this._notifyViewToRefresh();
+      chrome.runtime.sendMessage({ action: MESSAGE_EVENTS.DIFF_EXTENSIONS_VIEW });
     });
 
     // 初始化存储监听器
@@ -151,12 +151,6 @@ class BackgroundManager {
         this._restartRefreshInterval();
       }
     });
-  }
-  /**
-   * 通知刷新界面 (私有方法)
-   */
-  _notifyViewToRefresh() {
-    chrome.runtime.sendMessage({ action: MESSAGE_EVENTS.DIFF_EXTENSIONS_VIEW });
   }
 
   /**
@@ -283,10 +277,7 @@ class BackgroundManager {
           chrome.storage.local.set({todoExtensions: todoExtensions}, () => {
             console.log('Todo extensions saved to storage');
             // 通知所有监听者更新待办事项
-            chrome.runtime.sendMessage({
-              action: MESSAGE_EVENTS.DIFF_EXTENSIONS_VIEW,
-              todoExtensions: todoExtensions
-            });
+            chrome.runtime.sendMessage({ action: MESSAGE_EVENTS.DIFF_EXTENSIONS_VIEW });
             resolve({ status: 'success', message: 'Todo list generated', todoCount: todoExtensions.length });
           });
         } else {

@@ -331,7 +331,7 @@
 .divider {
   height: 1px;
   background-color: #ccc;
-  margin: 15px 0;
+  margin: 2px 0;
   grid-column: 1 / -1;
 }
 
