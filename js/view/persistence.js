@@ -163,7 +163,7 @@ class PersistenceManager {
               }
               
               if (response && response.status === 'success') {
-                AlertManager.showStatus('Extensions restored successfully! Conflict resolution needed.', STATUS_TYPES.SUCCESS);
+                AlertManager.showStatus('Extensions restored successfully! ', STATUS_TYPES.SUCCESS);
               } else if (response && response.message) {
                 AlertManager.showStatus(response.message, STATUS_TYPES.ERROR);
               } else {

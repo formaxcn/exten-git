@@ -75,7 +75,7 @@ class ExtensionManager {
     // 添加待办事项分组标题
     const todoHeader = document.createElement('h3');
     todoHeader.className = 'todo-section-header';
-    todoHeader.textContent = 'Conflict Resolution Needed';
+    todoHeader.textContent = 'Conflicts';
     todoHeader.style.gridColumn = '1 / -1';
     extensionsGrid.insertBefore(todoHeader, extensionsGrid.firstChild);
     
