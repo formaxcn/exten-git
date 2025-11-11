@@ -20,7 +20,7 @@ class PersistenceManager {
       'syncInterval',
       'syncStrategy',
       'autoSyncEnabled',
-      'lastSyncTime'
+      'browserSyncEnabled'
     ], (items) => {
       // 即使是空对象也要导出
       const configData = JSON.stringify(items || {}, null, 2);
@@ -61,8 +61,17 @@ class PersistenceManager {
           
           // 只保留Git和Sync相关的配置项
           const filteredConfig = {};
-          const configKeys = ['repoUrl', 'filePath', 'userName', 'password', 'branch', 
-                             'syncInterval', 'syncStrategy', 'autoSyncEnabled', 'lastSyncTime'];
+          const configKeys = [
+            'repoUrl', 
+            'filePath', 
+            'userName', 
+            'password', 
+            'branch', 
+            'syncInterval', 
+            'syncStrategy',
+            'autoSyncEnabled', 
+            'browserSyncEnabled'
+          ];
           
           configKeys.forEach(key => {
             if (configData.hasOwnProperty(key)) {
