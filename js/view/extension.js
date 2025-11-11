@@ -17,7 +17,7 @@ class ExtensionManager {
   _init() {
     document.addEventListener('DOMContentLoaded', () => {
       // Popup功能
-      this._loadExtensions();
+      this._loadDisplayExtensions();
       
       // 搜索框事件
       document.getElementById('extensionSearch').addEventListener('input', () => {
@@ -32,7 +32,7 @@ class ExtensionManager {
       chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         if (request.action === MESSAGE_EVENTS.DIFF_EXTENSIONS_VIEW) {
           // 显示待办事项
-          this._loadExtensions();
+          this._loadDisplayExtensions();
           // 调整刷新间隔
           this._adjustRefreshInterval();
           sendResponse({status: 'success'});
@@ -52,7 +52,7 @@ class ExtensionManager {
       } else {
         AlertManager.showStatus('Extension uninstalled successfully', STATUS_TYPES.SUCCESS);
         // 重新显示扩展列表
-        this._loadExtensions();
+        this._loadDisplayExtensions();
       }
     });
   }
@@ -187,20 +187,20 @@ class ExtensionManager {
         chrome.storage.local.set({todoExtensions: todoExtensions}, () => {
           AlertManager.showStatus('Action reverted', STATUS_TYPES.INFO);
           // 重新显示扩展列表
-          this._loadExtensions();
+          this._loadDisplayExtensions();
         });
       } else {
         chrome.storage.local.remove('todoExtensions', () => {
           AlertManager.showStatus('Action reverted', STATUS_TYPES.INFO);
           // 重新显示扩展列表
-          this._loadExtensions();
+          this._loadDisplayExtensions();
         });
       }
     });
   }
 
   // 获取所有扩展
-  _loadExtensions() {
+  _loadDisplayExtensions() {
     chrome.management.getAll((extensions) => {
       // popupStatusElement.textContent = '';
       
@@ -329,7 +329,7 @@ class ExtensionManager {
             } else {
               AlertManager.showStatus('Extension disabled successfully', STATUS_TYPES.SUCCESS);
               // 重新加载扩展列表
-              this._loadExtensions();
+              this._loadDisplayExtensions();
             }
           });
         });
@@ -435,7 +435,7 @@ class ExtensionManager {
             } else {
               AlertManager.showStatus('Extension enabled successfully', STATUS_TYPES.SUCCESS);
               // 重新加载扩展列表
-              this._loadExtensions();
+              this._loadDisplayExtensions();
             }
           });
         });
@@ -579,7 +579,7 @@ class ExtensionManager {
               console.log('Todo extensions updated in storage');
               
               // 通知popup刷新
-              this._loadExtensions();
+              this._loadDisplayExtensions();
               
               // 调整刷新间隔
               this._adjustRefreshInterval();
@@ -589,7 +589,7 @@ class ExtensionManager {
               console.log('Todo extensions cleared from storage');
               
               // 通知popup刷新
-              this._loadExtensions();
+              this._loadDisplayExtensions();
               
               // 调整刷新间隔
               this._adjustRefreshInterval();
