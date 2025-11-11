@@ -7,25 +7,6 @@ body {
   position: relative;
 }
 
-.logo-header {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  margin-bottom: 20px;
-  gap: 5px;
-}
-
-.logo-icon {
-  width: 32px;
-  height: 32px;
-}
-
-.logo-header .main-title {
-  margin: 0;
-  font-size: 18px;
-  color: #333;
-}
-
 .main-container {
   display: flex;
   gap: 20px;
@@ -40,6 +21,17 @@ body {
 .extensions-panel {
   flex: 7;
   overflow-y: auto;
+}
+
+.panel-title-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.panel-logo-icon {
+  width: 24px;
+  height: 24px;
 }
 
 .section-divider {
@@ -238,8 +230,9 @@ button:hover {
 
 .github-corner {
   position: fixed;
-  right: 20px;
-  top: 20px;
+  left: 20px;
+  bottom: 20px;
+  z-index: 1000;
 }
 
 .github-corner a {

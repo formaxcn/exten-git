@@ -7,14 +7,14 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-  <div class="logo-header">
-    <img src="icons/icon.png" alt="exten-git Logo" class="logo-icon">
-    <h1 class="main-title">exten-git</h1>
-  </div>
-  
   <div class="main-container">
     <div class="settings-panel">
-      <h2 class="panel-title-header">Settings</h2>
+      <h2 class="panel-title-header">
+        <div class="panel-title-container">
+          <img src="icons/icon.png" alt="exten-git Logo" class="panel-logo-icon">
+          <span>Settings</span>
+        </div>
+      </h2>
       
       <div class="section">
         <div class="section-header">
@@ -62,8 +62,8 @@
           </label>
         </div>
         <div class="form-group">
-          <span id="lastSyncTime" class="last-sync-time" style="display: block;"></span>
-          <span id="commitHashDisplay" class="last-sync-time" style="display: block;"></span>
+          <span id="lastSyncTime" class="last-sync-time" style="display: block;">lastSync:</span>
+          <span id="commitHashDisplay" class="last-sync-time" style="display: block;">localHash:</span>
           <label for="syncInterval">Sync Interval:</label>
           <div class="slider-container">
             <input type="range" id="syncInterval" min="0" max="10" value="3">
