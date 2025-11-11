@@ -1,6 +1,6 @@
 // 从alert.js导入AlertManager
 import AlertManager from './alert.js';
-import { MESSAGE_EVENTS } from '../util/constants.js';
+import { MESSAGE_EVENTS, STATUS_TYPES } from '../util/constants.js';
 
 // 存储所有扩展的变量
 let allExtensions = [];
@@ -88,9 +88,9 @@ class ExtensionManager {
   _uninstallExtension(extensionId, extensionName) {
     chrome.management.uninstall(extensionId, { showConfirmDialog: true }, () => {
       if (chrome.runtime.lastError) {
-        AlertManager.showStatus('Error uninstalling extension: ' + chrome.runtime.lastError.message, 'error');
+        AlertManager.showStatus('Error uninstalling extension: ' + chrome.runtime.lastError.message, STATUS_TYPES.ERROR);
       } else {
-        AlertManager.showStatus('Extension uninstalled successfully', 'success');
+        AlertManager.showStatus('Extension uninstalled successfully', STATUS_TYPES.SUCCESS);
         // 从待办列表中移除该项（如果存在）
         this.todoExtensions = this.todoExtensions.filter(ext => ext.id !== extensionId);
         // 重新显示扩展列表
@@ -226,7 +226,7 @@ class ExtensionManager {
         action: 'setTodoExtensions',
         todoExtensions: this.todoExtensions
       }, () => {
-        AlertManager.showStatus('Action reverted', 'info');
+        AlertManager.showStatus('Action reverted', STATUS_TYPES.INFO);
         // 重新显示扩展列表
         this._loadExtensions();
       });
@@ -234,7 +234,7 @@ class ExtensionManager {
       chrome.runtime.sendMessage({
         action: 'clearTodoExtensions'
       }, () => {
-        AlertManager.showStatus('Action reverted', 'info');
+        AlertManager.showStatus('Action reverted', STATUS_TYPES.INFO);
         // 重新显示扩展列表
         this._loadExtensions();
       });
@@ -350,7 +350,7 @@ class ExtensionManager {
             const webStoreUrl = `https://chromewebstore.google.com/detail/${extension.id}`;
             chrome.tabs.create({ url: webStoreUrl });
           } else {
-            AlertManager.showStatus('No store page available for this extension', 'error');
+            AlertManager.showStatus('No store page available for this extension', STATUS_TYPES.ERROR);
           }
         });
         
@@ -369,9 +369,9 @@ class ExtensionManager {
         toggleButton.addEventListener('click', () => {
           chrome.management.setEnabled(extension.id, false, () => {
             if (chrome.runtime.lastError) {
-              AlertManager.showStatus('Error disabling extension: ' + chrome.runtime.lastError.message, 'error');
+              AlertManager.showStatus('Error disabling extension: ' + chrome.runtime.lastError.message, STATUS_TYPES.ERROR);
             } else {
-              AlertManager.showStatus('Extension disabled successfully', 'success');
+              AlertManager.showStatus('Extension disabled successfully', STATUS_TYPES.SUCCESS);
               // 重新加载扩展列表
               this._loadExtensions();
             }
@@ -475,9 +475,9 @@ class ExtensionManager {
         toggleButton.addEventListener('click', () => {
           chrome.management.setEnabled(extension.id, true, () => {
             if (chrome.runtime.lastError) {
-              AlertManager.showStatus('Error enabling extension: ' + chrome.runtime.lastError.message, 'error');
+              AlertManager.showStatus('Error enabling extension: ' + chrome.runtime.lastError.message, STATUS_TYPES.ERROR);
             } else {
-              AlertManager.showStatus('Extension enabled successfully', 'success');
+              AlertManager.showStatus('Extension enabled successfully', STATUS_TYPES.SUCCESS);
               // 重新加载扩展列表
               this._loadExtensions();
             }
@@ -629,7 +629,7 @@ class ExtensionManager {
     // 发送消息到background script处理扩展数据导出
     chrome.runtime.sendMessage({action: 'exportExtensionsData'}, (response) => {
       if (chrome.runtime.lastError) {
-        AlertManager.showStatus(`Export failed: ${chrome.runtime.lastError.message}`, 'error');
+        AlertManager.showStatus(`Export failed: ${chrome.runtime.lastError.message}`, STATUS_TYPES.ERROR);
         return;
       }
       
@@ -645,11 +645,11 @@ class ExtensionManager {
         setTimeout(() => {
           document.body.removeChild(a);
           URL.revokeObjectURL(response.url);
-          AlertManager.showStatus('Extensions exported successfully!', 'success');
+          AlertManager.showStatus('Extensions exported successfully!', STATUS_TYPES.SUCCESS);
         }, 100);
       } else {
         const errorMessage = response ? response.message : 'Unknown error';
-        AlertManager.showStatus(`Export failed: ${errorMessage}`, 'error');
+        AlertManager.showStatus(`Export failed: ${errorMessage}`, STATUS_TYPES.ERROR);
       }
     });
   }

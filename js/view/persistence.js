@@ -4,6 +4,7 @@
  */
 import AlertManager from './alert.js';
 import OptionsManager, { optionsManager } from './options.js';
+import { MESSAGE_EVENTS, STATUS_TYPES } from '../util/constants.js';
 
 class FileManager {
   /**
@@ -36,7 +37,7 @@ class FileManager {
       setTimeout(() => {
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
-        AlertManager.showStatus('Configuration exported successfully!', 'success');
+        AlertManager.showStatus('Configuration exported successfully!', STATUS_TYPES.SUCCESS);
       }, 100);
     });
   }
@@ -72,10 +73,10 @@ class FileManager {
           chrome.storage.sync.set(filteredConfig, () => {
             // 使用导入的optionsManager实例来加载设置
             optionsManager._loadSettings();
-            AlertManager.showStatus('Configuration imported successfully!', 'success');
+            AlertManager.showStatus('Configuration imported successfully!', STATUS_TYPES.SUCCESS);
           });
         } catch (error) {
-          AlertManager.showStatus('Invalid configuration file', 'error');
+          AlertManager.showStatus('Invalid configuration file', STATUS_TYPES.ERROR);
         }
       };
       reader.readAsText(file);
@@ -93,7 +94,7 @@ class FileManager {
       // 检查是否有运行时错误
       if (chrome.runtime.lastError) {
         console.error('Runtime error:', chrome.runtime.lastError);
-        AlertManager.showStatus(`Runtime error: ${chrome.runtime.lastError.message}`, 'error');
+        AlertManager.showStatus(`Runtime error: ${chrome.runtime.lastError.message}`, STATUS_TYPES.ERROR);
         return;
       }
       
@@ -112,12 +113,12 @@ class FileManager {
         setTimeout(() => {
           document.body.removeChild(a);
           URL.revokeObjectURL(url);
-          AlertManager.showStatus('Extensions backed up successfully!', 'success');
+          AlertManager.showStatus('Extensions backed up successfully!', STATUS_TYPES.SUCCESS);
         }, 100);
       } else if (response && response.message) {
-        AlertManager.showStatus(response.message, 'error');
+        AlertManager.showStatus(response.message, STATUS_TYPES.ERROR);
       } else {
-        AlertManager.showStatus('Unknown error occurred during backup', 'error');
+        AlertManager.showStatus('Unknown error occurred during backup', STATUS_TYPES.ERROR);
       }
     });
   }
@@ -148,23 +149,23 @@ class FileManager {
               // 检查是否有运行时错误
               if (chrome.runtime.lastError) {
                 console.error('Runtime error:', chrome.runtime.lastError);
-                AlertManager.showStatus(`Runtime error: ${chrome.runtime.lastError.message}`, 'error');
+                AlertManager.showStatus(`Runtime error: ${chrome.runtime.lastError.message}`, STATUS_TYPES.ERROR);
                 return;
               }
               
               if (response && response.status === 'success') {
-                AlertManager.showStatus('Extensions restored successfully! Conflict resolution needed.', 'success');
+                AlertManager.showStatus('Extensions restored successfully! Conflict resolution needed.', STATUS_TYPES.SUCCESS);
               } else if (response && response.message) {
-                AlertManager.showStatus(response.message, 'error');
+                AlertManager.showStatus(response.message, STATUS_TYPES.ERROR);
               } else {
-                AlertManager.showStatus('Unknown error occurred during restore', 'error');
+                AlertManager.showStatus('Unknown error occurred during restore', STATUS_TYPES.ERROR);
               }
             });
           } else {
-            AlertManager.showStatus('Invalid backup file format', 'error');
+            AlertManager.showStatus('Invalid backup file format', STATUS_TYPES.ERROR);
           }
         } catch (error) {
-          AlertManager.showStatus('Invalid backup file', 'error');
+          AlertManager.showStatus('Invalid backup file', STATUS_TYPES.ERROR);
         }
       };
       reader.readAsText(file);

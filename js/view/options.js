@@ -4,7 +4,7 @@
  */
 import FileManager from './persistence.js';
 import AlertManager from './alert.js';
-import { MESSAGE_EVENTS } from '../util/constants.js';
+import { MESSAGE_EVENTS, STATUS_TYPES } from '../util/constants.js';
 
 class OptionsManager {
   /**
@@ -253,7 +253,7 @@ class OptionsManager {
     const autoSync = document.getElementById('autoSyncToggle').checked;
     
     if (!repoUrl) {
-      AlertManager.showStatus('Repository URL is required', 'error');
+      AlertManager.showStatus('Repository URL is required', STATUS_TYPES.ERROR);
       return;
     }
     
@@ -269,9 +269,9 @@ class OptionsManager {
     
     chrome.storage.sync.set(settings, () => {
       if (chrome.runtime.lastError) {
-        AlertManager.showStatus('Error saving settings: ' + chrome.runtime.lastError.message, 'error');
+        AlertManager.showStatus('Error saving settings: ' + chrome.runtime.lastError.message, STATUS_TYPES.ERROR);
       } else {
-        AlertManager.showStatus('Settings saved successfully!', 'success');
+        AlertManager.showStatus('Settings saved successfully!', STATUS_TYPES.SUCCESS);
         // 更新commit hash显示
         this._updateCommitHashDisplay();
       }
@@ -284,14 +284,14 @@ class OptionsManager {
   _testConnection() {
     const repoUrl = document.getElementById('repoUrl').value;
     if (!repoUrl) {
-      AlertManager.showStatus('Please enter a repository URL', 'error');
+      AlertManager.showStatus('Please enter a repository URL', STATUS_TYPES.ERROR);
       return;
     }
     
     const userName = document.getElementById('userName').value;
     const password = document.getElementById('password').value;
     
-    AlertManager.showStatus('Testing connection...', 'info');
+    AlertManager.showStatus('Testing connection...', STATUS_TYPES.INFO);
     
     // 通过background script发送消息来测试连接，避免CORS问题
     chrome.runtime.sendMessage({
@@ -303,17 +303,17 @@ class OptionsManager {
       // 检查是否有运行时错误
       if (chrome.runtime.lastError) {
         console.error('Runtime error:', chrome.runtime.lastError);
-        AlertManager.showStatus(`Runtime error: ${chrome.runtime.lastError.message}`, 'error');
+        AlertManager.showStatus(`Runtime error: ${chrome.runtime.lastError.message}`, STATUS_TYPES.ERROR);
         return;
       }
       
       // 处理响应
       if (response && response.status === 'success') {
-        AlertManager.showStatus(response.message, 'success');
+        AlertManager.showStatus(response.message, STATUS_TYPES.SUCCESS);
       } else if (response && response.message) {
-        AlertManager.showStatus(response.message, 'error');
+        AlertManager.showStatus(response.message, STATUS_TYPES.ERROR);
       } else {
-        AlertManager.showStatus('Unknown error occurred during connection test', 'error');
+        AlertManager.showStatus('Unknown error occurred during connection test', STATUS_TYPES.ERROR);
       }
     });
   }
@@ -328,7 +328,7 @@ class OptionsManager {
       // 可以添加其他同步逻辑
     });
     
-    AlertManager.showStatus('Sync functionality needs to be implemented', 'error');
+    AlertManager.showStatus('Sync functionality needs to be implemented', STATUS_TYPES.ERROR);
   }
 
   /**
@@ -341,7 +341,7 @@ class OptionsManager {
       // 可以添加其他pull逻辑
     });
     
-    AlertManager.showStatus('Pulling data from Git repository...', 'info');
+    AlertManager.showStatus('Pulling data from Git repository...', STATUS_TYPES.INFO);
     
     // 发送消息到background script执行pull操作
     chrome.runtime.sendMessage({
@@ -349,16 +349,16 @@ class OptionsManager {
     }, (response) => {
       if (chrome.runtime.lastError) {
         console.error('Runtime error:', chrome.runtime.lastError);
-        AlertManager.showStatus(`Runtime error: ${chrome.runtime.lastError.message}`, 'error');
+        AlertManager.showStatus(`Runtime error: ${chrome.runtime.lastError.message}`, STATUS_TYPES.ERROR);
         return;
       }
       
       if (response && response.status === 'success') {
-        AlertManager.showStatus('Successfully pulled data from Git repository', 'success');
+        AlertManager.showStatus('Successfully pulled data from Git repository', STATUS_TYPES.SUCCESS);
       } else if (response && response.message) {
-        AlertManager.showStatus(`Pull failed: ${response.message}`, 'error');
+        AlertManager.showStatus(`Pull failed: ${response.message}`, STATUS_TYPES.ERROR);
       } else {
-        AlertManager.showStatus('Unknown error occurred during pull operation', 'error');
+        AlertManager.showStatus('Unknown error occurred during pull operation', STATUS_TYPES.ERROR);
       }
       
       // 更新commit hash显示
@@ -376,28 +376,28 @@ class OptionsManager {
       // 可以添加其他push逻辑
     });
     
-    AlertManager.showStatus('Checking todo items...', 'info');
+    AlertManager.showStatus('Checking todo items...', STATUS_TYPES.INFO);
     
     // 检查待办事项是否为空
     chrome.storage.local.get(['todoExtensions'], (result) => {
       const todoExtensions = result.todoExtensions || [];
       if (todoExtensions.length > 0) {
-        AlertManager.showStatus('Cannot push: there are pending operations that need to be resolved first', 'error');
+        AlertManager.showStatus('Cannot push: there are pending operations that need to be resolved first', STATUS_TYPES.ERROR);
         return;
       }
       
-      AlertManager.showStatus('Loading extensions data...', 'info');
+      AlertManager.showStatus('Loading extensions data...', STATUS_TYPES.INFO);
       
       // 发送消息到background script获取扩展数据，参考persistence.js中的实现
       chrome.runtime.sendMessage({action: MESSAGE_EVENTS.EXPORT_EXTENSIONS_DATA}, (response) => {
         if (chrome.runtime.lastError) {
           console.error('Runtime error:', chrome.runtime.lastError);
-          AlertManager.showStatus(`Runtime error: ${chrome.runtime.lastError.message}`, 'error');
+          AlertManager.showStatus(`Runtime error: ${chrome.runtime.lastError.message}`, STATUS_TYPES.ERROR);
           return;
         }
         
         if (response && response.status === 'success') {
-          AlertManager.showStatus('Pushing data to Git repository...', 'info');
+          AlertManager.showStatus('Pushing data to Git repository...', STATUS_TYPES.INFO);
           
           // 发送消息到background script执行push操作，传递扩展数据
           chrome.runtime.sendMessage({
@@ -407,25 +407,25 @@ class OptionsManager {
           }, (response) => {
             if (chrome.runtime.lastError) {
               console.error('Runtime error:', chrome.runtime.lastError);
-              AlertManager.showStatus(`Runtime error: ${chrome.runtime.lastError.message}`, 'error');
+              AlertManager.showStatus(`Runtime error: ${chrome.runtime.lastError.message}`, STATUS_TYPES.ERROR);
               return;
             }
             
             if (response && response.status === 'success') {
-              AlertManager.showStatus('Successfully pushed data to Git repository', 'success');
+              AlertManager.showStatus('Successfully pushed data to Git repository', STATUS_TYPES.SUCCESS);
             } else if (response && response.message) {
-              AlertManager.showStatus(`Push failed: ${response.message}`, 'error');
+              AlertManager.showStatus(`Push failed: ${response.message}`, STATUS_TYPES.ERROR);
             } else {
-              AlertManager.showStatus('Unknown error occurred during push operation', 'error');
+              AlertManager.showStatus('Unknown error occurred during push operation', STATUS_TYPES.ERROR);
             }
             
             // 更新commit hash显示
             this._updateCommitHashDisplay();
           });
         } else if (response && response.message) {
-          AlertManager.showStatus(`Failed to get extensions data: ${response.message}`, 'error');
+          AlertManager.showStatus(`Failed to get extensions data: ${response.message}`, STATUS_TYPES.ERROR);
         } else {
-          AlertManager.showStatus('Unknown error occurred while getting extensions data', 'error');
+          AlertManager.showStatus('Unknown error occurred while getting extensions data', STATUS_TYPES.ERROR);
         }
       });
     });

@@ -2,6 +2,8 @@
  * AlertManager类
  * 统一处理状态信息显示功能
  */
+import { STATUS_TYPES } from '../util/constants.js';
+
 class AlertManager {
   /**
    * 显示状态信息
