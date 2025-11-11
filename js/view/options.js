@@ -106,7 +106,7 @@ class OptionsManager {
       });
       
       // 浏览器同步开关事件
-      document.getElementById('browserSyncToggle').addEventListener('change', (e) => {
+      document.getElementById('browserSyncCheckbox').addEventListener('change', (e) => {
         // 自动保存开关状态
         chrome.storage.sync.set({browserSyncEnabled: e.target.checked});
       });

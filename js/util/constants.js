@@ -30,33 +30,5 @@ const STATUS_TYPES = {
   ERROR: 'error'
 };
 
-// 同时支持ES6模块系统和传统引入方式
-if (typeof module !== 'undefined' && module.exports) {
-  // CommonJS (Node.js)
-  module.exports = { MESSAGE_EVENTS, EXTENSION_ACTIONS, STATUS_TYPES };
-} else if (typeof define === 'function' && define.amd) {
-  // AMD
-  define([], function() {
-    return { MESSAGE_EVENTS, EXTENSION_ACTIONS, STATUS_TYPES };
-  });
-} else if (typeof window !== 'undefined') {
-  // 浏览器环境
-  window.MESSAGE_EVENTS = MESSAGE_EVENTS;
-  window.EXTENSION_ACTIONS = EXTENSION_ACTIONS;
-  window.STATUS_TYPES = STATUS_TYPES;
-  
-  // 添加ES6命名导出以支持浏览器环境中的import { MESSAGE_EVENTS } from '../util/constants.js'语法
-  if (typeof exports !== 'undefined') {
-    exports.MESSAGE_EVENTS = MESSAGE_EVENTS;
-    exports.EXTENSION_ACTIONS = EXTENSION_ACTIONS;
-    exports.STATUS_TYPES = STATUS_TYPES;
-  }
-} else if (typeof self !== 'undefined') {
-  // Service Worker环境
-  self.MESSAGE_EVENTS = MESSAGE_EVENTS;
-  self.EXTENSION_ACTIONS = EXTENSION_ACTIONS;
-  self.STATUS_TYPES = STATUS_TYPES;
-}
-
 // 添加ES6命名导出以支持Service Worker中使用ES模块
 export { MESSAGE_EVENTS, EXTENSION_ACTIONS, STATUS_TYPES };

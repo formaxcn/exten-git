@@ -1,12 +1,10 @@
 // 从alert.js导入AlertManager
 import AlertManager from './alert.js';
+import { MESSAGE_EVENTS } from '../util/constants.js';
 
 // 存储所有扩展的变量
 let allExtensions = [];
 const defaultIcon = 'https://fonts.gstatic.com/s/i/productlogos/chrome_store/v7/192px.svg';
-
-// 通过importScripts引入常量
-importScripts('../util/constants.js');
 
 class ExtensionManager {
   constructor() {
