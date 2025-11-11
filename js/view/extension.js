@@ -12,6 +12,8 @@ class ExtensionManager {
   constructor() {
     this.allExtensions = [];
     this.todoExtensions = [];
+    this.refreshInterval = null;
+    this.currentInterval = 30000; // 默认30秒刷新一次
     this._init();
   }
 
@@ -36,6 +38,9 @@ class ExtensionManager {
           sendResponse({status: 'success'});
         }
       });
+      
+      // 启动刷新间隔检查
+      this._startRefreshInterval();
     });
   }
 
@@ -75,6 +80,9 @@ class ExtensionManager {
       
       // 显示待办事项
       this._loadExtensions();
+      
+      // 调整刷新间隔
+      this._adjustRefreshInterval();
     });
   }
 
@@ -529,6 +537,93 @@ class ExtensionManager {
     document.getElementById('extensionSearch').value = '';
     this._displayExtensions(this.allExtensions);
     document.getElementById('extensionSearch').focus();
+  }
+
+  /**
+   * 启动刷新间隔 (私有方法)
+   */
+  _startRefreshInterval() {
+    // 如果已经有定时器在运行，先清除它
+    if (this.refreshInterval) {
+      clearInterval(this.refreshInterval);
+    }
+
+    // 根据是否有待办事项设置刷新频率
+    this.refreshInterval = setInterval(() => {
+      this._checkTodoExtensionsCompletion();
+    }, this.currentInterval);
+  }
+
+  /**
+   * 调整刷新间隔 (私有方法)
+   */
+  _adjustRefreshInterval() {
+    const newInterval = this.todoExtensions.length > 0 ? 1000 : 30000;
+    
+    // 只有当间隔发生变化时才重新设置定时器
+    if (newInterval !== this.currentInterval) {
+      this.currentInterval = newInterval;
+      this._stopRefreshInterval();
+      this._startRefreshInterval();
+    }
+  }
+
+  /**
+   * 停止刷新间隔 (私有方法)
+   */
+  _stopRefreshInterval() {
+    if (this.refreshInterval) {
+      clearInterval(this.refreshInterval);
+      this.refreshInterval = null;
+    }
+  }
+
+  /**
+   * 检查待办事项中的扩展是否已完成安装或卸载 (私有方法)
+   */
+  _checkTodoExtensionsCompletion() {
+    chrome.management.getAll((currentExtensions) => {
+      // 过滤掉主题类型扩展
+      const filteredCurrentExtensions = currentExtensions.filter(ext => ext.type !== 'theme');
+
+      // 检查待办事项中的扩展是否已完成
+      const completedExtensions = [];
+
+      this.todoExtensions.forEach(todoExt => {
+        if (todoExt.action === 'remove') {
+          // 检查需要删除的扩展是否还存在
+          const extensionExists = filteredCurrentExtensions.some(ext => ext.id === todoExt.id);
+          if (!extensionExists) {
+            // 扩展已被成功删除
+            completedExtensions.push(todoExt.id);
+          }
+        } else if (todoExt.action === 'add') {
+          // 检查需要添加的扩展是否已安装
+          const extensionExists = filteredCurrentExtensions.some(ext => ext.id === todoExt.id);
+          if (extensionExists) {
+            // 扩展已成功安装
+            completedExtensions.push(todoExt.id);
+          }
+        }
+      });
+
+      // 如果有待办事项已完成，更新存储并通知popup刷新
+      if (completedExtensions.length > 0) {
+        // 从待办事项中移除已完成的扩展
+        this.todoExtensions = this.todoExtensions.filter(ext => !completedExtensions.includes(ext.id));
+        
+        // 保存更新后的待办事项到存储
+        chrome.storage.local.set({todoExtensions: this.todoExtensions}, () => {
+          console.log('Todo extensions updated in storage');
+          
+          // 通知popup刷新
+          this._loadExtensions();
+          
+          // 调整刷新间隔
+          this._adjustRefreshInterval();
+        });
+      }
+    });
   }
 
   // 备份扩展列表

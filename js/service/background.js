@@ -129,7 +129,6 @@ class BackgroundManager {
     chrome.storage.local.set({todoExtensions: this.todoExtensions}, () => {
       console.log('Todo extensions saved to storage');
     });
-    this._adjustRefreshInterval();
   }
 
   /**
@@ -140,7 +139,6 @@ class BackgroundManager {
     chrome.storage.local.remove('todoExtensions', () => {
       console.log('Todo extensions cleared from storage');
     });
-    this._adjustRefreshInterval();
   }
 
   /**
@@ -174,8 +172,10 @@ class BackgroundManager {
     }
 
     // 根据是否有待办事项设置刷新频率
+    // 注意：实际的检查逻辑已经移到extension.js中
     this.refreshInterval = setInterval(() => {
-      this._checkTodoExtensionsCompletion();
+      // 定时器仍然保留在background.js中，但实际检查逻辑在extension.js中执行
+      // 这里可以添加其他需要在background中执行的定期任务
     }, this.currentInterval);
   }
 
@@ -199,54 +199,6 @@ class BackgroundManager {
     if (this.settings.autoPush || this.settings.autoPull) {
       this._startRefreshInterval();
     }
-  }
-
-  /**
-   * 检查待办事项中的扩展是否已完成安装或卸载 (私有方法)
-   */
-  _checkTodoExtensionsCompletion() {
-    chrome.management.getAll((currentExtensions) => {
-      // 过滤掉主题类型扩展
-      const filteredCurrentExtensions = currentExtensions.filter(ext => ext.type !== 'theme');
-
-      // 检查待办事项中的扩展是否已完成
-      const completedExtensions = [];
-
-      this.todoExtensions.forEach(todoExt => {
-        if (todoExt.action === 'remove') {
-          // 检查需要删除的扩展是否还存在
-          const extensionExists = filteredCurrentExtensions.some(ext => ext.id === todoExt.id);
-          if (!extensionExists) {
-            // 扩展已被成功删除
-            completedExtensions.push(todoExt.id);
-          }
-        } else if (todoExt.action === 'add') {
-          // 检查需要添加的扩展是否已安装
-          const extensionExists = filteredCurrentExtensions.some(ext => ext.id === todoExt.id);
-          if (extensionExists) {
-            // 扩展已成功安装
-            completedExtensions.push(todoExt.id);
-          }
-        }
-      });
-
-      // 如果有待办事项已完成，更新存储并通知popup刷新
-      if (completedExtensions.length > 0) {
-        // 从待办事项中移除已完成的扩展
-        this.todoExtensions = this.todoExtensions.filter(ext => !completedExtensions.includes(ext.id));
-        
-        // 保存更新后的待办事项到存储
-        chrome.storage.local.set({todoExtensions: this.todoExtensions}, () => {
-          console.log('Todo extensions updated in storage');
-        });
-        
-        // 通知popup刷新
-        this._notifyPopupToRefresh();
-        
-        // 调整刷新间隔
-        this._adjustRefreshInterval();
-      }
-    });
   }
 
   /**
