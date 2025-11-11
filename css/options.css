@@ -275,14 +275,10 @@ button:hover {
 .switch {
   position: relative;
   display: inline-block;
-  width: 60px;
-  height: 34px;
-  vertical-align: middle;
-}
-
-.switch.small {
   width: 40px;
   height: 24px;
+  vertical-align: middle;
+  margin-bottom: 0; /* 确保开关按钮不会增加标题栏的高度 */
 }
 
 .switch input {
@@ -306,8 +302,8 @@ button:hover {
 .slider:before {
   position: absolute;
   content: "";
-  height: 26px;
-  width: 26px;
+  height: 16px;
+  width: 16px;
   left: 4px;
   bottom: 4px;
   background-color: white;
@@ -315,28 +311,18 @@ button:hover {
   border-radius: 50%;
 }
 
-.switch.small .slider:before {
-  height: 16px;
-  width: 16px;
-  left: 4px;
-  bottom: 4px;
-}
-
 input:checked + .slider {
   background-color: #4CAF50;
 }
 
 input:checked + .slider:before {
-  transform: translateX(26px);
-}
-
-.switch.small input:checked + .slider:before {
   transform: translateX(16px);
 }
 
 .label-text {
   margin-left: 10px;
   font-weight: bold;
+  white-space: nowrap;
 }
 
 /* 弹出状态消息样式 */
