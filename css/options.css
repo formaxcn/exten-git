@@ -136,9 +136,24 @@ input[type="text"], input[type="password"] {
   margin-right: 5px;
 }
 
-.last-sync-time-value {
-  display: block;
+.sync-info {
+  margin: 10px 0;
+}
+
+.sync-line {
+  display: flex;
+  align-items: center;
   margin-bottom: 5px;
+}
+
+.sync-label {
+  font-weight: bold;
+  margin-right: 5px;
+  min-width: 100px;
+}
+
+.last-sync-time-value {
+  flex: 1;
 }
 
 /* 合并相同样式的按钮 */
