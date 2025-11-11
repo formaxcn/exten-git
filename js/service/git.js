@@ -544,7 +544,6 @@
     }
   }
 
-  // 创建全局实例
+  // 将 GitManager 暴露为全局变量，而不是使用 ES6 export
   global.GitManager = GitManager;
-  global.gitManager = new GitManager();
 });

@@ -1,5 +1,7 @@
 // background.js
 // 使用importScripts加载isomorphic-git库和git.js模块
+
+// 由于 Service Worker 环境限制，需要确保所有模块都通过 importScripts 加载且不包含 ES6 export 语法
 try {
   importScripts(
     '../lib/buffer.js',

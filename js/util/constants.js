@@ -46,6 +46,3 @@ if (typeof module !== 'undefined' && module.exports) {
   global.EXTENSION_ACTIONS = EXTENSION_ACTIONS;
   global.STATUS_TYPES = STATUS_TYPES;
 }
-
-// ES6默认导出
-export { MESSAGE_EVENTS, EXTENSION_ACTIONS, STATUS_TYPES };
