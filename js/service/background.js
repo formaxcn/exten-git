@@ -158,6 +158,24 @@ class BackgroundManager {
   }
 
   _extensionChanged(changeType,extensionId=null) {
+    // 如果 extensionId 不为空，从 todoExtensions 中删除对应项
+    if (extensionId) {
+      chrome.storage.local.get(['todoExtensions'], (result) => {
+        if (result.todoExtensions && Array.isArray(result.todoExtensions)) {
+          // 过滤掉匹配 extensionId 的项
+          const updatedTodoExtensions = result.todoExtensions.filter(
+            ext => ext.id !== extensionId
+          );
+          
+          // 更新存储中的 todoExtensions
+          chrome.storage.local.set({ todoExtensions: updatedTodoExtensions }, () => {
+            if (chrome.runtime.lastError) {
+              console.error('Error updating todo extensions:', chrome.runtime.lastError);
+            }
+          });
+        }
+      });
+    }
     
     chrome.runtime.sendMessage({ action: MESSAGE_EVENTS.DIFF_EXTENSIONS_VIEW });
   }
