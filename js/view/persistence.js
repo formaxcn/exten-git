@@ -37,7 +37,7 @@ class PersistenceManager {
       setTimeout(() => {
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
-        AlertManager.showStatus('Configuration exported successfully!', STATUS_TYPES.SUCCESS);
+        AlertManager.showStatus('Configuration backup successfully!', STATUS_TYPES.SUCCESS);
       }, 100);
     });
   }
@@ -82,7 +82,7 @@ class PersistenceManager {
           chrome.storage.sync.set(filteredConfig, () => {
             // 使用导入的optionsManager实例来加载设置
             optionsManager._loadSettings();
-            AlertManager.showStatus('Configuration imported successfully!', STATUS_TYPES.SUCCESS);
+            AlertManager.showStatus('Configuration restored successfully!', STATUS_TYPES.SUCCESS);
           });
         } catch (error) {
           AlertManager.showStatus('Invalid configuration file', STATUS_TYPES.ERROR);
@@ -122,7 +122,7 @@ class PersistenceManager {
         setTimeout(() => {
           document.body.removeChild(a);
           URL.revokeObjectURL(url);
-          AlertManager.showStatus('Extensions backed up successfully!', STATUS_TYPES.SUCCESS);
+          AlertManager.showStatus('Extensions exported successfully!', STATUS_TYPES.SUCCESS);
         }, 100);
       } else if (response && response.message) {
         AlertManager.showStatus(response.message, STATUS_TYPES.ERROR);
@@ -163,7 +163,7 @@ class PersistenceManager {
               }
               
               if (response && response.status === 'success') {
-                AlertManager.showStatus('Extensions restored successfully! ', STATUS_TYPES.SUCCESS);
+                AlertManager.showStatus('Extensions imported successfully! ', STATUS_TYPES.SUCCESS);
               } else if (response && response.message) {
                 AlertManager.showStatus(response.message, STATUS_TYPES.ERROR);
               } else {
