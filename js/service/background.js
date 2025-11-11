@@ -26,17 +26,17 @@ class MessageHandler {
   async handleMessage(request, sender, sendResponse) {
     try {
       switch (request.action) {
-        case 'saveExtensions':
+        case MESSAGE_EVENTS.SAVE_EXTENSIONS:
           this.saveExtensionsToList(request.extensions);
           sendResponse({status: 'success'});
           break;
           
-        case 'pushToGit':
+        case MESSAGE_EVENTS.PUSH_TO_GIT:
           const pushResult = await this.gitManager.pushToGit({message: request.message});
           sendResponse(pushResult);
           break;
           
-        case 'pullFromGit':
+        case MESSAGE_EVENTS.PULL_FROM_GIT:
           const pullResult = await this.gitManager.pullFromGit();
           if (pullResult.status === 'success') {
             // 处理拉取到的数据
@@ -45,12 +45,12 @@ class MessageHandler {
           sendResponse(pullResult);
           break;
           
-        case 'processPulledExtensions':
+        case MESSAGE_EVENTS.PROCESS_PULLED_EXTENSIONS:
           const processResult = await this.processPulledExtensions(request.data);
           sendResponse(processResult);
           break;
           
-        case 'testGitConnection':
+        case MESSAGE_EVENTS.TEST_GIT_CONNECTION:
           const testResult = await this.gitManager.testGitConnection(
             request.repoUrl, 
             request.userName, 
@@ -59,40 +59,40 @@ class MessageHandler {
           sendResponse(testResult);
           break;
           
-        case 'setTodoExtensions':
+        case MESSAGE_EVENTS.SET_TODO_EXTENSIONS:
           this.setTodoExtensions(request.todoExtensions);
           sendResponse({status: 'success'});
           break;
           
-        case 'clearTodoExtensions':
+        case MESSAGE_EVENTS.CLEAR_TODO_EXTENSIONS:
           this.clearTodoExtensions();
           sendResponse({status: 'success'});
           break;
           
-        case 'getTodoExtensions':
+        case MESSAGE_EVENTS.GET_TODO_EXTENSIONS:
           sendResponse({todoExtensions: this.todoExtensions});
           break;
           
-        case 'getExtensionsData':
+        case MESSAGE_EVENTS.GET_EXTENSIONS_DATA:
           const dataResult = await this.extensionDataManager._getExtensionsData();
           sendResponse({status: 'success', data: dataResult});
           break;
           
-        case 'exportExtensionsData':
+        case MESSAGE_EVENTS.EXPORT_EXTENSIONS_DATA:
           const exportResult = await this.extensionDataManager.exportExtensionsData();
           sendResponse({status: 'success', data: exportResult});
           break;
           
-        case 'listRemoteBranches':
+        case MESSAGE_EVENTS.LIST_REMOTE_BRANCHES:
           const branchesResult = await this.gitManager.listRemoteBranches(request.settings);
           sendResponse(branchesResult);
           break;
           
-        case 'diffExtensions':
+        case MESSAGE_EVENTS.DIFF_EXTENSIONS:
           this.handleDiffExtensions(request, sendResponse);
           break;
           
-        case 'gitDataPulled':
+        case MESSAGE_EVENTS.GIT_DATA_PULLED:
           this.handleGitDataPulled(request, sendResponse);
           break;
           
@@ -114,7 +114,7 @@ class MessageHandler {
 
     // 发送消息通知popup或其他组件更新数据
     chrome.runtime.sendMessage({
-      action: 'gitDataPulled',
+      action: MESSAGE_EVENTS.GIT_DATA_PULLED,
       data: data
     });
   }
@@ -143,8 +143,8 @@ class MessageHandler {
 
         // 合并待办事项
         const todoExtensions = [
-          ...toRemove.map(ext => ({...ext, action: 'remove'})),
-          ...toAdd.map(ext => ({...ext, action: 'add'}))
+          ...toRemove.map(ext => ({...ext, action: EXTENSION_ACTIONS.REMOVE})),
+          ...toAdd.map(ext => ({...ext, action: EXTENSION_ACTIONS.ADD}))
         ];
 
         // 如果有待办事项，发送到storage；否则通知没有待办事项
@@ -154,7 +154,7 @@ class MessageHandler {
             console.log('Todo extensions saved to storage');
             // 通知所有监听者更新待办事项
             chrome.runtime.sendMessage({
-              action: 'setTodoExtensions',
+              action: MESSAGE_EVENTS.SET_TODO_EXTENSIONS,
               todoExtensions: todoExtensions
             });
             resolve({ status: 'success', message: 'Todo list generated', todoCount: todoExtensions.length });
@@ -185,7 +185,7 @@ class MessageHandler {
    * 处理扩展差异比较的消息
    */
   handleDiffExtensions(request, sendResponse) {
-    chrome.runtime.sendMessage({action: 'diffExtensions'});
+    chrome.runtime.sendMessage({action: MESSAGE_EVENTS.DIFF_EXTENSIONS});
     if (sendResponse) sendResponse({ status: 'success' });
   }
 
@@ -195,7 +195,7 @@ class MessageHandler {
   handleGitDataPulled(request, sendResponse) {
     // 通知所有监听者更新数据
     chrome.runtime.sendMessage({
-      action: 'gitDataPulled',
+      action: MESSAGE_EVENTS.GIT_DATA_PULLED,
       data: request.data
     });
     if (sendResponse) sendResponse({status: 'success'});
@@ -216,6 +216,28 @@ try {
 } catch (error) {
   console.error('Failed to load Git manager:', error);
 }
+
+// 定义事件常量（由于Service Worker中不能使用ES6模块，需要在全局作用域中定义）
+const MESSAGE_EVENTS = {
+  SAVE_EXTENSIONS: 'saveExtensions',
+  PUSH_TO_GIT: 'pushToGit',
+  PULL_FROM_GIT: 'pullFromGit',
+  PROCESS_PULLED_EXTENSIONS: 'processPulledExtensions',
+  TEST_GIT_CONNECTION: 'testGitConnection',
+  SET_TODO_EXTENSIONS: 'setTodoExtensions',
+  CLEAR_TODO_EXTENSIONS: 'clearTodoExtensions',
+  GET_TODO_EXTENSIONS: 'getTodoExtensions',
+  GET_EXTENSIONS_DATA: 'getExtensionsData',
+  EXPORT_EXTENSIONS_DATA: 'exportExtensionsData',
+  LIST_REMOTE_BRANCHES: 'listRemoteBranches',
+  DIFF_EXTENSIONS: 'diffExtensions',
+  GIT_DATA_PULLED: 'gitDataPulled'
+};
+
+const EXTENSION_ACTIONS = {
+  ADD: 'add',
+  REMOVE: 'remove'
+};
 
 class BackgroundManager {
   constructor() {
@@ -332,7 +354,7 @@ class BackgroundManager {
 
   // 通知popup刷新界面
   notifyPopupToRefresh() {
-    chrome.runtime.sendMessage({action: 'diffExtensions'});
+    chrome.runtime.sendMessage({action: MESSAGE_EVENTS.DIFF_EXTENSIONS});
   }
 
   // 调整刷新间隔

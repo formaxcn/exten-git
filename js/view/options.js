@@ -296,7 +296,7 @@ class OptionsManager {
     
     // 通过background script发送消息来测试连接，避免CORS问题
     chrome.runtime.sendMessage({
-      action: 'testGitConnection',
+      action: MESSAGE_EVENTS.TEST_GIT_CONNECTION,
       repoUrl: repoUrl,
       userName: userName,
       password: password
@@ -346,7 +346,7 @@ class OptionsManager {
     
     // 发送消息到background script执行pull操作
     chrome.runtime.sendMessage({
-      action: 'pullFromGit'
+      action: MESSAGE_EVENTS.PULL_FROM_GIT
     }, (response) => {
       if (chrome.runtime.lastError) {
         console.error('Runtime error:', chrome.runtime.lastError);
@@ -390,7 +390,7 @@ class OptionsManager {
       AlertManager.showStatus('Loading extensions data...', 'info');
       
       // 发送消息到background script获取扩展数据，参考persistence.js中的实现
-      chrome.runtime.sendMessage({action: 'exportExtensionsData'}, (response) => {
+      chrome.runtime.sendMessage({action: MESSAGE_EVENTS.EXPORT_EXTENSIONS_DATA}, (response) => {
         if (chrome.runtime.lastError) {
           console.error('Runtime error:', chrome.runtime.lastError);
           AlertManager.showStatus(`Runtime error: ${chrome.runtime.lastError.message}`, 'error');
@@ -402,20 +402,20 @@ class OptionsManager {
           
           // 发送消息到background script执行push操作，传递扩展数据
           chrome.runtime.sendMessage({
-            action: 'pushToGit',
+            action: MESSAGE_EVENTS.PUSH_TO_GIT,
             message: `Update extensions data ${new Date().toISOString()}`,
             data: response.data
-          }, (pushResponse) => {
+          }, (response) => {
             if (chrome.runtime.lastError) {
               console.error('Runtime error:', chrome.runtime.lastError);
               AlertManager.showStatus(`Runtime error: ${chrome.runtime.lastError.message}`, 'error');
               return;
             }
             
-            if (pushResponse && pushResponse.status === 'success') {
+            if (response && response.status === 'success') {
               AlertManager.showStatus('Successfully pushed data to Git repository', 'success');
-            } else if (pushResponse && pushResponse.message) {
-              AlertManager.showStatus(`Push failed: ${pushResponse.message}`, 'error');
+            } else if (response && response.message) {
+              AlertManager.showStatus(`Push failed: ${response.message}`, 'error');
             } else {
               AlertManager.showStatus('Unknown error occurred during push operation', 'error');
             }
@@ -443,6 +443,23 @@ class OptionsManager {
 }
 
 export default OptionsManager;
+
+// 定义事件常量
+const MESSAGE_EVENTS = {
+  SAVE_EXTENSIONS: 'saveExtensions',
+  PUSH_TO_GIT: 'pushToGit',
+  PULL_FROM_GIT: 'pullFromGit',
+  PROCESS_PULLED_EXTENSIONS: 'processPulledExtensions',
+  TEST_GIT_CONNECTION: 'testGitConnection',
+  SET_TODO_EXTENSIONS: 'setTodoExtensions',
+  CLEAR_TODO_EXTENSIONS: 'clearTodoExtensions',
+  GET_TODO_EXTENSIONS: 'getTodoExtensions',
+  GET_EXTENSIONS_DATA: 'getExtensionsData',
+  EXPORT_EXTENSIONS_DATA: 'exportExtensionsData',
+  LIST_REMOTE_BRANCHES: 'listRemoteBranches',
+  DIFF_EXTENSIONS: 'diffExtensions',
+  GIT_DATA_PULLED: 'gitDataPulled'
+};
 
 // 初始化OptionsManager
 export const optionsManager = new OptionsManager();

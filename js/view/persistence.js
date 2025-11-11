@@ -89,7 +89,7 @@ class FileManager {
    */
   static backupExtensions() {
     // 发送消息到background script获取扩展数据
-    chrome.runtime.sendMessage({action: 'exportExtensionsData'}, (response) => {
+    chrome.runtime.sendMessage({action: MESSAGE_EVENTS.EXPORT_EXTENSIONS_DATA}, (response) => {
       // 检查是否有运行时错误
       if (chrome.runtime.lastError) {
         console.error('Runtime error:', chrome.runtime.lastError);
@@ -142,7 +142,7 @@ class FileManager {
           if (backupData.extensions) {
             // 发送消息到background script处理扩展恢复
             chrome.runtime.sendMessage({
-              action: 'diffExtensions',
+              action: MESSAGE_EVENTS.PROCESS_PULLED_EXTENSIONS,
               data: backupData
             }, (response) => {
               // 检查是否有运行时错误
@@ -177,6 +177,23 @@ class FileManager {
    * 显示状态信息的方法已被移除，改用 AlertManager
    */
 }
+
+// 定义事件常量
+const MESSAGE_EVENTS = {
+  SAVE_EXTENSIONS: 'saveExtensions',
+  PUSH_TO_GIT: 'pushToGit',
+  PULL_FROM_GIT: 'pullFromGit',
+  PROCESS_PULLED_EXTENSIONS: 'processPulledExtensions',
+  TEST_GIT_CONNECTION: 'testGitConnection',
+  SET_TODO_EXTENSIONS: 'setTodoExtensions',
+  CLEAR_TODO_EXTENSIONS: 'clearTodoExtensions',
+  GET_TODO_EXTENSIONS: 'getTodoExtensions',
+  GET_EXTENSIONS_DATA: 'getExtensionsData',
+  EXPORT_EXTENSIONS_DATA: 'exportExtensionsData',
+  LIST_REMOTE_BRANCHES: 'listRemoteBranches',
+  DIFF_EXTENSIONS: 'diffExtensions',
+  GIT_DATA_PULLED: 'gitDataPulled'
+};
 
 // 导出 FileManager 类（用于 ES6 模块）
 export default FileManager;
