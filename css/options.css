@@ -26,12 +26,16 @@ body {
 .panel-title-container {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 15px;
 }
 
 .panel-logo-icon {
-  width: 24px;
-  height: 24px;
+  width: 36px;
+  height: 36px;
+}
+
+.panel-title-container span {
+  font-size: 28px;
 }
 
 .section-divider {

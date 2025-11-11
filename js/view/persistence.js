@@ -178,28 +178,3 @@ class FileManager {
    * 显示状态信息的方法已被移除，改用 AlertManager
    */
 }
-
-try {
-  // 通过importScripts引入常量
-  importScripts('../util/constants.js');
-} catch (e) {
-  // 如果importScripts失败，定义本地常量（向后兼容）
-  var MESSAGE_EVENTS = {
-    SAVE_EXTENSIONS: 'saveExtensions',
-    PUSH_TO_GIT: 'pushToGit',
-    PULL_FROM_GIT: 'pullFromGit',
-    PROCESS_PULLED_EXTENSIONS: 'processPulledExtensions',
-    TEST_GIT_CONNECTION: 'testGitConnection',
-    SET_TODO_EXTENSIONS: 'setTodoExtensions',
-    CLEAR_TODO_EXTENSIONS: 'clearTodoExtensions',
-    GET_TODO_EXTENSIONS: 'getTodoExtensions',
-    GET_EXTENSIONS_DATA: 'getExtensionsData',
-    EXPORT_EXTENSIONS_DATA: 'exportExtensionsData',
-    LIST_REMOTE_BRANCHES: 'listRemoteBranches',
-    DIFF_EXTENSIONS: 'diffExtensions',
-    GIT_DATA_PULLED: 'gitDataPulled'
-  };
-}
-
-// 导出 FileManager 类（用于 ES6 模块）
-export default FileManager;
