@@ -32,55 +32,16 @@ class ExtensionManager {
       
       chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         if (request.action === MESSAGE_EVENTS.DIFF_EXTENSIONS) {
-          this._compareExtensions(restoredData.extensions);
+          // 显示待办事项
+          this._loadExtensions();
+          // 调整刷新间隔
+          this._adjustRefreshInterval();
           sendResponse({status: 'success'});
         }
       });
       
       // 启动刷新间隔检查
       this._startRefreshInterval();
-    });
-  }
-
-  // 比较扩展列表
-  _compareExtensions(importedExtensions) {
-    chrome.management.getAll((currentExtensions) => {
-      // 过滤掉主题类型扩展
-      const filteredCurrentExtensions = currentExtensions.filter(ext => ext.type !== 'theme');
-      
-      // 找出需要卸载的扩展（在当前安装但在导入列表中不存在）
-      const toRemove = filteredCurrentExtensions.filter(currentExt => {
-        return !importedExtensions.some(importedExt => importedExt.id === currentExt.id);
-      });
-      
-      // 找出需要安装的扩展（在导入列表中但当前未安装）
-      const toAdd = importedExtensions.filter(importedExt => {
-        return !filteredCurrentExtensions.some(currentExt => currentExt.id === importedExt.id);
-      });
-      
-      // 合并待办事项
-      this.todoExtensions = [
-        ...toRemove.map(ext => ({...ext, action: 'remove'})),
-        ...toAdd.map(ext => ({...ext, action: 'add'}))
-      ];
-      
-      // 发送待办事项到background script
-      if (this.todoExtensions.length > 0) {
-        chrome.runtime.sendMessage({
-          action: 'setTodoExtensions',
-          todoExtensions: this.todoExtensions
-        });
-      } else {
-        chrome.runtime.sendMessage({
-          action: 'clearTodoExtensions'
-        });
-      }
-      
-      // 显示待办事项
-      this._loadExtensions();
-      
-      // 调整刷新间隔
-      this._adjustRefreshInterval();
     });
   }
 

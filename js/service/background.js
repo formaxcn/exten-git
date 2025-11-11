@@ -123,7 +123,7 @@ class BackgroundManager {
           break;
 
         case MESSAGE_EVENTS.EXPORT_EXTENSIONS_DATA:
-          const exportResult = await this._exportExtensionsData();
+          const exportResult = await this.exportExtensionsData();
           sendResponse({ status: 'success', data: exportResult });
           break;
 
@@ -223,7 +223,7 @@ class BackgroundManager {
    * 导出扩展数据为JSON格式 (公共方法)
    * @returns {Promise} Promise that resolves with the extensions data in JSON format
    */
-  async _exportExtensionsData() {
+  async exportExtensionsData() {
     try {
       const extensions = await this._getExtensionsData();
 
@@ -247,6 +247,54 @@ class BackgroundManager {
     } catch (error) {
       throw error;
     }
+  }
+
+  // 处理从Git拉取的扩展数据，执行与导入相同的操作
+  async processExtensionDiffData(pulledData) {
+    return new Promise((resolve) => {
+      if (!pulledData || !pulledData.extensions) {
+        resolve({ status: 'error', message: 'Invalid pulled data' });
+        return;
+      }
+
+      chrome.management.getAll((currentExtensions) => {
+        // 过滤掉主题类型扩展
+        const filteredCurrentExtensions = currentExtensions.filter(ext => ext.type !== 'theme');
+
+        // 找出需要卸载的扩展（在当前安装但在导入列表中不存在）
+        const toRemove = filteredCurrentExtensions.filter(currentExt => {
+          return !pulledData.extensions.some(pulledExt => pulledExt.id === currentExt.id);
+        });
+
+        // 找出需要安装的扩展（在导入列表中但当前未安装）
+        const toAdd = pulledData.extensions.filter(pulledExt => {
+          return !filteredCurrentExtensions.some(currentExt => currentExt.id === pulledExt.id);
+        });
+
+        // 合并待办事项
+        const todoExtensions = [
+          ...toRemove.map(ext => ({...ext, action: 'remove'})),
+          ...toAdd.map(ext => ({...ext, action: 'add'}))
+        ];
+
+        // 如果有待办事项，发送到storage；否则通知没有待办事项
+        if (todoExtensions.length > 0) {
+          // 发送待办事项到storage
+          chrome.storage.local.set({todoExtensions: todoExtensions}, () => {
+            console.log('Todo extensions saved to storage');
+            // 通知所有监听者更新待办事项
+            chrome.runtime.sendMessage({
+              action: MESSAGE_EVENTS.DIFF_EXTENSIONS_VIEW,
+              todoExtensions: todoExtensions
+            });
+            resolve({ status: 'success', message: 'Todo list generated', todoCount: todoExtensions.length });
+          });
+        } else {
+          // 没有待办事项
+          resolve({ status: 'success', message: 'Pull processed with no conflicts' });
+        }
+      });
+    });
   }
 }
 
