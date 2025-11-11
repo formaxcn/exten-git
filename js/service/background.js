@@ -7,9 +7,7 @@ try {
     '../lib/isomorphic-git.index.umd.min.js',
     '../lib/isomorphic-git-http-web.index.js',
     '../util/constants.js',
-    'git.js',
-    'extensionData.js',
-    'messageHandler.js'
+    'git.js'
   );
 } catch (error) {
   console.error('Failed to load Git manager:', error);
@@ -25,8 +23,12 @@ class BackgroundManager {
   }
 
   _init() {
-    // 初始化消息处理器
-    this.messageHandler = new MessageHandler(gitManager, extensionDataManager);
+    // 监听来自popup或options的消息
+    chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+      this._handleMessage(request, sender, sendResponse);
+      // 返回true以保持消息通道开放，因为我们在使用异步操作
+      return true;
+    });
     
     chrome.runtime.onInstalled.addListener(() => {
       console.log('Extension Git Sync installed');
@@ -67,10 +69,6 @@ class BackgroundManager {
     chrome.storage.local.get(['todoExtensions'], (result) => {
       if (result.todoExtensions) {
         this.todoExtensions = result.todoExtensions;
-        // 更新消息处理器中的待办事项
-        if (this.messageHandler) {
-          this.messageHandler.setTodoExtensions(this.todoExtensions);
-        }
       }
     });
   }
@@ -172,10 +170,8 @@ class BackgroundManager {
     }
 
     // 根据是否有待办事项设置刷新频率
-    // 注意：实际的检查逻辑已经移到extension.js中
     this.refreshInterval = setInterval(() => {
-      // 定时器仍然保留在background.js中，但实际检查逻辑在extension.js中执行
-      // 这里可以添加其他需要在background中执行的定期任务
+      // 定时器保留在background.js中执行定期任务
     }, this.currentInterval);
   }
 
