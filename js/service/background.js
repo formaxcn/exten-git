@@ -145,12 +145,20 @@ class BackgroundManager {
    */
   _handleStorageChange(changes) {
     // 检查是否有影响定时器的设置变化
-    ['autoSyncEnabled', 'browserSyncEnabled', 'refreshInterval'].forEach(key => {
+    ['autoSyncEnabled', 'refreshInterval'].forEach(key => {
       if (changes[key]) {
         this.settings[key] = changes[key].newValue;
         this._restartRefreshInterval();
       }
     });
+
+    if(changes['browserSyncEnabled']){
+      //TODO
+    }
+
+    if (changes['todoExtensions']){
+      chrome.runtime.sendMessage({ action: MESSAGE_EVENTS.DIFF_EXTENSIONS_VIEW });
+    }
   }
 
   /**
