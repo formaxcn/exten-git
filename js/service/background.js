@@ -275,11 +275,18 @@ class BackgroundManager {
         if (todoExtensions.length > 0) {
           // 发送待办事项到storage
           chrome.storage.local.set({todoExtensions: todoExtensions}, () => {
+            // 检查运行时是否有错误发生（例如，存储空间已满等极端情况）
+            if (chrome.runtime.lastError) {
+                console.error('Error saving todo extensions to storage:', chrome.runtime.lastError);
+                return; // 遇到错误则停止后续操作
+            }
+
             console.log('Todo extensions saved to storage');
-            // 通知所有监听者更新待办事项
+            // 只有在没有运行时错误的情况下，才发送消息
             chrome.runtime.sendMessage({ action: MESSAGE_EVENTS.DIFF_EXTENSIONS_VIEW });
+            // 成功后调用 resolve
             resolve({ status: 'success', message: 'Todo list generated', todoCount: todoExtensions.length });
-          });
+        });
         } else {
           // 没有待办事项
           resolve({ status: 'success', message: 'Pull processed with no conflicts' });

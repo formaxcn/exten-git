@@ -30,7 +30,7 @@ class ExtensionManager {
       });
       
       chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-        if (request.action === MESSAGE_EVENTS.DIFF_EXTENSIONS) {
+        if (request.action === MESSAGE_EVENTS.DIFF_EXTENSIONS_VIEW) {
           // 显示待办事项
           this._loadExtensions();
           // 调整刷新间隔
