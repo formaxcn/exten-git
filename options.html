@@ -62,8 +62,6 @@
           </label>
         </div>
         <div class="form-group">
-          <span id="lastSyncTime" class="last-sync-time" style="display: block;">lastSync:</span>
-          <span id="commitHashDisplay" class="last-sync-time" style="display: block;">localHash:</span>
           <label for="syncInterval">Sync Interval:</label>
           <div class="slider-container">
             <input type="range" id="syncInterval" min="0" max="10" value="3">
@@ -94,6 +92,9 @@
           <button id="pullBtn" class="sync-button"><i class="fas fa-download"></i> Pull</button>
           <button id="syncBtn" class="sync-button"><i class="fas fa-sync-alt"></i> Sync</button>
         </div>
+
+        <label class="last-sync-label">last sync: </label><span id="lastSyncTimeValue" class="last-sync-time-value"></span>
+        <label class="last-sync-label">last commit: </label><span id="commitHashValue" class="last-sync-time-value"></span>
       </div>
       
       <div class="section-divider"></div>

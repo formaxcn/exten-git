@@ -130,6 +130,17 @@ input[type="text"], input[type="password"] {
   font-weight: normal;
 }
 
+/* last sync 时间显示样式 */
+.last-sync-label {
+  font-weight: bold;
+  margin-right: 5px;
+}
+
+.last-sync-time-value {
+  display: block;
+  margin-bottom: 5px;
+}
+
 /* 合并相同样式的按钮 */
 button {
   padding: 8px 16px;
@@ -326,17 +337,6 @@ input:checked + .slider:before {
 .label-text {
   margin-left: 10px;
   font-weight: bold;
-}
-
-.last-sync-time {
-  font-size: 12px;
-  color: #666;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 200px;
-  display: block;
-  margin-bottom: 10px;
 }
 
 /* 弹出状态消息样式 */

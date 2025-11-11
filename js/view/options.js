@@ -128,14 +128,14 @@ class OptionsManager {
    */
   _updateCommitHashDisplay() {
     chrome.storage.local.get(['lastCommitHash'], (result) => {
-      const commitHashDisplay = document.getElementById('commitHashDisplay');
+      const commitHashDisplay = document.getElementById('commitHashValue');
       if (commitHashDisplay) {
         if (result.lastCommitHash) {
           // 显示前8位commit hash
-          commitHashDisplay.textContent = `last commit: ${result.lastCommitHash.substring(0, 8)}`;
+          commitHashDisplay.textContent = result.lastCommitHash.substring(0, 8);
           commitHashDisplay.title = result.lastCommitHash; // 完整hash显示在title中
         } else {
-          commitHashDisplay.textContent = 'last commit: Not available';
+          commitHashDisplay.textContent = 'Not available';
           commitHashDisplay.title = '';
         }
       }
@@ -148,9 +148,9 @@ class OptionsManager {
   _updateLastSyncTime() {
     const now = new Date();
     const timeString = now.toLocaleString();
-    const lastSyncElement = document.getElementById('lastSyncTime');
+    const lastSyncElement = document.getElementById('lastSyncTimeValue');
     if (lastSyncElement) {
-      lastSyncElement.textContent = `last sync: ${timeString}`;
+      lastSyncElement.textContent = timeString;
     }
   }
 
@@ -208,10 +208,10 @@ class OptionsManager {
       
       // 显示上次同步时间
       if (items.lastSyncTime) {
-        const lastSyncElement = document.getElementById('lastSyncTime');
+        const lastSyncElement = document.getElementById('lastSyncTimeValue');
         if (lastSyncElement) {
           const lastSyncDate = new Date(items.lastSyncTime);
-          lastSyncElement.textContent = `last sync time: ${lastSyncDate.toLocaleString()}`;
+          lastSyncElement.textContent = lastSyncDate.toLocaleString();
         }
       }
       
