@@ -27,7 +27,9 @@ const EXTENSION_ACTIONS = {
 // 状态常量
 const STATUS_TYPES = {
   SUCCESS: 'success',
-  ERROR: 'error'
+  ERROR: 'error',
+  INFO: 'info',
+  WARNING: 'warning'
 };
 
 // 添加ES6命名导出以支持Service Worker中使用ES模块
