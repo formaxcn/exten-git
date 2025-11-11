@@ -438,13 +438,6 @@ class OptionsManager {
     });
   }
 
-  /**
-   * 切换自动同步
-   */
-  _toggleAutoSync(enabled) {
-    // 这里可以添加实际的自动同步逻辑
-    // 例如设置定时器或与后台脚本通信
-  }
 
 }
 

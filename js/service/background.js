@@ -75,14 +75,14 @@ class BackgroundManager {
         'password', 
         'branchName', 
         'commitPrefix',
-        'autoPush',
-        'autoPull'
+        'autoSyncEnabled',
+        'browserSyncEnabled',
       ]);
       
       this.settings = result;
       
       // 如果启用了自动推送或拉取，则设置定时器
-      if (result.autoPush || result.autoPull) {
+      if (result.autoSyncEnabled || result.browserSyncEnabled) {
         this._startRefreshInterval();
       }
     } catch (error) {
@@ -144,40 +144,19 @@ class BackgroundManager {
    * 处理存储变化 (私有方法)
    */
   _handleStorageChange(changes) {
-    let needsRestart = false;
-    
     // 检查是否有影响定时器的设置变化
-    ['autoPush', 'autoPull', 'refreshInterval'].forEach(key => {
+    ['autoSyncEnabled','browserSyncEnabled','refreshInterval'].forEach(key => {
       if (changes[key]) {
         this.settings[key] = changes[key].newValue;
-        needsRestart = true;
+        this._restartRefreshInterval();
       }
     });
-
-    // 如果设置发生变化，重启定时器
-    if (needsRestart) {
-      this._restartRefreshInterval();
-    }
   }
   /**
    * 通知popup刷新界面 (私有方法)
    */
   _notifyViewToRefresh() {
     chrome.runtime.sendMessage({action: MESSAGE_EVENTS.DIFF_EXTENSIONS});
-  }
-
-  /**
-   * 调整刷新间隔 (私有方法)
-   */
-  _adjustRefreshInterval() {
-    const newInterval = this.todoExtensions.length > 0 ? 1000 : 30000;
-    
-    // 只有当间隔发生变化时才重新设置定时器
-    if (newInterval !== this.currentInterval) {
-      this.currentInterval = newInterval;
-      this._stopRefreshInterval();
-      this._startRefreshInterval();
-    }
   }
 
   /**
