@@ -105,6 +105,12 @@ class OptionsManager {
         chrome.storage.sync.set({autoSyncEnabled: e.target.checked});
       });
       
+      // 浏览器同步开关事件
+      document.getElementById('browserSyncToggle').addEventListener('change', (e) => {
+        // 自动保存开关状态
+        chrome.storage.sync.set({browserSyncEnabled: e.target.checked});
+      });
+      
       // 同步策略变更后自动保存
       const syncStrategyInputs = document.querySelectorAll('input[name="syncStrategy"]');
       syncStrategyInputs.forEach(input => {
@@ -167,6 +173,7 @@ class OptionsManager {
       'syncInterval',
       'syncStrategy',
       'autoSyncEnabled',
+      'browserSyncEnabled',
       'lastSyncTime'
     ], (items) => {
       document.getElementById('repoUrl').value = items.repoUrl || '';
@@ -204,6 +211,11 @@ class OptionsManager {
       // 设置自动同步开关
       if (items.autoSyncEnabled !== undefined) {
         document.getElementById('autoSyncToggle').checked = items.autoSyncEnabled;
+      }
+      
+      // 设置浏览器同步开关
+      if (items.browserSyncEnabled !== undefined) {
+        document.getElementById('browserSyncToggle').checked = items.browserSyncEnabled;
       }
       
       // 显示上次同步时间

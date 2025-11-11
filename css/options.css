@@ -254,6 +254,10 @@ button:hover {
   white-space: nowrap;
 }
 
+#browserSyncToggle {
+  margin-left: 10px;
+}
+
 .github-corner {
   position: fixed;
   left: 20px;
