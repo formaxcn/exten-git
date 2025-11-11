@@ -3,7 +3,6 @@ import AlertManager from './alert.js';
 import { MESSAGE_EVENTS, STATUS_TYPES } from '../util/constants.js';
 
 // 存储所有扩展的变量
-let allExtensions = [];
 const defaultIcon = 'https://fonts.gstatic.com/s/i/productlogos/chrome_store/v7/192px.svg';
 
 class ExtensionManager {
@@ -52,27 +51,17 @@ class ExtensionManager {
 
   // 显示待办扩展项
   _displayTodoExtensions(todoExtensions) {
-    const extensionsGrid = document.getElementById('extensionsGrid');
+    const todoContainer = document.getElementById('todoExtensionsContainer');
     
-    // 清除现有的待办事项标题和项目
-    const todoHeaders = extensionsGrid.querySelectorAll('.todo-section-header');
-    const todoItems = extensionsGrid.querySelectorAll('.todo-item');
-    todoHeaders.forEach(header => header.remove());
-    todoItems.forEach(item => item.remove());
+    // 清除现有的待办项目
+    todoContainer.innerHTML = '';
     
     // 如果没有待办事项，直接返回
     if (todoExtensions.length === 0) {
       return;
     }
     
-    // 添加待办事项分组标题
-    const todoHeader = document.createElement('h3');
-    todoHeader.className = 'todo-section-header';
-    todoHeader.textContent = '⚠️Conflicts';
-    todoHeader.style.gridColumn = '1 / -1';
-    extensionsGrid.insertBefore(todoHeader, extensionsGrid.firstChild);
-    
-    // 显示每个待办事项（插入到最前面）
+    // 显示每个待办事项
     for (let i = todoExtensions.length - 1; i >= 0; i--) {
       const extension = todoExtensions[i];
       const extensionItem = document.createElement('div');
@@ -162,7 +151,7 @@ class ExtensionManager {
         extensionItem.appendChild(name);
       }
       
-      extensionsGrid.insertBefore(extensionItem, extensionsGrid.firstChild.nextSibling);
+      todoContainer.appendChild(extensionItem);
     }
   }
 
@@ -222,20 +211,15 @@ class ExtensionManager {
 
   // 显示扩展列表
   _displayExtensions(extensions, todoExtensions) {
-    const extensionsGrid = document.getElementById('extensionsGrid');
-    
     // 先显示待办事项
     this._displayTodoExtensions(todoExtensions);
     
-    // 只清空普通扩展项目，保留待办事项
-    // 清除现有的普通扩展项目（不包括待办事项）
-    const regularItems = extensionsGrid.querySelectorAll('.extension-item:not(.todo-item)');
-    const sectionHeaders = extensionsGrid.querySelectorAll('.section-header');
-    const dividers = extensionsGrid.querySelectorAll('.divider');
+    const activeContainer = document.getElementById('activeExtensionsContainer');
+    const inactiveContainer = document.getElementById('inactiveExtensionsContainer');
     
-    regularItems.forEach(item => item.remove());
-    sectionHeaders.forEach(header => header.remove());
-    dividers.forEach(divider => divider.remove());
+    // 清除现有的扩展项目
+    activeContainer.innerHTML = '';
+    inactiveContainer.innerHTML = '';
     
     // 过滤掉主题类型的扩展，只保留普通扩展
     const filteredExtensions = extensions.filter(ext => ext.type !== 'theme');
@@ -247,15 +231,8 @@ class ExtensionManager {
     const enabledExtensions = filteredExtensions.filter(ext => ext.enabled && !todoExtensionIds.includes(ext.id));
     const disabledExtensions = filteredExtensions.filter(ext => !ext.enabled && !todoExtensionIds.includes(ext.id));
     
-    // 先添加启用的扩展
+    // 添加启用的扩展
     if (enabledExtensions.length > 0) {
-      // 添加启用扩展的标题
-      const enabledHeader = document.createElement('h3');
-      enabledHeader.className = 'section-header';
-      enabledHeader.textContent = 'Active Extensions';
-      enabledHeader.style.gridColumn = '1 / -1';
-      extensionsGrid.appendChild(enabledHeader);
-      
       enabledExtensions.forEach((extension) => {
         const extensionItem = document.createElement('div');
         extensionItem.className = 'extension-item';
@@ -348,26 +325,12 @@ class ExtensionManager {
         extensionItem.appendChild(icon);
         extensionItem.appendChild(name);
         extensionItem.appendChild(buttonContainer);
-        extensionsGrid.appendChild(extensionItem);
+        activeContainer.appendChild(extensionItem);
       });
     }
     
-    // 如果存在未启用的扩展，则添加分割线
+    // 添加未启用的扩展
     if (disabledExtensions.length > 0) {
-      if (enabledExtensions.length > 0) {
-        const divider = document.createElement('div');
-        divider.className = 'divider';
-        extensionsGrid.appendChild(divider);
-      }
-      
-      // 添加禁用扩展的标题
-      const disabledHeader = document.createElement('h3');
-      disabledHeader.className = 'section-header';
-      disabledHeader.textContent = 'Inactive Extensions';
-      disabledHeader.style.gridColumn = '1 / -1';
-      extensionsGrid.appendChild(disabledHeader);
-      
-      // 再添加未启用的扩展
       disabledExtensions.forEach((extension) => {
         const extensionItem = document.createElement('div');
         extensionItem.className = 'extension-item disabled';
@@ -454,8 +417,16 @@ class ExtensionManager {
         extensionItem.appendChild(icon);
         extensionItem.appendChild(name);
         extensionItem.appendChild(buttonContainer);
-        extensionsGrid.appendChild(extensionItem);
+        inactiveContainer.appendChild(extensionItem);
       });
+    }
+    
+    // 根据是否有内容显示或隐藏分隔线
+    const divider = document.querySelector('.divider');
+    if (enabledExtensions.length > 0 && disabledExtensions.length > 0) {
+      divider.style.display = 'block';
+    } else {
+      divider.style.display = 'none';
     }
   }
 

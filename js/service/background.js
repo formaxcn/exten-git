@@ -2,7 +2,7 @@
 // 负责处理扩展的核心功能，包括Git同步、数据管理和消息传递
 
 // 使用ES6模块导入替代importScripts
-import { MESSAGE_EVENTS } from '../util/constants.js';
+import { MESSAGE_EVENTS,EXTENSION_ACTIONS } from '../util/constants.js';
 
 class BackgroundManager {
   constructor() {
@@ -31,12 +31,12 @@ class BackgroundManager {
     });
 
     // 监听扩展管理事件
-    chrome.management.onInstalled.addListener(() => {
-      chrome.runtime.sendMessage({ action: MESSAGE_EVENTS.DIFF_EXTENSIONS_VIEW });
+    chrome.management.onInstalled.addListener((extensionInfo) => {
+      this._extensionChanged(EXTENSION_ACTIONS.ADD,extensionInfo.id);
     });
 
-    chrome.management.onUninstalled.addListener(() => {
-      chrome.runtime.sendMessage({ action: MESSAGE_EVENTS.DIFF_EXTENSIONS_VIEW });
+    chrome.management.onUninstalled.addListener((extensionInfo) => {
+      this._extensionChanged(EXTENSION_ACTIONS.REMOVE,extensionInfo.id);
     });
 
     // 初始化存储监听器
@@ -127,10 +127,6 @@ class BackgroundManager {
           sendResponse({ status: 'success', data: exportResult });
           break;
 
-        case MESSAGE_EVENTS.DIFF_EXTENSIONS_VIEW:
-          this.handleDiffExtensions(request, sendResponse);
-          break;
-
         default:
           sendResponse({ status: 'error', message: 'Unknown action' });
       }
@@ -157,8 +153,13 @@ class BackgroundManager {
     }
 
     if (changes['todoExtensions']){
-      chrome.runtime.sendMessage({ action: MESSAGE_EVENTS.DIFF_EXTENSIONS_VIEW });
+      this._extensionChanged(EXTENSION_ACTIONS.UNDO);
     }
+  }
+
+  _extensionChanged(changeType,extensionId=null) {
+    
+    chrome.runtime.sendMessage({ action: MESSAGE_EVENTS.DIFF_EXTENSIONS_VIEW });
   }
 
   /**

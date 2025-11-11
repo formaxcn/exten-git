@@ -96,6 +96,13 @@
   margin-bottom: 5px; /* 减少底部留白 */
 }
 
+#todoExtensionsContainer,
+#activeExtensionsContainer,
+#inactiveExtensionsContainer {
+  grid-column: 1 / -1;
+  display: contents;
+}
+
 .extension-item {
   text-align: center;
   padding: 8px;
@@ -333,6 +340,14 @@
   background-color: #ccc;
   margin: 2px 0;
   grid-column: 1 / -1;
+}
+
+.divider.hidden {
+  display: none;
+}
+
+.divider.visible {
+  display: block;
 }
 
 .section-header {

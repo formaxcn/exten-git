@@ -15,7 +15,8 @@ const MESSAGE_EVENTS = {
 // 扩展操作常量
 const EXTENSION_ACTIONS = {
   ADD: 'add',
-  REMOVE: 'remove'
+  REMOVE: 'remove',
+  UNDO: 'undo'
 };
 
 // 状态常量
