@@ -88,6 +88,14 @@ class MessageHandler {
           sendResponse(branchesResult);
           break;
           
+        case 'diffExtensions':
+          this.handleDiffExtensions(request, sendResponse);
+          break;
+          
+        case 'gitDataPulled':
+          this.handleGitDataPulled(request, sendResponse);
+          break;
+          
         default:
           sendResponse({status: 'error', message: 'Unknown action'});
       }
@@ -172,7 +180,28 @@ class MessageHandler {
       console.log('Todo extensions cleared from storage');
     });
   }
+  
+  /**
+   * 处理扩展差异比较的消息
+   */
+  handleDiffExtensions(request, sendResponse) {
+    chrome.runtime.sendMessage({action: 'diffExtensions'});
+    if (sendResponse) sendResponse({ status: 'success' });
+  }
+
+  /**
+   * 处理Git数据拉取完成的消息
+   */
+  handleGitDataPulled(request, sendResponse) {
+    // 通知所有监听者更新数据
+    chrome.runtime.sendMessage({
+      action: 'gitDataPulled',
+      data: request.data
+    });
+    if (sendResponse) sendResponse({status: 'success'});
+  }
 }
+
 // background.js
 // 使用importScripts加载isomorphic-git库和git.js模块
 try {
@@ -228,141 +257,6 @@ class BackgroundManager {
     
     // 加载初始设置
     this.loadSettings();
-  }
-
-  /**
-   * 处理推送至Git的消息
-   */
-  async handlePushToGit(request, sendResponse) {
-    try {
-      const result = await gitManager.pushToGit({message: request.message, data: request.data});
-      sendResponse(result);
-    } catch (error) {
-      console.error('Push to Git error:', error);
-      sendResponse({status: 'error', message: error.message});
-    }
-  }
-
-  /**
-   * 处理从Git拉取的消息
-   */
-  async handlePullFromGit(request, sendResponse) {
-    try {
-      const result = await gitManager.pullFromGit();
-      if (result.status === 'success') {
-        // 处理拉取到的数据
-        this.processPulledData(result.data);
-      }
-      sendResponse(result);
-    } catch (error) {
-      console.error('Pull from Git error:', error);
-      sendResponse({status: 'error', message: error.message});
-    }
-  }
-
-  /**
-   * 处理测试Git连接的消息
-   */
-  async handleTestGitConnection(request, sendResponse) {
-    try {
-      const result = await gitManager.testGitConnection(
-        request.repoUrl, 
-        request.userName, 
-        request.password
-      );
-      sendResponse(result);
-    } catch (error) {
-      console.error('Test Git connection error:', error);
-      sendResponse({status: 'error', message: error.message});
-    }
-  }
-
-  /**
-   * 处理获取扩展数据的消息
-   */
-  async handleGetExtensionsData(request, sendResponse) {
-    try {
-      const data = await extensionDataManager._getExtensionsData();
-      sendResponse({status: 'success', data: data});
-    } catch (error) {
-      console.error('Get extensions data error:', error);
-      sendResponse({status: 'error', message: error.message});
-    }
-  }
-
-  /**
-   * 处理导出扩展数据的消息
-   */
-  async handleExportExtensionsData(request, sendResponse) {
-    try {
-      const data = await extensionDataManager.exportExtensionsData();
-      sendResponse({status: 'success', data: data});
-    } catch (error) {
-      console.error('Export extensions data error:', error);
-      sendResponse({status: 'error', message: error.message});
-    }
-  }
-
-  /**
-   * 处理扩展差异比较的消息
-   */
-  async handleDiffExtensions(request, sendResponse) {
-    try {
-      const result = await this.processPulledExtensions(request.data);
-      sendResponse(result);
-    } catch (error) {
-      console.error('Diff extensions error:', error);
-      sendResponse({status: 'error', message: error.message});
-    }
-  }
-
-  /**
-   * 处理设置待办事项的消息
-   */
-  handleSetTodoExtensions(request, sendResponse) {
-    this.todoExtensions = request.todoExtensions || [];
-    chrome.storage.local.set({todoExtensions: this.todoExtensions}, () => {
-      console.log('Todo extensions saved to storage');
-    });
-    sendResponse({status: 'success'});
-  }
-
-  /**
-   * 处理清除待办事项的消息
-   */
-  handleClearTodoExtensions(request, sendResponse) {
-    this.todoExtensions = [];
-    chrome.storage.local.remove('todoExtensions', () => {
-      console.log('Todo extensions cleared from storage');
-    });
-    sendResponse({status: 'success'});
-  }
-
-  /**
-   * 处理获取待办事项的消息
-   */
-  handleGetTodoExtensions(request, sendResponse) {
-    sendResponse({todoExtensions: this.todoExtensions});
-  }
-
-  /**
-   * 处理扩展差异比较的消息
-   */
-  async handleDiffExtensions(request, sendResponse) {
-    chrome.runtime.sendMessage({action: 'diffExtensions'});
-    if (sendResponse) sendResponse({ status: 'success' });
-  }
-
-  /**
-   * 处理Git数据拉取完成的消息
-   */
-  handleGitDataPulled(request, sendResponse) {
-    // 通知所有监听者更新数据
-    chrome.runtime.sendMessage({
-      action: 'gitDataPulled',
-      data: request.data
-    });
-    if (sendResponse) sendResponse({status: 'success'});
   }
 
   // 从存储中加载待办事项
