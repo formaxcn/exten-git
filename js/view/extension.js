@@ -31,7 +31,7 @@ class ExtensionManager {
       });
       
       chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-        if (request.action === 'diffExtensions') {
+        if (request.action === MESSAGE_EVENTS.DIFF_EXTENSIONS) {
           this._compareExtensions(restoredData.extensions);
           sendResponse({status: 'success'});
         }

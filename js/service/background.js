@@ -32,11 +32,11 @@ class BackgroundManager {
 
     // 监听扩展管理事件
     chrome.management.onInstalled.addListener(() => {
-      this._notifyPopupToRefresh();
+      this._notifyViewToRefresh();
     });
 
     chrome.management.onUninstalled.addListener(() => {
-      this._notifyPopupToRefresh();
+      this._notifyViewToRefresh();
     });
 
     // 初始化存储监听器
@@ -94,11 +94,6 @@ class BackgroundManager {
   async _handleMessage(request, sender, sendResponse) {
     try {
       switch (request.action) {
-        case MESSAGE_EVENTS.SAVE_EXTENSIONS:
-          this.saveExtensionsToList(request.extensions);
-          sendResponse({status: 'success'});
-          break;
-          
         case MESSAGE_EVENTS.PUSH_TO_GIT:
           const pushResult = await this.gitManager.pushToGit({message: request.message});
           sendResponse(pushResult);
@@ -127,41 +122,13 @@ class BackgroundManager {
           sendResponse(testResult);
           break;
           
-        case MESSAGE_EVENTS.SET_TODO_EXTENSIONS:
-          this.setTodoExtensions(request.todoExtensions);
-          sendResponse({status: 'success'});
-          break;
-          
-        case MESSAGE_EVENTS.CLEAR_TODO_EXTENSIONS:
-          this.clearTodoExtensions();
-          sendResponse({status: 'success'});
-          break;
-          
-        case MESSAGE_EVENTS.GET_TODO_EXTENSIONS:
-          sendResponse({todoExtensions: this.todoExtensions});
-          break;
-          
-        case MESSAGE_EVENTS.GET_EXTENSIONS_DATA:
-          const dataResult = await this.extensionDataManager._getExtensionsData();
-          sendResponse({status: 'success', data: dataResult});
-          break;
-          
         case MESSAGE_EVENTS.EXPORT_EXTENSIONS_DATA:
           const exportResult = await this.extensionDataManager.exportExtensionsData();
           sendResponse({status: 'success', data: exportResult});
           break;
           
-        case MESSAGE_EVENTS.LIST_REMOTE_BRANCHES:
-          const branchesResult = await this.gitManager.listRemoteBranches(request.settings);
-          sendResponse(branchesResult);
-          break;
-          
         case MESSAGE_EVENTS.DIFF_EXTENSIONS:
           this.handleDiffExtensions(request, sendResponse);
-          break;
-          
-        case MESSAGE_EVENTS.GIT_DATA_PULLED:
-          this.handleGitDataPulled(request, sendResponse);
           break;
           
         default:
@@ -192,31 +159,10 @@ class BackgroundManager {
       this._restartRefreshInterval();
     }
   }
-
-  /**
-   * 设置待办事项并保存到存储 (公共方法)
-   */
-  setTodoExtensions(todoExtensions) {
-    this.todoExtensions = todoExtensions;
-    chrome.storage.local.set({todoExtensions: this.todoExtensions}, () => {
-      console.log('Todo extensions saved to storage');
-    });
-  }
-
-  /**
-   * 清除待办事项 (公共方法)
-   */
-  clearTodoExtensions() {
-    this.todoExtensions = [];
-    chrome.storage.local.remove('todoExtensions', () => {
-      console.log('Todo extensions cleared from storage');
-    });
-  }
-
   /**
    * 通知popup刷新界面 (私有方法)
    */
-  _notifyPopupToRefresh() {
+  _notifyViewToRefresh() {
     chrome.runtime.sendMessage({action: MESSAGE_EVENTS.DIFF_EXTENSIONS});
   }
 
@@ -271,14 +217,6 @@ class BackgroundManager {
     }
   }
 
-  /**
-   * 保存扩展列表到本地存储 (公共方法)
-   */
-  saveExtensionsToList(extensions) {
-    chrome.storage.local.set({currentExtensions: extensions}, function() {
-      console.log('Extensions list saved');
-    });
-  }
 }
 
 // 创建后台管理器实例

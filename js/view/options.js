@@ -100,13 +100,20 @@ class OptionsManager {
       
       // 自动同步开关事件
       document.getElementById('autoSyncToggle').addEventListener('change', (e) => {
-        this._toggleAutoSync(e.target.checked);
+        chrome.messages.sendMessage({
+          type: MESSAGE_EVENTS.TOGGLE_AUTO_SYNC,
+          payload: e.target.checked
+        });
         // 自动保存开关状态
         chrome.storage.sync.set({autoSyncEnabled: e.target.checked});
       });
       
       // 浏览器同步开关事件
       document.getElementById('browserSyncCheckbox').addEventListener('change', (e) => {
+        chrome.messages.sendMessage({
+          type: MESSAGE_EVENTS.TOGGLE_BROWSER_SYNC,
+          payload: e.target.checked
+        });
         // 自动保存开关状态
         chrome.storage.sync.set({browserSyncEnabled: e.target.checked});
       });

@@ -3,19 +3,13 @@
 
 // Background消息事件常量
 const MESSAGE_EVENTS = {
-  SAVE_EXTENSIONS: 'saveExtensions',
   PUSH_TO_GIT: 'pushToGit',
   PULL_FROM_GIT: 'pullFromGit',
+  SYNC_GIT_CHANGES: 'syncGitChanges',
   PROCESS_PULLED_EXTENSIONS: 'processPulledExtensions',
   TEST_GIT_CONNECTION: 'testGitConnection',
-  SET_TODO_EXTENSIONS: 'setTodoExtensions',
-  CLEAR_TODO_EXTENSIONS: 'clearTodoExtensions',
-  GET_TODO_EXTENSIONS: 'getTodoExtensions',
-  GET_EXTENSIONS_DATA: 'getExtensionsData',
   EXPORT_EXTENSIONS_DATA: 'exportExtensionsData',
-  LIST_REMOTE_BRANCHES: 'listRemoteBranches',
-  DIFF_EXTENSIONS: 'diffExtensions',
-  GIT_DATA_PULLED: 'gitDataPulled'
+  DIFF_EXTENSIONS: 'diffExtensions'
 };
 
 // 扩展操作常量
