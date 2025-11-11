@@ -2,13 +2,7 @@
 // 负责处理扩展的核心功能，包括Git同步、数据管理和消息传递
 
 // 使用ES6模块导入替代importScripts
-import { Buffer } from '../lib/buffer.js';
-import '../lib/lightning-fs.min.js';
-import '../lib/isomorphic-git/index.umd.min.js';
-import { MESSAGE_EVENTS, EXTENSION_ACTIONS, STATUS_TYPES } from '../util/constants.js';
-import GitManager from './git.js';
-import ExtensionManager from './extension.js';
-import { exportExtensionsData, importExtensionsData } from './extensionData.js';
+import { MESSAGE_EVENTS } from '../util/constants.js';
 
 class BackgroundManager {
   constructor() {
