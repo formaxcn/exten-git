@@ -6,7 +6,7 @@ try {
     '../lib/lightning-fs.min.js',
     '../lib/isomorphic-git.index.umd.min.js',
     '../lib/isomorphic-git-http-web.index.js',
-    '../util/constants.js',
+    // '../util/constants.js',
     'git.js'
   );
 } catch (error) {
