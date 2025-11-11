@@ -49,19 +49,16 @@ class OptionsManager {
       // Sync操作
       document.getElementById('syncBtn').addEventListener('click', () => {
         this._syncChanges();
-        this._updateLastSyncTime();
       });
       
       // Pull操作
       document.getElementById('pullBtn').addEventListener('click', () => {
         this._pullChanges();
-        this._updateLastSyncTime();
       });
       
       // Push操作
       document.getElementById('pushBtn').addEventListener('click', () => {
         this._pushChanges();
-        this._updateLastSyncTime();
       });
       
       // 导出配置
@@ -95,19 +92,19 @@ class OptionsManager {
       document.getElementById('syncInterval').addEventListener('change', (e) => {
         const index = parseInt(e.target.value);
         const syncInterval = this.syncIntervalOptions[index].value;
-        chrome.storage.sync.set({syncInterval: syncInterval});
+        chrome.storage.local.set({syncInterval: syncInterval});
       });
       
       // 自动同步开关事件
       document.getElementById('autoSyncToggle').addEventListener('change', (e) => {
         // 自动保存开关状态
-        chrome.storage.sync.set({autoSyncEnabled: e.target.checked});
+        chrome.storage.local.set({autoSyncEnabled: e.target.checked});
       });
       
       // 浏览器同步开关事件
       document.getElementById('browserSyncCheckbox').addEventListener('change', (e) => {
         // 自动保存开关状态
-        chrome.storage.sync.set({browserSyncEnabled: e.target.checked});
+        chrome.storage.local.set({browserSyncEnabled: e.target.checked});
       });
       
       // 同步策略变更后自动保存
@@ -115,16 +112,19 @@ class OptionsManager {
       syncStrategyInputs.forEach(input => {
         input.addEventListener('change', (e) => {
           if (e.target.checked) {
-            chrome.storage.sync.set({syncStrategy: e.target.value});
+            chrome.storage.local.set({syncStrategy: e.target.value});
           }
         });
       });
-      
-      // 定期更新commit hash显示
-      this._updateCommitHashDisplay();
-      setInterval(() => {
-        this._updateCommitHashDisplay();
-      }, 5000); // 每5秒更新一次
+
+      chrome.storage.onChanged.addListener((changes, areaName) => {
+        if ("lastSyncTime" === areaName) {
+          this._updateLastSyncTime();
+        }
+        else if ("lastCommitHash" === areaName) {
+          this._updateCommitHashDisplay();
+        }
+      });
     });
   }
 
@@ -151,19 +151,20 @@ class OptionsManager {
    * 更新上次同步时间显示
    */
   _updateLastSyncTime() {
-    const now = new Date();
-    const timeString = now.toLocaleString();
-    const lastSyncElement = document.getElementById('lastSyncTimeValue');
-    if (lastSyncElement) {
-      lastSyncElement.textContent = timeString;
-    }
+    chrome.storage.local.get(["lastSyncTime"], (result) => {
+      // 可以添加其他同步逻辑    
+      const lastSyncElement = document.getElementById('lastSyncTimeValue');
+      if (lastSyncElement) { 
+        lastSyncElement.textContent = result.lastSyncTime.toLocaleString();
+      }
+    });
   }
 
   /**
    * 加载设置
    */
   _loadSettings() {
-    chrome.storage.sync.get([
+    chrome.storage.local.get([
       'repoUrl', 
       'filePath',
       'userName',
@@ -229,13 +230,10 @@ class OptionsManager {
       // 保存默认值（如果尚未保存）
       if (!items.syncInterval) {
         const defaultSyncInterval = this.syncIntervalOptions[selectedIndex].value;
-        chrome.storage.sync.set({
+        chrome.storage.local.set({
           syncInterval: defaultSyncInterval
         });
       }
-      
-      // 更新commit hash显示
-      this._updateCommitHashDisplay();
     });
   }
 
@@ -266,13 +264,11 @@ class OptionsManager {
       autoSync: autoSync
     };
     
-    chrome.storage.sync.set(settings, () => {
+    chrome.storage.local.set(settings, () => {
       if (chrome.runtime.lastError) {
         AlertManager.showStatus('Error saving settings: ' + chrome.runtime.lastError.message, STATUS_TYPES.ERROR);
       } else {
         AlertManager.showStatus('Settings saved successfully!', STATUS_TYPES.SUCCESS);
-        // 更新commit hash显示
-        this._updateCommitHashDisplay();
       }
     });
   }
@@ -321,12 +317,6 @@ class OptionsManager {
    * Sync操作
    */
   _syncChanges() {
-    // 保存同步时间
-    const now = new Date().getTime();
-    chrome.storage.sync.set({ lastSyncTime: now }, () => {
-      // 可以添加其他同步逻辑
-    });
-    
     AlertManager.showStatus('Sync functionality needs to be implemented', STATUS_TYPES.ERROR);
   }
 
@@ -334,24 +324,12 @@ class OptionsManager {
    * Pull操作 - 从Git仓库拉取扩展数据
    */
   _pullChanges() {
-    // 保存同步时间
-    const now = new Date().getTime();
-    chrome.storage.sync.set({ lastSyncTime: now }, () => {
-      // 可以添加其他pull逻辑
-    });
-    
     AlertManager.showStatus('Pulling data from Git repository...', STATUS_TYPES.INFO);
     
     // 发送消息到background script执行pull操作
     chrome.runtime.sendMessage({
       action: MESSAGE_EVENTS.PULL_FROM_GIT
-    }, (response) => {
-      if (chrome.runtime.lastError) {
-        console.error('Runtime error:', chrome.runtime.lastError);
-        AlertManager.showStatus(`Runtime error: ${chrome.runtime.lastError.message}`, STATUS_TYPES.ERROR);
-        return;
-      }
-      
+    }, (response) => {      
       if (response && response.status === 'success') {
         AlertManager.showStatus('Successfully pulled data from Git repository', STATUS_TYPES.SUCCESS);
       } else if (response && response.message) {
@@ -359,9 +337,6 @@ class OptionsManager {
       } else {
         AlertManager.showStatus('Unknown error occurred during pull operation', STATUS_TYPES.ERROR);
       }
-      
-      // 更新commit hash显示
-      this._updateCommitHashDisplay();
     });
   }
 
@@ -369,12 +344,6 @@ class OptionsManager {
    * Push操作 - 将扩展数据推送到Git仓库
    */
   _pushChanges() {
-    // 保存同步时间
-    const now = new Date().getTime();
-    chrome.storage.sync.set({ lastSyncTime: now }, () => {
-      // 可以添加其他push逻辑
-    });
-    
     AlertManager.showStatus('Checking todo items...', STATUS_TYPES.INFO);
     
     // 检查待办事项是否为空
@@ -417,9 +386,6 @@ class OptionsManager {
             } else {
               AlertManager.showStatus('Unknown error occurred during push operation', STATUS_TYPES.ERROR);
             }
-            
-            // 更新commit hash显示
-            this._updateCommitHashDisplay();
           });
         } else if (response && response.message) {
           AlertManager.showStatus(`Failed to get extensions data: ${response.message}`, STATUS_TYPES.ERROR);

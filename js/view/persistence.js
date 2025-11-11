@@ -11,7 +11,7 @@ class PersistenceManager {
    * 导出配置
    */
   static exportConfig() {
-    chrome.storage.sync.get([
+    chrome.storage.local.get([
       'repoUrl', 
       'filePath',
       'userName',
@@ -79,7 +79,7 @@ class PersistenceManager {
             }
           });
           
-          chrome.storage.sync.set(filteredConfig, () => {
+          chrome.storage.local.set(filteredConfig, () => {
             // 使用导入的optionsManager实例来加载设置
             optionsManager._loadSettings();
             AlertManager.showStatus('Configuration restored successfully!', STATUS_TYPES.SUCCESS);

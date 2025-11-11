@@ -20,6 +20,7 @@ class GitManager {
     }
   }
 
+
   /**
    * 推送到Git仓库 (公共方法)
    * @param {Object} options - 推送选项
@@ -175,7 +176,7 @@ class GitManager {
    */
   _getGitSettings() {
     return new Promise((resolve) => {
-      chrome.storage.sync.get([
+      chrome.storage.local.get([
         'repoUrl', 
         'userName', 
         'password', 
@@ -532,6 +533,12 @@ class GitManager {
     return new Promise((resolve) => {
       chrome.storage.local.set({ lastCommitHash: commitHash }, () => {
         resolve();
+      });
+
+      // 保存同步时间
+      const now = new Date().getTime();
+      chrome.storage.local.set({ lastSyncTime: now }, () => {
+        // 可以添加其他同步逻辑
       });
     });
   }

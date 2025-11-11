@@ -41,7 +41,7 @@ class BackgroundManager {
 
     // 初始化存储监听器
     chrome.storage.onChanged.addListener((changes, areaName) => {
-      if (areaName === 'sync') {
+      if (["todoExtensions","browserSyncEnabled","refreshInterval","autoSyncEnabled"].includes(areaName)) {
         this._handleStorageChange(changes);
       }
     });
@@ -69,7 +69,7 @@ class BackgroundManager {
    */
   async _loadSettings() {
     try {
-      const result = await chrome.storage.sync.get([
+      const result = await chrome.storage.local.get([
         'repoUrl',
         'userName',
         'password',
