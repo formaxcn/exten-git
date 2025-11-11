@@ -6,10 +6,10 @@ const MESSAGE_EVENTS = {
   PUSH_TO_GIT: 'pushToGit',
   PULL_FROM_GIT: 'pullFromGit',
   SYNC_GIT_CHANGES: 'syncGitChanges',
-  PROCESS_PULLED_EXTENSIONS: 'processPulledExtensions',
   TEST_GIT_CONNECTION: 'testGitConnection',
+  IMPORT_EXTENSIONS_DATA: 'processPulledExtensions',
   EXPORT_EXTENSIONS_DATA: 'exportExtensionsData',
-  DIFF_EXTENSIONS: 'diffExtensions'
+  DIFF_EXTENSIONS_VIEW: 'diffExtensions'
 };
 
 // 扩展操作常量

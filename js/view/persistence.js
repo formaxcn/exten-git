@@ -152,7 +152,7 @@ class PersistenceManager {
           if (backupData.extensions) {
             // 发送消息到background script处理扩展恢复
             chrome.runtime.sendMessage({
-              action: MESSAGE_EVENTS.PROCESS_PULLED_EXTENSIONS,
+              action: MESSAGE_EVENTS.IMPORT_EXTENSIONS_DATA,
               data: backupData
             }, (response) => {
               // 检查是否有运行时错误

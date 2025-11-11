@@ -20,7 +20,7 @@ class BackgroundManager {
       // 返回true以保持消息通道开放，因为我们在使用异步操作
       return true;
     });
-    
+
     chrome.runtime.onInstalled.addListener(() => {
       console.log('Extension Git Sync installed');
     });
@@ -48,7 +48,7 @@ class BackgroundManager {
 
     // 初始化时从存储中加载待办事项
     this._loadTodoExtensionsFromStorage();
-    
+
     // 加载初始设置
     this._loadSettings();
   }
@@ -70,17 +70,17 @@ class BackgroundManager {
   async _loadSettings() {
     try {
       const result = await chrome.storage.sync.get([
-        'repoUrl', 
-        'userName', 
-        'password', 
-        'branchName', 
+        'repoUrl',
+        'userName',
+        'password',
+        'branchName',
         'commitPrefix',
         'autoSyncEnabled',
         'browserSyncEnabled',
       ]);
-      
+
       this.settings = result;
-      
+
       // 如果启用了自动推送或拉取，则设置定时器
       if (result.autoSyncEnabled || result.browserSyncEnabled) {
         this._startRefreshInterval();
@@ -95,48 +95,48 @@ class BackgroundManager {
     try {
       switch (request.action) {
         case MESSAGE_EVENTS.PUSH_TO_GIT:
-          const pushResult = await this.gitManager.pushToGit({message: request.message});
+          const pushResult = await this.gitManager.pushToGit({ message: request.message });
           sendResponse(pushResult);
           break;
-          
+
         case MESSAGE_EVENTS.PULL_FROM_GIT:
           const pullResult = await this.gitManager.pullFromGit();
           if (pullResult.status === 'success') {
             // 处理拉取到的数据
-            this.processPulledData(pullResult.data);
+            this.processExtensionDiffData(pullResult.data);
           }
           sendResponse(pullResult);
           break;
-          
-        case MESSAGE_EVENTS.PROCESS_PULLED_EXTENSIONS:
-          const processResult = await this.processPulledExtensions(request.data);
+
+        case MESSAGE_EVENTS.IMPORT_EXTENSIONS_DATA:
+          const processResult = await this.processExtensionDiffData(request.data);
           sendResponse(processResult);
           break;
-          
+
         case MESSAGE_EVENTS.TEST_GIT_CONNECTION:
           const testResult = await this.gitManager.testGitConnection(
-            request.repoUrl, 
-            request.userName, 
+            request.repoUrl,
+            request.userName,
             request.password
           );
           sendResponse(testResult);
           break;
-          
+
         case MESSAGE_EVENTS.EXPORT_EXTENSIONS_DATA:
-          const exportResult = await this.extensionDataManager.exportExtensionsData();
-          sendResponse({status: 'success', data: exportResult});
+          const exportResult = await this._exportExtensionsData();
+          sendResponse({ status: 'success', data: exportResult });
           break;
-          
-        case MESSAGE_EVENTS.DIFF_EXTENSIONS:
+
+        case MESSAGE_EVENTS.DIFF_EXTENSIONS_VIEW:
           this.handleDiffExtensions(request, sendResponse);
           break;
-          
+
         default:
-          sendResponse({status: 'error', message: 'Unknown action'});
+          sendResponse({ status: 'error', message: 'Unknown action' });
       }
     } catch (error) {
       console.error(`Error handling message ${request.action}:`, error);
-      sendResponse({status: 'error', message: error.message});
+      sendResponse({ status: 'error', message: error.message });
     }
   }
 
@@ -145,7 +145,7 @@ class BackgroundManager {
    */
   _handleStorageChange(changes) {
     // 检查是否有影响定时器的设置变化
-    ['autoSyncEnabled','browserSyncEnabled','refreshInterval'].forEach(key => {
+    ['autoSyncEnabled', 'browserSyncEnabled', 'refreshInterval'].forEach(key => {
       if (changes[key]) {
         this.settings[key] = changes[key].newValue;
         this._restartRefreshInterval();
@@ -153,10 +153,10 @@ class BackgroundManager {
     });
   }
   /**
-   * 通知popup刷新界面 (私有方法)
+   * 通知刷新界面 (私有方法)
    */
   _notifyViewToRefresh() {
-    chrome.runtime.sendMessage({action: MESSAGE_EVENTS.DIFF_EXTENSIONS});
+    chrome.runtime.sendMessage({ action: MESSAGE_EVENTS.DIFF_EXTENSIONS_VIEW });
   }
 
   /**
@@ -189,13 +189,65 @@ class BackgroundManager {
    */
   _restartRefreshInterval() {
     this._stopRefreshInterval();
-    
+
     // 如果启用自动推送或拉取，则重新启动定时器
     if (this.settings.autoPush || this.settings.autoPull) {
       this._startRefreshInterval();
     }
   }
 
+
+  /**
+   * 获取扩展列表数据 (公共方法)
+   * @returns {Promise} Promise that resolves with the extensions data
+   */
+  _getExtensionsData() {
+    return new Promise((resolve, reject) => {
+      chrome.management.getAll((extensions) => {
+        if (chrome.runtime.lastError) {
+          reject(new Error(chrome.runtime.lastError.message));
+          return;
+        }
+
+        // 过滤掉当前扩展自身，只保留其他扩展
+        const filteredExtensions = extensions.filter(ext =>
+          ext.id !== chrome.runtime.id
+        );
+
+        resolve(filteredExtensions);
+      });
+    });
+  }
+
+  /**
+   * 导出扩展数据为JSON格式 (公共方法)
+   * @returns {Promise} Promise that resolves with the extensions data in JSON format
+   */
+  async _exportExtensionsData() {
+    try {
+      const extensions = await this._getExtensionsData();
+
+      // 提取需要的信息
+      const extensionsData = extensions.map(ext => ({
+        id: ext.id,
+        name: ext.name,
+        version: ext.version,
+        description: ext.description,
+        homepageUrl: ext.homepageUrl,
+        installType: ext.installType,
+        enabled: ext.enabled
+      }));
+
+      // 返回格式化的数据，符合指定格式
+      return {
+        version: "0.1",
+        extensions: extensionsData,
+        exportTime: new Date().toISOString()
+      };
+    } catch (error) {
+      throw error;
+    }
+  }
 }
 
 // 创建后台管理器实例
