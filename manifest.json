@@ -13,7 +13,8 @@
   ],
   "options_page": "options.html",
   "background": {
-    "service_worker": "js/service/background.js"
+    "service_worker": "js/service/background.js",
+    "type": "module"
   },
   "action": {
     "default_title": "Extension Git Sync"

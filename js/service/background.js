@@ -1,19 +1,14 @@
-// background.js
-// 使用importScripts加载isomorphic-git库和git.js模块
+// background.js - 后台服务工作者
+// 负责处理扩展的核心功能，包括Git同步、数据管理和消息传递
 
-// 由于 Service Worker 环境限制，需要确保所有模块都通过 importScripts 加载且不包含 ES6 export 语法
-try {
-  importScripts(
-    '../lib/buffer.js',
-    '../lib/lightning-fs.min.js',
-    '../lib/isomorphic-git.index.umd.min.js',
-    '../lib/isomorphic-git-http-web.index.js',
-    '../util/constants.js',
-    'git.js'
-  );
-} catch (error) {
-  console.error('Failed to load Git manager:', error);
-}
+// 使用ES6模块导入替代importScripts
+import { Buffer } from '../lib/buffer.js';
+import '../lib/lightning-fs.min.js';
+import '../lib/isomorphic-git/index.umd.min.js';
+import { MESSAGE_EVENTS, EXTENSION_ACTIONS, STATUS_TYPES } from '../util/constants.js';
+import GitManager from './git.js';
+import ExtensionManager from './extension.js';
+import { exportExtensionsData, importExtensionsData } from './extensionData.js';
 
 class BackgroundManager {
   constructor() {

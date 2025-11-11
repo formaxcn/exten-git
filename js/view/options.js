@@ -4,7 +4,7 @@
  */
 import FileManager from './persistence.js';
 import AlertManager from './alert.js';
-import MESSAGE_EVENTS from '../util/constants.js';
+import { MESSAGE_EVENTS } from '../util/constants.js';
 
 class OptionsManager {
   /**
