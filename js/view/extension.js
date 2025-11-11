@@ -52,14 +52,19 @@ class ExtensionManager {
   // 显示待办扩展项
   _displayTodoExtensions(todoExtensions) {
     const todoContainer = document.getElementById('todoExtensionsContainer');
+    const todoSectionHeader = document.querySelector('.todo-section-header');
     
     // 清除现有的待办项目
     todoContainer.innerHTML = '';
     
-    // 如果没有待办事项，直接返回
+    // 如果没有待办事项，隐藏标题并直接返回
     if (todoExtensions.length === 0) {
+      todoSectionHeader.style.display = 'none';
       return;
     }
+    
+    // 如果有待办事项，显示标题
+    todoSectionHeader.style.display = 'block';
     
     // 显示每个待办事项
     for (let i = todoExtensions.length - 1; i >= 0; i--) {
