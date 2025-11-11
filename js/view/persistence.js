@@ -6,7 +6,7 @@ import AlertManager from './alert.js';
 import OptionsManager, { optionsManager } from './options.js';
 import { MESSAGE_EVENTS, STATUS_TYPES } from '../util/constants.js';
 
-class FileManager {
+class PersistenceManager {
   /**
    * 导出配置
    */
@@ -178,3 +178,7 @@ class FileManager {
    * 显示状态信息的方法已被移除，改用 AlertManager
    */
 }
+
+export default PersistenceManager;
+
+export const persistenceManager = new PersistenceManager();

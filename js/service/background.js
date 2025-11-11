@@ -90,6 +90,89 @@ class BackgroundManager {
     }
   }
 
+
+  async _handleMessage(request, sender, sendResponse) {
+    try {
+      switch (request.action) {
+        case MESSAGE_EVENTS.SAVE_EXTENSIONS:
+          this.saveExtensionsToList(request.extensions);
+          sendResponse({status: 'success'});
+          break;
+          
+        case MESSAGE_EVENTS.PUSH_TO_GIT:
+          const pushResult = await this.gitManager.pushToGit({message: request.message});
+          sendResponse(pushResult);
+          break;
+          
+        case MESSAGE_EVENTS.PULL_FROM_GIT:
+          const pullResult = await this.gitManager.pullFromGit();
+          if (pullResult.status === 'success') {
+            // 处理拉取到的数据
+            this.processPulledData(pullResult.data);
+          }
+          sendResponse(pullResult);
+          break;
+          
+        case MESSAGE_EVENTS.PROCESS_PULLED_EXTENSIONS:
+          const processResult = await this.processPulledExtensions(request.data);
+          sendResponse(processResult);
+          break;
+          
+        case MESSAGE_EVENTS.TEST_GIT_CONNECTION:
+          const testResult = await this.gitManager.testGitConnection(
+            request.repoUrl, 
+            request.userName, 
+            request.password
+          );
+          sendResponse(testResult);
+          break;
+          
+        case MESSAGE_EVENTS.SET_TODO_EXTENSIONS:
+          this.setTodoExtensions(request.todoExtensions);
+          sendResponse({status: 'success'});
+          break;
+          
+        case MESSAGE_EVENTS.CLEAR_TODO_EXTENSIONS:
+          this.clearTodoExtensions();
+          sendResponse({status: 'success'});
+          break;
+          
+        case MESSAGE_EVENTS.GET_TODO_EXTENSIONS:
+          sendResponse({todoExtensions: this.todoExtensions});
+          break;
+          
+        case MESSAGE_EVENTS.GET_EXTENSIONS_DATA:
+          const dataResult = await this.extensionDataManager._getExtensionsData();
+          sendResponse({status: 'success', data: dataResult});
+          break;
+          
+        case MESSAGE_EVENTS.EXPORT_EXTENSIONS_DATA:
+          const exportResult = await this.extensionDataManager.exportExtensionsData();
+          sendResponse({status: 'success', data: exportResult});
+          break;
+          
+        case MESSAGE_EVENTS.LIST_REMOTE_BRANCHES:
+          const branchesResult = await this.gitManager.listRemoteBranches(request.settings);
+          sendResponse(branchesResult);
+          break;
+          
+        case MESSAGE_EVENTS.DIFF_EXTENSIONS:
+          this.handleDiffExtensions(request, sendResponse);
+          break;
+          
+        case MESSAGE_EVENTS.GIT_DATA_PULLED:
+          this.handleGitDataPulled(request, sendResponse);
+          break;
+          
+        default:
+          sendResponse({status: 'error', message: 'Unknown action'});
+      }
+    } catch (error) {
+      console.error(`Error handling message ${request.action}:`, error);
+      sendResponse({status: 'error', message: error.message});
+    }
+  }
+
   /**
    * 处理存储变化 (私有方法)
    */
