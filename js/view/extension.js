@@ -12,48 +12,35 @@ class ExtensionManager {
   constructor() {
     this.allExtensions = [];
     this.todoExtensions = [];
-    this.init();
+    this._init();
   }
 
-  init() {
+  _init() {
     document.addEventListener('DOMContentLoaded', () => {
       // Popup功能
-      this.loadExtensions();
+      this._loadExtensions();
       
       // 搜索框事件
       document.getElementById('extensionSearch').addEventListener('input', () => {
-        this.filterExtensions();
+        this._filterExtensions();
       });
       
       // 清除搜索按钮事件
       document.getElementById('clearSearch').addEventListener('click', () => {
-        this.clearSearch();
+        this._clearSearch();
       });
       
-      // 监听文件导入事件
-      this.setupImportListener();
+      chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+        if (request.action === 'diffExtensions') {
+          this._compareExtensions(restoredData.extensions);
+          sendResponse({status: 'success'});
+        }
+      });
     });
-  }
-
-  // 设置导入监听器
-  setupImportListener() {
-    // 监听来自background script的扩展差异事件
-    chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-      if (request.action === 'diffExtensions') {
-        this.handleRestoredExtensions(request.data);
-        sendResponse({status: 'success'});
-      }
-    });
-  }
-
-  // 处理导入的扩展列表
-  handleRestoredExtensions(restoredData) {
-    // 比较当前扩展和导入的扩展
-    this.compareExtensions(restoredData.extensions);
   }
 
   // 比较扩展列表
-  compareExtensions(importedExtensions) {
+  _compareExtensions(importedExtensions) {
     chrome.management.getAll((currentExtensions) => {
       // 过滤掉主题类型扩展
       const filteredCurrentExtensions = currentExtensions.filter(ext => ext.type !== 'theme');
@@ -87,12 +74,12 @@ class ExtensionManager {
       }
       
       // 显示待办事项
-      this.loadExtensions();
+      this._loadExtensions();
     });
   }
 
   // 统一的卸载方法
-  uninstallExtension(extensionId, extensionName) {
+  _uninstallExtension(extensionId, extensionName) {
     chrome.management.uninstall(extensionId, { showConfirmDialog: true }, () => {
       if (chrome.runtime.lastError) {
         AlertManager.showStatus('Error uninstalling extension: ' + chrome.runtime.lastError.message, 'error');
@@ -101,13 +88,13 @@ class ExtensionManager {
         // 从待办列表中移除该项（如果存在）
         this.todoExtensions = this.todoExtensions.filter(ext => ext.id !== extensionId);
         // 重新显示扩展列表
-        this.loadExtensions();
+        this._loadExtensions();
       }
     });
   }
 
   // 显示待办扩展项
-  displayTodoExtensions() {
+  _displayTodoExtensions() {
     const extensionsGrid = document.getElementById('extensionsGrid');
     
     // 清除现有的待办事项标题和项目
@@ -146,7 +133,7 @@ class ExtensionManager {
       undoPart.title = 'Undo';
       undoPart.addEventListener('click', (e) => {
         e.stopPropagation();
-        this.revertTodoAction(extension.id);
+        this._revertTodoAction(extension.id);
       });
       
       overlay.appendChild(undoPart);
@@ -165,7 +152,7 @@ class ExtensionManager {
         actionPart.title = 'Uninstall Extension';
         actionPart.addEventListener('click', (e) => {
           e.stopPropagation();
-          this.uninstallExtension(extension.id, extension.name);
+          this._uninstallExtension(extension.id, extension.name);
         });
         
         overlay.appendChild(actionPart);
@@ -223,7 +210,7 @@ class ExtensionManager {
   }
 
   // 撤销待办操作
-  revertTodoAction(extensionId) {
+  _revertTodoAction(extensionId) {
     // 从待办列表中移除该项
     this.todoExtensions = this.todoExtensions.filter(ext => ext.id !== extensionId);
     
@@ -235,7 +222,7 @@ class ExtensionManager {
       }, () => {
         AlertManager.showStatus('Action reverted', 'info');
         // 重新显示扩展列表
-        this.loadExtensions();
+        this._loadExtensions();
       });
     } else {
       chrome.runtime.sendMessage({
@@ -243,39 +230,13 @@ class ExtensionManager {
       }, () => {
         AlertManager.showStatus('Action reverted', 'info');
         // 重新显示扩展列表
-        this.loadExtensions();
+        this._loadExtensions();
       });
     }
   }
 
-  // 标记为移除
-  markForRemoval(extension) {
-    // 这里应该实现实际的移除逻辑
-    console.log('Marked for removal:', extension.id);
-    AlertManager.showStatus(`Extension ${extension.name} marked for removal`, 'info');
-    
-    // 从待办列表中移除该项
-    this.todoExtensions = this.todoExtensions.filter(ext => ext.id !== extension.id);
-    
-    // 重新显示扩展列表
-    this.loadExtensions();
-  }
-
-  // 标记为安装
-  markForInstallation(extension) {
-    // 这里应该实现实际的安装逻辑
-    console.log('Marked for installation:', extension.id);
-    AlertManager.showStatus(`Extension ${extension.name} marked for installation`, 'info');
-    
-    // 从待办列表中移除该项
-    this.todoExtensions = this.todoExtensions.filter(ext => ext.id !== extension.id);
-    
-    // 重新显示扩展列表
-    this.loadExtensions();
-  }
-
   // 获取所有扩展
-  loadExtensions() {
+  _loadExtensions() {
     chrome.management.getAll((extensions) => {
       // popupStatusElement.textContent = '';
       
@@ -295,21 +256,21 @@ class ExtensionManager {
             ext.name.toLowerCase().includes(searchTerm) || 
             (ext.description && ext.description.toLowerCase().includes(searchTerm))
           );
-          this.displayExtensions(filteredExtensions);
+          this._displayExtensions(filteredExtensions);
         } else {
           // 显示所有扩展
-          this.displayExtensions(extensions);
+          this._displayExtensions(extensions);
         }
       });
     });
   }
 
   // 显示扩展列表
-  displayExtensions(extensions) {
+  _displayExtensions(extensions) {
     const extensionsGrid = document.getElementById('extensionsGrid');
     
     // 先显示待办事项
-    this.displayTodoExtensions();
+    this._displayTodoExtensions();
     
     // 只清空普通扩展项目，保留待办事项
     // 清除现有的普通扩展项目（不包括待办事项）
@@ -406,7 +367,7 @@ class ExtensionManager {
             } else {
               AlertManager.showStatus('Extension disabled successfully', 'success');
               // 重新加载扩展列表
-              this.loadExtensions();
+              this._loadExtensions();
             }
           });
         });
@@ -416,7 +377,7 @@ class ExtensionManager {
         uninstallButton.className = 'extension-button uninstall-button';
         uninstallButton.innerHTML = '<i class="fas fa-trash-alt"></i> Uninstall';
         uninstallButton.addEventListener('click', () => {
-          this.uninstallExtension(extension.id, extension.name);
+          this._uninstallExtension(extension.id, extension.name);
         });
         
         // 将按钮添加到行中
@@ -512,7 +473,7 @@ class ExtensionManager {
             } else {
               AlertManager.showStatus('Extension enabled successfully', 'success');
               // 重新加载扩展列表
-              this.loadExtensions();
+              this._loadExtensions();
             }
           });
         });
@@ -522,7 +483,7 @@ class ExtensionManager {
         uninstallButton.className = 'extension-button uninstall-button';
         uninstallButton.innerHTML = '<i class="fas fa-trash-alt"></i> Uninstall';
         uninstallButton.addEventListener('click', () => {
-          this.uninstallExtension(extension.id, extension.name);
+          this._uninstallExtension(extension.id, extension.name);
         });
         
         // 将按钮添加到行中
@@ -544,12 +505,12 @@ class ExtensionManager {
   }
 
   // 过滤扩展
-  filterExtensions() {
+  _filterExtensions() {
     const searchTerm = document.getElementById('extensionSearch').value.toLowerCase();
     
     if (!searchTerm) {
       // 如果搜索框为空，显示所有扩展
-      this.displayExtensions(this.allExtensions);
+      this._displayExtensions(this.allExtensions);
       return;
     }
     
@@ -560,13 +521,13 @@ class ExtensionManager {
     );
     
     // 显示过滤后的扩展
-    this.displayExtensions(filteredExtensions);
+    this._displayExtensions(filteredExtensions);
   }
 
   // 清除搜索
-  clearSearch() {
+  _clearSearch() {
     document.getElementById('extensionSearch').value = '';
-    this.displayExtensions(this.allExtensions);
+    this._displayExtensions(this.allExtensions);
     document.getElementById('extensionSearch').focus();
   }
 
@@ -599,8 +560,6 @@ class ExtensionManager {
       }
     });
   }
-
-  // 删除原来的showStatus方法，使用AlertManager替代
 }
 
 // 初始化ExtensionManager

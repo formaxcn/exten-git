@@ -71,7 +71,7 @@ class FileManager {
           
           chrome.storage.sync.set(filteredConfig, () => {
             // 使用导入的optionsManager实例来加载设置
-            optionsManager.loadSettings();
+            optionsManager._loadSettings();
             AlertManager.showStatus('Configuration imported successfully!', 'success');
           });
         } catch (error) {

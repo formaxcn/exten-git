@@ -4,6 +4,7 @@
  */
 import FileManager from './persistence.js';
 import AlertManager from './alert.js';
+import MESSAGE_EVENTS from '../util/constants.js';
 
 class OptionsManager {
   /**
@@ -24,43 +25,43 @@ class OptionsManager {
       { value: 1440, label: '1 d' }
     ];
     
-    this.init();
+    this._init();
   }
 
   /**
    * 初始化选项管理器
    */
-  init() {
+  _init() {
     document.addEventListener('DOMContentLoaded', () => {
       // 加载保存的设置
-      this.loadSettings();
+      this._loadSettings();
       
       // 保存设置
       document.getElementById('saveBtn').addEventListener('click', () => {
-        this.saveSettings();
+        this._saveSettings();
       });
       
       // 测试连接
       document.getElementById('testBtn').addEventListener('click', () => {
-        this.testConnection();
+        this._testConnection();
       });
       
       // Sync操作
       document.getElementById('syncBtn').addEventListener('click', () => {
-        this.syncChanges();
-        this.updateLastSyncTime();
+        this._syncChanges();
+        this._updateLastSyncTime();
       });
       
       // Pull操作
       document.getElementById('pullBtn').addEventListener('click', () => {
-        this.pullChanges();
-        this.updateLastSyncTime();
+        this._pullChanges();
+        this._updateLastSyncTime();
       });
       
       // Push操作
       document.getElementById('pushBtn').addEventListener('click', () => {
-        this.pushChanges();
-        this.updateLastSyncTime();
+        this._pushChanges();
+        this._updateLastSyncTime();
       });
       
       // 导出配置
@@ -99,7 +100,7 @@ class OptionsManager {
       
       // 自动同步开关事件
       document.getElementById('autoSyncToggle').addEventListener('change', (e) => {
-        this.toggleAutoSync(e.target.checked);
+        this._toggleAutoSync(e.target.checked);
         // 自动保存开关状态
         chrome.storage.sync.set({autoSyncEnabled: e.target.checked});
       });
@@ -115,9 +116,9 @@ class OptionsManager {
       });
       
       // 定期更新commit hash显示
-      this.updateCommitHashDisplay();
+      this._updateCommitHashDisplay();
       setInterval(() => {
-        this.updateCommitHashDisplay();
+        this._updateCommitHashDisplay();
       }, 5000); // 每5秒更新一次
     });
   }
@@ -125,7 +126,7 @@ class OptionsManager {
   /**
    * 更新commit hash显示
    */
-  updateCommitHashDisplay() {
+  _updateCommitHashDisplay() {
     chrome.storage.local.get(['lastCommitHash'], (result) => {
       const commitHashDisplay = document.getElementById('commitHashDisplay');
       if (commitHashDisplay) {
@@ -144,7 +145,7 @@ class OptionsManager {
   /**
    * 更新上次同步时间显示
    */
-  updateLastSyncTime() {
+  _updateLastSyncTime() {
     const now = new Date();
     const timeString = now.toLocaleString();
     const lastSyncElement = document.getElementById('lastSyncTime');
@@ -156,7 +157,7 @@ class OptionsManager {
   /**
    * 加载设置
    */
-  loadSettings() {
+  _loadSettings() {
     chrome.storage.sync.get([
       'repoUrl', 
       'filePath',
@@ -223,14 +224,14 @@ class OptionsManager {
       }
       
       // 更新commit hash显示
-      this.updateCommitHashDisplay();
+      this._updateCommitHashDisplay();
     });
   }
 
   /**
    * 保存设置
    */
-  saveSettings() {
+  _saveSettings() {
     const repoUrl = document.getElementById('repoUrl').value.trim();
     const branchName = document.getElementById('branch').value.trim();
     const filePath = document.getElementById('filePath').value.trim();
@@ -260,29 +261,15 @@ class OptionsManager {
       } else {
         AlertManager.showStatus('Settings saved successfully!', 'success');
         // 更新commit hash显示
-        this.updateCommitHashDisplay();
+        this._updateCommitHashDisplay();
       }
     });
   }
   
   /**
-   * 验证仓库URL
-   */
-  validateRepoUrl() {
-    const repoUrl = document.getElementById('repoUrl').value.trim();
-    
-    if (!repoUrl) {
-      AlertManager.showStatus('Please enter a repository URL', 'error');
-      return false;
-    }
-    
-    return true;
-  }
-  
-  /**
    * 测试连接
    */
-  testConnection() {
+  _testConnection() {
     const repoUrl = document.getElementById('repoUrl').value;
     if (!repoUrl) {
       AlertManager.showStatus('Please enter a repository URL', 'error');
@@ -322,7 +309,7 @@ class OptionsManager {
   /**
    * Sync操作
    */
-  syncChanges() {
+  _syncChanges() {
     // 保存同步时间
     const now = new Date().getTime();
     chrome.storage.sync.set({ lastSyncTime: now }, () => {
@@ -335,7 +322,7 @@ class OptionsManager {
   /**
    * Pull操作 - 从Git仓库拉取扩展数据
    */
-  pullChanges() {
+  _pullChanges() {
     // 保存同步时间
     const now = new Date().getTime();
     chrome.storage.sync.set({ lastSyncTime: now }, () => {
@@ -363,14 +350,14 @@ class OptionsManager {
       }
       
       // 更新commit hash显示
-      this.updateCommitHashDisplay();
+      this._updateCommitHashDisplay();
     });
   }
 
   /**
    * Push操作 - 将扩展数据推送到Git仓库
    */
-  pushChanges() {
+  _pushChanges() {
     // 保存同步时间
     const now = new Date().getTime();
     chrome.storage.sync.set({ lastSyncTime: now }, () => {
@@ -421,7 +408,7 @@ class OptionsManager {
             }
             
             // 更新commit hash显示
-            this.updateCommitHashDisplay();
+            this._updateCommitHashDisplay();
           });
         } else if (response && response.message) {
           AlertManager.showStatus(`Failed to get extensions data: ${response.message}`, 'error');
@@ -435,7 +422,7 @@ class OptionsManager {
   /**
    * 切换自动同步
    */
-  toggleAutoSync(enabled) {
+  _toggleAutoSync(enabled) {
     // 这里可以添加实际的自动同步逻辑
     // 例如设置定时器或与后台脚本通信
   }
@@ -443,28 +430,6 @@ class OptionsManager {
 }
 
 export default OptionsManager;
-
-try {
-  // 通过importScripts引入常量
-  importScripts('../util/constants.js');
-} catch (e) {
-  // 如果importScripts失败，定义本地常量（向后兼容）
-  var MESSAGE_EVENTS = {
-    SAVE_EXTENSIONS: 'saveExtensions',
-    PUSH_TO_GIT: 'pushToGit',
-    PULL_FROM_GIT: 'pullFromGit',
-    PROCESS_PULLED_EXTENSIONS: 'processPulledExtensions',
-    TEST_GIT_CONNECTION: 'testGitConnection',
-    SET_TODO_EXTENSIONS: 'setTodoExtensions',
-    CLEAR_TODO_EXTENSIONS: 'clearTodoExtensions',
-    GET_TODO_EXTENSIONS: 'getTodoExtensions',
-    GET_EXTENSIONS_DATA: 'getExtensionsData',
-    EXPORT_EXTENSIONS_DATA: 'exportExtensionsData',
-    LIST_REMOTE_BRANCHES: 'listRemoteBranches',
-    DIFF_EXTENSIONS: 'diffExtensions',
-    GIT_DATA_PULLED: 'gitDataPulled'
-  };
-}
 
 // 初始化OptionsManager
 export const optionsManager = new OptionsManager();
