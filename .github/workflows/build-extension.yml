@@ -1,0 +1,57 @@
+name: Build Chrome Extension
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        
+    - name: Get version from tag or use default
+      id: get_version
+      run: |
+        if [[ $GITHUB_REF_TYPE == 'tag' && $GITHUB_REF_NAME == v* ]]; then
+          echo "VERSION=${GITHUB_REF_NAME}" >> $GITHUB_ENV
+        else
+          echo "VERSION=$(date +'%Y%m%d-%H%M%S')" >> $GITHUB_ENV
+        fi
+        
+    - name: Create distribution folder
+      run: |
+        # Create dist folder and copy all necessary files
+        mkdir -p dist
+        
+        # Copy all files and folders except .git, node_modules and dist
+        rsync -av --exclude='.git' --exclude='node_modules' --exclude='dist' --exclude='.github' . dist/
+        
+    - name: Zip extension files
+      run: |
+        cd dist
+        zip -r ../exten-git-${{ env.VERSION }}.zip .
+      
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: exten-git-zip
+        path: exten-git-*.zip
+        
+    - name: Create Release
+      if: startsWith(github.ref, 'refs/tags/')
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          exten-git-*.zip
+        draft: false
+        prerelease: false
