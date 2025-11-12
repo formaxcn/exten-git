@@ -45,10 +45,12 @@ class BackgroundManager {
       if (areaName !== 'local') return;
       if (changes.refreshInterval || changes.autoSyncEnabled) {
         this._handleStorageChange(changes);
-      } else if (changes.todoExtensions){
+      }
+      if (changes.todoExtensions) {
         this._extensionChanged(EXTENSION_ACTIONS.UNDO);
-      } else if (changes.browserSyncEnabled){
-        //TODO
+      } 
+      if (changes.browserSyncEnabled){
+        //TODO: browser sync
       }  
     });
 
