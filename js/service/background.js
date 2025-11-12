@@ -156,7 +156,6 @@ class BackgroundManager {
       // 处理拉取到的数据
       this.processExtensionDiffData(localData.data);
     }
-    sendResponse(localData);
   }
 
   /**
