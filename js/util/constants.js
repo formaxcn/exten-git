@@ -8,6 +8,7 @@ const MESSAGE_EVENTS = {
   SYNC_GIT_CHANGES: 'syncGitChanges',
   TEST_GIT_CONNECTION: 'testGitConnection',
   LOCAL_SAVE_EXTENSIONS: 'localSaveExtensions',
+  GIT_LOCAL_DIFF: 'gitLocalDiff',
   IMPORT_EXTENSIONS_DATA: 'importExtensionsData',
   EXPORT_EXTENSIONS_DATA: 'exportExtensionsData',
   DIFF_EXTENSIONS_VIEW: 'diffExtensionsView'

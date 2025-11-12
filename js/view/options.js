@@ -137,6 +137,7 @@ class OptionsManager {
       const commitHashDisplay = document.getElementById('commitHashValue');
       const addedCountDisplay = document.getElementById('addedCount');
       const removedCountDisplay = document.getElementById('removedCount');
+      const revertButton = document.getElementById('revertLocalChangesButton');
       
       if (commitHashDisplay) {
         let displayText = '';
@@ -173,16 +174,38 @@ class OptionsManager {
           } else {
             removedCountDisplay.style.display = 'none';
           }
+          
+          // 如果有任何更改，显示revert按钮
+          if ((diffObj.added > 0 || diffObj.removed > 0) && revertButton) {
+            revertButton.style.display = 'inline';
+            // 为revert按钮添加点击事件
+            revertButton.onclick = () => {
+              chrome.runtime.sendMessage({action: MESSAGE_EVENTS.GIT_LOCAL_DIFF});
+            };
+          } else if (revertButton) {
+            revertButton.style.display = 'none';
+          }
         } catch (e) {
           console.error('Error parsing git diff:', e);
           // 解析失败时隐藏diff显示
           if (addedCountDisplay) addedCountDisplay.style.display = 'none';
           if (removedCountDisplay) removedCountDisplay.style.display = 'none';
+          
+          // 同时隐藏revert按钮
+          const revertButton = document.getElementById('revertLocalChangesButton');
+          if (revertButton) {
+            revertButton.style.display = 'none';
+          }
         }
       } else {
         // 没有diff信息时隐藏显示
         if (addedCountDisplay) addedCountDisplay.style.display = 'none';
         if (removedCountDisplay) removedCountDisplay.style.display = 'none';
+        
+        // 同时隐藏revert按钮
+        if (revertButton) {
+          revertButton.style.display = 'none';
+        }
       }
     });
   }

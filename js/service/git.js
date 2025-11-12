@@ -88,6 +88,10 @@ class GitManager {
     }
   }
 
+  aysnc getHeadData(){
+    
+  }
+
   async diffExtensions(browserExtensionsData){
     try {
       // 从Git仓库中读取最新的插件数据

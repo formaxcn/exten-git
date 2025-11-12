@@ -106,18 +106,18 @@ class BackgroundManager {
           break;
 
         case MESSAGE_EVENTS.PULL_FROM_GIT:
-          const pullResult = await gitManager.pullFromGit();
-          if (pullResult.status === 'success') {
-            // 处理拉取到的数据
-            this.processExtensionDiffData(pullResult.data);
-          }
-          sendResponse(pullResult);
+          await gitManager.pullFromGit();
+          this._calcGitDiff();
           break;
 
         case MESSAGE_EVENTS.LOCAL_SAVE_EXTENSIONS:
           const currentExtensions = await this._getExtensionsData();
           //TODO 先判断是否拉取过git
           await gitManager.diffExtensions(currentExtensions);
+          break;
+        
+        case MESSAGE_EVENTS.GIT_LOCAL_DIFF:
+          this._calcGitDiff();
           break;
 
         case MESSAGE_EVENTS.IMPORT_EXTENSIONS_DATA:
@@ -146,6 +146,15 @@ class BackgroundManager {
       console.error(`Error handling message ${request.action}:`, error);
       sendResponse({ status: 'error', message: error.message });
     }
+  }
+
+  _calcGitDiff(){
+    const localData = gitManager.getHeadData();
+    if (localData.status === 'success') {
+      // 处理拉取到的数据
+      this.processExtensionDiffData(localData.data);
+    }
+    sendResponse(localData);
   }
 
   /**
