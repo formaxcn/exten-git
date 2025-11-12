@@ -174,7 +174,8 @@ class OptionsManager {
       'syncStrategy',
       'autoSyncEnabled',
       'browserSyncEnabled',
-      'lastSyncTime'
+      'lastSyncTime',
+      'lastCommitHash'
     ], (items) => {
       document.getElementById('repoUrl').value = items.repoUrl || '';
       document.getElementById('filePath').value = items.filePath || '';
@@ -220,11 +221,11 @@ class OptionsManager {
       
       // 显示上次同步时间
       if (items.lastSyncTime) {
-        const lastSyncElement = document.getElementById('lastSyncTimeValue');
-        if (lastSyncElement) {
-          const lastSyncDate = new Date(items.lastSyncTime);
-          lastSyncElement.textContent = lastSyncDate.toLocaleString();
-        }
+        this._updateLastSyncTime();
+      }
+
+      if (items.lastCommitHash){
+        this._updateCommitHashDisplay();
       }
       
       // 保存默认值（如果尚未保存）

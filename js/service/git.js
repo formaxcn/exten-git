@@ -69,13 +69,16 @@ class GitManager {
 
       const result = await this._performGitPull(settings);
       
+      // 无论是否有新提交，都要更新commit hash（可能是第一次同步或者冲突情况）
+      if (result.commitHash) {
+        await this._saveLastCommitHash(result.commitHash);
+      }
+      
       if (!result.hasNewCommit) {
         return { status: 'success', message: 'Already up to date', data: null };
       }
       
       await this._processPulledData(result.data);
-      
-      await this._saveLastCommitHash(result.commitHash);
       
       return { status: 'success', message: 'Pull completed successfully', data: result.data };
     } catch (error) {
@@ -320,8 +323,9 @@ class GitManager {
 
       // 检查远程分支是否存在 (加 pfs/http 到 log)
       let remoteBranchExists = true;
+      let remoteCommitHash = null;
       try {
-        await git.log({
+        const remoteLog = await git.log({
           fs: this.fs,
           pfs: this.pfs,
           http: GitHttp,
@@ -331,41 +335,25 @@ class GitManager {
           ...auth,
           depth: 1
         });
+        remoteCommitHash = remoteLog[0]?.oid;
       } catch (logError) {
         console.log(`Could not access remote branch '${branchName}':`, logError);
         remoteBranchExists = false;
       }
 
-      if (!remoteBranchExists) {
-        console.log(`Remote branch '${branchName}' does not exist`);
-        return { hasNewCommit: false };
-      }
-
-      // 获取远程最新的commit hash (加 pfs)
-      let remoteLog = [];
-      try {
-        remoteLog = await git.log({
-          fs: this.fs,
-          pfs: this.pfs,
-          http: GitHttp,
-          dir,
-          remote: 'origin',
-          ref: `origin/${branchName}`,
-          ...auth,
-          depth: 1
-        });
-      } catch (error) {
-        console.error('Error getting remote log:', error);
-      }
-      
-      const remoteCommitHash = remoteLog[0]?.oid;
       console.log(`Remote commit hash: ${remoteCommitHash}`);
       
       const lastCommitHash = await this._getLastCommitHash();
       console.log(`Last commit hash: ${lastCommitHash}`);
       
       if (remoteCommitHash && remoteCommitHash === lastCommitHash) {
-        return { hasNewCommit: false };
+        return { hasNewCommit: false, commitHash: remoteCommitHash };
+      }
+
+      // 如果远程分支不存在，仍然返回当前commit hash（如果有）
+      if (!remoteBranchExists) {
+        console.log(`Remote branch '${branchName}' does not exist`);
+        return { hasNewCommit: false, commitHash: remoteCommitHash };
       }
 
       // 确保本地分支存在并正确设置 (加 pfs)
