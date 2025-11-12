@@ -118,10 +118,10 @@ class OptionsManager {
       });
 
       chrome.storage.onChanged.addListener((changes, areaName) => {
-        if ("lastSyncTime" === areaName) {
+        if (areaName === "lastSyncTime") {
           this._updateLastSyncTime();
         }
-        else if ("lastCommitHash", "gitDiff" === areaName) {
+        else if (areaName === "lastCommitHash" || areaName === "gitDiff") {
           this._updateCommitHashDisplay();
         }
       });
@@ -135,14 +135,23 @@ class OptionsManager {
     chrome.storage.local.get(['lastCommitHash', 'gitDiff'], (result) => {
       const commitHashDisplay = document.getElementById('commitHashValue');
       if (commitHashDisplay) {
+        let displayText = '';
+        
         if (result.lastCommitHash) {
           // 显示前8位commit hash
-          commitHashDisplay.textContent = result.lastCommitHash.substring(0, 8);
+          displayText = result.lastCommitHash.substring(0, 8);
           commitHashDisplay.title = result.lastCommitHash; // 完整hash显示在title中
         } else {
-          commitHashDisplay.textContent = 'Not available';
+          displayText = 'Not available';
           commitHashDisplay.title = '';
         }
+        
+        // 添加diff信息（如果有）
+        if (result.gitDiff) {
+          displayText += ' ' + result.gitDiff;
+        }
+        
+        commitHashDisplay.textContent = displayText;
       }
     });
   }

@@ -3,6 +3,7 @@
 import { git, LightningFS, http as GitHttp, Buffer } from '../lib/bundle.js';
 
 class GitManager {
+  static localRepoDir = '/repo';
   constructor() {
     // 修复：分离 fs (回调) 和 pfs (promises)
     if (typeof LightningFS !== 'undefined') {
@@ -88,7 +89,51 @@ class GitManager {
   }
 
   async diffExtensions(browserExtensionsData){
-
+    try {
+      // 从Git仓库中读取最新的插件数据
+      const filePath = await this._getFilePath();
+      
+      let gitExtensionsData = { extensions: [] };
+      try {
+        const fileBuffer = await this.pfs.readFile(`${localRepoDir}/${filePath}`);
+        gitExtensionsData = JSON.parse(fileBuffer.toString('utf8'));
+      } catch (fileError) {
+        console.log('File does not exist in repository, treating as empty data');
+      }
+      
+      // 提取插件ID集合
+      const browserExtensionIds = new Set(browserExtensionsData.map(ext => ext.id));
+      const gitExtensionIds = new Set(gitExtensionsData.extensions.map(ext => ext.id));
+      
+      // 计算差异
+      let addedCount = 0;  // 浏览器中有但Git中没有的插件数量（新增）
+      let removedCount = 0; // Git中有但浏览器中没有的插件数量（移除）
+      
+      // 计算新增的插件（在浏览器中但不在Git中）
+      for (const extId of browserExtensionIds) {
+        if (!gitExtensionIds.has(extId)) {
+          addedCount++;
+        }
+      }
+      
+      // 计算移除的插件（在Git中但不在浏览器中）
+      for (const extId of gitExtensionIds) {
+        if (!browserExtensionIds.has(extId)) {
+          removedCount++;
+        }
+      }
+      
+      // 构造diff结果字符串
+      const diffResult = `M +${addedCount} -${removedCount}`;
+      
+      // 保存diff结果到localStorage
+      await this._saveGitDiff(diffResult);
+      
+      return diffResult;
+    } catch (error) {
+      console.error('Error calculating diff:', error);
+      throw new Error(`Diff calculation failed: ${error.message}`);
+    }
   }
 
   /**
@@ -97,11 +142,10 @@ class GitManager {
   async testGitConnection(repoUrl, userName, password) {
     try {
       const auth = this._buildAuthObject(userName, password);
-      const dir = '/repo';
       
       // 修复：加 pfs 到 init
       try {
-        await git.init({ fs: this.fs, pfs: this.pfs, dir });
+        await git.init({ fs: this.fs, pfs: this.pfs, localRepoDir });
       } catch (initError) {
         console.log('Test repository already initialized');
       }
@@ -111,7 +155,7 @@ class GitManager {
         await git.addRemote({
           fs: this.fs,
           pfs: this.pfs,
-          dir,
+          localRepoDir,
           remote: 'origin',
           url: repoUrl,
           force: true
@@ -190,12 +234,11 @@ class GitManager {
     } = settings;
 
     const auth = this._buildAuthObject(userName, password);
-    const dir = '/repo';
     
     try {
       // 初始化仓库（加 pfs）
       try {
-        await git.init({ fs: this.fs, pfs: this.pfs, dir });
+        await git.init({ fs: this.fs, pfs: this.pfs, localRepoDir });
       } catch (initError) {
         console.log('Repository already initialized');
       }
@@ -205,7 +248,7 @@ class GitManager {
         await git.addRemote({
           fs: this.fs,
           pfs: this.pfs,
-          dir,
+          localRepoDir,
           remote: 'origin',
           url: repoUrl,
           force: true
@@ -219,7 +262,7 @@ class GitManager {
         fs: this.fs,
         pfs: this.pfs,
         http: GitHttp,
-        dir,
+        localRepoDir,
         remote: 'origin',
         ref: branchName,
         ...auth
@@ -227,29 +270,29 @@ class GitManager {
 
       // 检查本地分支是否存在 (加 pfs)
       try {
-        await git.currentBranch({ fs: this.fs, pfs: this.pfs, dir, fullname: false });
+        await git.currentBranch({ fs: this.fs, pfs: this.pfs, localRepoDir, fullname: false });
       } catch (branchError) {
         // 创建并切换到该分支 (加 pfs)
         await git.branch({
           fs: this.fs,
           pfs: this.pfs,
-          dir,
+          localRepoDir,
           ref: branchName,
           checkout: true
         });
       }
 
       // 写入文件 (用 pfs)
-      await this.pfs.writeFile(`${dir}/${filePath}`, fileContent);
+      await this.pfs.writeFile(`${localRepoDir}/${filePath}`, fileContent);
 
       // 添加文件到暂存区 (加 pfs)
-      await git.add({ fs: this.fs, pfs: this.pfs, dir, filepath: filePath });
+      await git.add({ fs: this.fs, pfs: this.pfs, localRepoDir, filepath: filePath });
 
       // 创建提交 (加 pfs)
       const sha = await git.commit({
         fs: this.fs,
         pfs: this.pfs,
-        dir,
+        localRepoDir,
         author: {
           name: 'Extension Git Sync',
           email: 'exten.git@local'
@@ -264,7 +307,7 @@ class GitManager {
         fs: this.fs,
         pfs: this.pfs,
         http: GitHttp,
-        dir,
+        localRepoDir,
         remote: 'origin',
         ref: { local: branchName, remote: branchName },
         ...auth
@@ -290,12 +333,11 @@ class GitManager {
     } = settings;
 
     const auth = this._buildAuthObject(userName, password);
-    const dir = '/repo';
     
     try {
       // 初始化仓库（加 pfs）
       try {
-        await git.init({ fs: this.fs, pfs: this.pfs, dir });
+        await git.init({ fs: this.fs, pfs: this.pfs, localRepoDir });
       } catch (initError) {
         console.log('Repository already initialized');
       }
@@ -305,7 +347,7 @@ class GitManager {
         await git.addRemote({
           fs: this.fs,
           pfs: this.pfs,
-          dir,
+          localRepoDir,
           remote: 'origin',
           url: repoUrl,
           force: true
@@ -319,7 +361,7 @@ class GitManager {
         fs: this.fs,
         pfs: this.pfs,
         http: GitHttp,
-        dir,
+        localRepoDir,
         remote: 'origin',
         ref: branchName,
         ...auth
@@ -333,7 +375,7 @@ class GitManager {
           fs: this.fs,
           pfs: this.pfs,
           http: GitHttp,
-          dir,
+          localRepoDir,
           remote: 'origin',
           ref: `origin/${branchName}`,
           ...auth,
@@ -362,7 +404,7 @@ class GitManager {
 
       // 确保本地分支存在并正确设置 (加 pfs)
       try {
-        const currentBranch = await git.currentBranch({ fs: this.fs, pfs: this.pfs, dir });
+        const currentBranch = await git.currentBranch({ fs: this.fs, pfs: this.pfs, localRepoDir });
         console.log('Current branch:', currentBranch);
         
         if (currentBranch !== branchName) {
@@ -370,14 +412,14 @@ class GitManager {
             await git.checkout({ 
               fs: this.fs, 
               pfs: this.pfs, 
-              dir, 
+              localRepoDir, 
               ref: branchName 
             });
           } catch (checkoutError) {
             await git.branch({
               fs: this.fs,
               pfs: this.pfs,
-              dir,
+              localRepoDir,
               ref: branchName,
               checkout: true
             });
@@ -388,7 +430,7 @@ class GitManager {
         await git.branch({
           fs: this.fs,
           pfs: this.pfs,
-          dir,
+          localRepoDir,
           ref: branchName,
           checkout: true
         });
@@ -399,7 +441,7 @@ class GitManager {
         fs: this.fs,
         pfs: this.pfs,
         http: GitHttp,
-        dir,
+        localRepoDir,
         remote: 'origin',
         ref: branchName,
         ...auth,
@@ -413,7 +455,7 @@ class GitManager {
       // 读取文件内容 (用 pfs)
       let fileContent = null;
       try {
-        const fileBuffer = await this.pfs.readFile(`${dir}/${filePath}`);
+        const fileBuffer = await this.pfs.readFile(`${localRepoDir}/${filePath}`);
         fileContent = JSON.parse(fileBuffer.toString('utf8'));
       } catch (fileError) {
         console.log('File does not exist in repository, treating as empty data');
@@ -497,6 +539,28 @@ class GitManager {
       const now = Date.now(); // 使用 Date.now() 更简洁
       chrome.storage.local.set({ lastSyncTime: now }, () => {
         // 可以添加其他同步逻辑
+      });
+    });
+  }
+  
+  /**
+   * 获取文件路径 (私有方法)
+   */
+  _getFilePath() {
+    return new Promise((resolve) => {
+      chrome.storage.local.get(['filePath'], (result) => {
+        resolve(result.filePath || 'extensions.json');
+      });
+    });
+  }
+  
+  /**
+   * 保存Git diff结果 (私有方法)
+   */
+  _saveGitDiff(diffResult) {
+    return new Promise((resolve) => {
+      chrome.storage.local.set({ gitDiff: diffResult }, () => {
+        resolve();
       });
     });
   }

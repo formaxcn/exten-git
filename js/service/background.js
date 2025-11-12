@@ -111,6 +111,7 @@ class BackgroundManager {
 
         case MESSAGE_EVENTS.LOCAL_SAVE_EXTENSIONS:
           const currentExtensions = this._getExtensionsData();
+          //TODO 先判断是否拉取过git
           await gitManager.diffExtensions(currentExtensions);
           break;
 
