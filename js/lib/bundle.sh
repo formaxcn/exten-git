@@ -21,7 +21,7 @@ mkdir -p src
 cat > src/index.js << 'EOF'
 // src/index.js - 暴露 named exports，模拟裸 import
 import * as isomorphicGit from 'isomorphic-git';
-import * as lightningFS from '@isomorphic-git/lightning-fs';
+import lightningFS from '@isomorphic-git/lightning-fs';
 import * as gitHttpWeb from 'isomorphic-git/http/web';
 import { Buffer } from 'buffer';
 
@@ -32,14 +32,14 @@ if (typeof window !== 'undefined') {
 
 // Named exports：直接暴露模块
 export { isomorphicGit as git };  // 用 git 别名
-export { default as LightningFS } from '@isomorphic-git/lightning-fs';  // 或 export * as LightningFS from ...
+export { default as LightningFS } from '@isomorphic-git/lightning-fs';
 export { gitHttpWeb as http };
 export { Buffer };
 
 // 保持 GitLib（可选 fallback）
 export const GitLib = {
   git: isomorphicGit,
-  LightningFS,
+  LightningFS: lightningFS,  // 这里使用默认导出
   http: gitHttpWeb,
   // ... 其他函数
 };
@@ -61,7 +61,7 @@ if [ ! -f "dist/bundle.js" ]; then
   exit 1
 fi
 
-LIB_PATH="$EXTENSION_PATH/lib"
+LIB_PATH="$EXTENSION_PATH"
 mkdir -p "$LIB_PATH"
 cp dist/bundle.js "$LIB_PATH/bundle.js"
 
