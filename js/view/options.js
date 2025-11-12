@@ -122,38 +122,38 @@ class OptionsManager {
         if (changes.lastSyncTime) {
           this._updateLastSyncTime();
         }
-        else if (changes.lastCommitHash || changes.gitDiff) {
+        if (changes.lastCommitHash) {
           this._updateCommitHashDisplay();
+        }
+        if (changes.gitDiff) {
+          this._updateGitDiffDisplay();
+        }
+        if (changes.todoExtensions) {
+          this._updateGitDiffDisplay();
+          this._updateBtnsDisplay(changes.todoExtensions.newValue);
         }
       });
     });
   }
 
-  /**
-   * 更新commit hash显示
-   */
-  _updateCommitHashDisplay() {
-    chrome.storage.local.get(['lastCommitHash', 'gitDiff', 'todoExtensions'], (result) => {
-      const commitHashDisplay = document.getElementById('commitHashValue');
+  _updateBtnsDisplay(todoItems) {
+    const pushBtn = document.getElementById('pushBtn');
+    const syncBtn = document.getElementById('syncBtn');
+    
+    if (todoItems && todoItems.length > 0) {
+      pushBtn.disabled = true;
+      syncBtn.disabled = true;
+    } else {
+      pushBtn.disabled = false;
+      syncBtn.disabled = false;
+    }
+  }
+
+  _updateGitDiffDisplay() { 
+    chrome.storage.local.get(['gitDiff', 'todoExtensions'], (result) => {
       const addedCountDisplay = document.getElementById('addedCount');
       const removedCountDisplay = document.getElementById('removedCount');
       const revertButton = document.getElementById('revertLocalChangesButton');
-
-      if (commitHashDisplay) {
-        let displayText = '';
-
-        if (result.lastCommitHash) {
-          // 显示前8位commit hash
-          displayText = result.lastCommitHash.substring(0, 8);
-          commitHashDisplay.title = result.lastCommitHash; // 完整hash显示在title中
-        } else {
-          displayText = 'Not available';
-          commitHashDisplay.title = '';
-        }
-
-        commitHashDisplay.textContent = displayText;
-      }
-
       var hideDiff = false;
       // 如果有todo项，直接进入else部分处理
       if (result.todoExtensions && result.todoExtensions.length > 0) {
@@ -199,12 +199,38 @@ class OptionsManager {
         hideDiff = true;
       }
       const gitDiffContainerDisplay = document.getElementById('gitDiffContainer');
-      if (hideDiff){
+      if (hideDiff) {
         if (gitDiffContainerDisplay) gitDiffContainerDisplay.style.display = 'none';
         chrome.storage.local.set({ gitDiff: null });
       }
-      else{
+      else {
         if (gitDiffContainerDisplay) gitDiffContainerDisplay.style.display = 'block';
+      }
+    });
+  }
+
+
+
+  /**
+   * 更新commit hash显示
+   */
+  _updateCommitHashDisplay() {
+    chrome.storage.local.get(['lastCommitHash'], (result) => {
+      const commitHashDisplay = document.getElementById('commitHashValue');
+
+      if (commitHashDisplay) {
+        let displayText = '';
+
+        if (result.lastCommitHash) {
+          // 显示前8位commit hash
+          displayText = result.lastCommitHash.substring(0, 8);
+          commitHashDisplay.title = result.lastCommitHash; // 完整hash显示在title中
+        } else {
+          displayText = 'Not available';
+          commitHashDisplay.title = '';
+        }
+
+        commitHashDisplay.textContent = displayText;
       }
     });
   }
@@ -252,7 +278,8 @@ class OptionsManager {
       'autoSyncEnabled',
       'browserSyncEnabled',
       'lastSyncTime',
-      'lastCommitHash'
+      'lastCommitHash',
+      'todoExtensions'
     ], (items) => {
       document.getElementById('repoUrl').value = items.repoUrl || '';
       document.getElementById('filePath').value = items.filePath || '';
@@ -303,6 +330,10 @@ class OptionsManager {
 
       if (items.lastCommitHash) {
         this._updateCommitHashDisplay();
+      }
+
+      if (items.todoExtensions) {
+        this._updateBtnsDisplay(items.todoExtensions);
       }
 
       // 保存默认值（如果尚未保存）

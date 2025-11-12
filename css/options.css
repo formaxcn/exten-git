@@ -265,6 +265,15 @@ button:hover {
   background-color: #F57C00;
 }
 
+/* 按钮禁用状态样式 */
+button:disabled,
+button:disabled:hover {
+  background-color: #cccccc !important;
+  color: #666666 !important;
+  cursor: not-allowed !important;
+  opacity: 0.6 !important;
+}
+
 .success {
   background-color: #dff0d8;
   color: #3c763d;
