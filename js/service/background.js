@@ -154,7 +154,7 @@ class BackgroundManager {
     const localData = await gitManager.getLocalHeadData();
     if (localData.status === 'success') {
       // 处理拉取到的数据
-      this.processExtensionDiffData(localData.data);
+      await this.processExtensionDiffData(localData.data);
     }
   }
 

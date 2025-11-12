@@ -185,7 +185,7 @@ class OptionsManager {
           if ((diffObj.added > 0 || diffObj.removed > 0) && revertButton) {
             revertButton.style.display = 'inline';
             // 为revert按钮添加点击事件
-            revertButton.onclick = this._discardChanges;
+            revertButton.onclick = this._discardChanges.bind(this);
           } else if (revertButton) {
             revertButton.style.display = 'none';
           }
