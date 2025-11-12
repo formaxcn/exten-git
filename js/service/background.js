@@ -118,7 +118,7 @@ class BackgroundManager {
           break;
         
         case MESSAGE_EVENTS.GIT_LOCAL_DIFF:
-          this._calcGitDiff();
+          await this._calcGitDiff();
           sendResponse({ status: 'success' });
           break;
 
