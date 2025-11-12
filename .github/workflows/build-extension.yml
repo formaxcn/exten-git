@@ -66,3 +66,4 @@ jobs:
           exten-git-*.crx
         draft: false
         prerelease: ${{ env.RELEASE_TYPE == 'prerelease' }}
+        tag_name: ${{ env.VERSION }}
