@@ -168,6 +168,11 @@ class ExtensionManager {
       
       // 从待办列表中移除该项
       todoExtensions = todoExtensions.filter(ext => ext.id !== extensionId);
+
+      chrome.runtime.sendMessage({
+        type: MESSAGE_EVENTS.LOCAL_SAVE_EXTENSIONS,
+        extensionId: extensionId
+      });
       
       // 更新存储中的待办事项列表
       if (todoExtensions.length > 0) {

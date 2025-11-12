@@ -7,6 +7,7 @@ const MESSAGE_EVENTS = {
   PULL_FROM_GIT: 'pullFromGit',
   SYNC_GIT_CHANGES: 'syncGitChanges',
   TEST_GIT_CONNECTION: 'testGitConnection',
+  LOCAL_SAVE_EXTENSIONS: 'localSaveExtensions',
   IMPORT_EXTENSIONS_DATA: 'importExtensionsData',
   EXPORT_EXTENSIONS_DATA: 'exportExtensionsData',
   DIFF_EXTENSIONS_VIEW: 'diffExtensionsView'

@@ -87,6 +87,10 @@ class GitManager {
     }
   }
 
+  async diffExtensions(browserExtensionsData){
+
+  }
+
   /**
    * 测试Git连接 (公共方法)
    */

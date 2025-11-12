@@ -109,6 +109,11 @@ class BackgroundManager {
           sendResponse(pullResult);
           break;
 
+        case MESSAGE_EVENTS.LOCAL_SAVE_EXTENSIONS:
+          const currentExtensions = this._getExtensionsData();
+          await gitManager.diffExtensions(currentExtensions);
+          break;
+
         case MESSAGE_EVENTS.IMPORT_EXTENSIONS_DATA:
           const processResult = await this.processExtensionDiffData(request.data);
           sendResponse(processResult);
