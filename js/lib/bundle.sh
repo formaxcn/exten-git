@@ -3,7 +3,7 @@
 # Git Bundle Packer (ESM 版) - 暴露 ES6 格式
 set -e
 
-EXTENSION_PATH="${1:-$(pwd)/extension}"
+EXTENSION_PATH="${1:-$(pwd)}"
 BUNDLER_DIR="git-bundler-temp-esm"
 
 echo "🚀 打包 ESM isomorphic-git (ES6 暴露) 到 $EXTENSION_PATH/lib/bundle.js"
@@ -19,33 +19,30 @@ npm install --save-dev esbuild
 # 生成 src/index.js (ES6 export)
 mkdir -p src
 cat > src/index.js << 'EOF'
-import git from 'isomorphic-git';
-import LightningFS from '@isomorphic-git/lightning-fs';
-import http from 'isomorphic-git/http/web';
+// src/index.js - 暴露 named exports，模拟裸 import
+import * as isomorphicGit from 'isomorphic-git';
+import * as lightningFS from '@isomorphic-git/lightning-fs';
+import * as gitHttpWeb from 'isomorphic-git/http/web';
 import { Buffer } from 'buffer';
 
+// Polyfill
 if (typeof window !== 'undefined') {
   window.Buffer = Buffer;
 }
 
-export const GitLib = {
-  git,
-  LightningFS,
-  http,
-  Buffer,
-  createFS: (dir = 'my-repo') => {
-    const fs = new LightningFS(dir, { wipe: true });
-    return { fs, pfs: fs.promises };
-  },
-  initRepo: async ({ fs, pfs }, dir = '/') => {
-    await git.init({ fs, pfs, dir });
-  },
-  clone: async ({ fs, pfs, http }, url, dir = '/') => {
-    await git.clone({ fs, pfs, http, url, dir });
-  }
-};
+// Named exports：直接暴露模块
+export { isomorphicGit as git };  // 用 git 别名
+export { default as LightningFS } from '@isomorphic-git/lightning-fs';  // 或 export * as LightningFS from ...
+export { gitHttpWeb as http };
+export { Buffer };
 
-export default GitLib;
+// 保持 GitLib（可选 fallback）
+export const GitLib = {
+  git: isomorphicGit,
+  LightningFS,
+  http: gitHttpWeb,
+  // ... 其他函数
+};
 EOF
 
 # package.json scripts (ESM)
@@ -73,4 +70,4 @@ rm -rf "$BUNDLER_DIR"
 
 BUNDLE_SIZE=$(du -h "$LIB_PATH/bundle.js" | cut -f1)
 echo "✅ ESM bundle.js (大小: $BUNDLE_SIZE) 已复制！"
-echo "💡 用法: import { GitLib } from '../lib/bundle.js';"
+echo "💡 用法: import { git, LightningFS, http, Buffer } from '../lib/bundle.js';"
