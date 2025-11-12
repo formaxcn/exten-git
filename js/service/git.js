@@ -319,7 +319,7 @@ class GitManager {
       if (localFiles.length === 0 || !localFiles.includes('README.md')) {
         console.log('  → 本地为空，写入占位 README.md');
         await this.pfs.writeFile(`${repoDir}/README.md`,
-          '# Extension Git Sync\nManaged by browser extension.\n');
+          '# Exten Git\nManaged by browser extension.\n');
         await git.add({ fs: this.fs, pfs: this.pfs, dir: repoDir, filepath: 'README.md' });
         await git.commit({
           fs: this.fs, pfs: this.pfs, dir: repoDir,
@@ -339,7 +339,7 @@ class GitManager {
       console.log('7. git.commit');
       const sha = await git.commit({
         fs: this.fs, pfs: this.pfs, dir: repoDir,
-        author: { name: 'Extension Git Sync', email: 'ext@local' },
+        author: { name: 'Exten Git', email: 'ext@local' },
         message: settings.commitMessage
       });
       console.log('  → Commit SHA:', sha);
@@ -509,7 +509,7 @@ class GitManager {
         ...auth,
         singleBranch: true,
         author: {
-          name: 'Extension Git Sync',
+          name: 'Exten Git',
           email: 'exten.git@local'
         }
       });

@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Extension Git Sync",
+  "name": "Exten Git",
   "version": "1.0",
   "description": "Sync your Chrome extensions with a Git repository",
   "permissions": [
@@ -17,7 +17,7 @@
     "type": "module"
   },
   "action": {
-    "default_title": "Extension Git Sync"
+    "default_title": "Exten Git"
   },
   "icons": {
     "16": "icons/icon.png",

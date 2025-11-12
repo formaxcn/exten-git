@@ -23,7 +23,7 @@ class BackgroundManager {
     });
 
     chrome.runtime.onInstalled.addListener(() => {
-      console.log('Extension Git Sync installed');
+      console.log('Exten Git installed');
     });
 
     // 监听图标点击事件，打开选项页面
