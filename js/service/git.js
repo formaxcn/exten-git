@@ -23,11 +23,8 @@ class GitManager {
 
   /**
    * 推送到Git仓库 (公共方法)
-   * @param {Object} options - 推送选项
-   * @param {string} options.message - 提交信息
-   * @param {Object} options.data - 要推送的数据
    */
-  async pushToGit(options = {}) {
+  async pushToGit(fileContent) {
     try {
       const isTodoEmpty = await this._checkTodoIsEmpty();
       if (!isTodoEmpty) {
@@ -39,10 +36,8 @@ class GitManager {
         throw new Error('Git repository not configured');
       }
 
-      const extensionsData = options.data;
-      const fileContent = JSON.stringify(extensionsData, null, 2);
-      const commitMessage = options.message || `Update extensions data ${new Date().toISOString()}`;
-      
+      const commitMessage = `Update extensions data ${new Date().toISOString()}`;
+
       const commitHash = await this._performGitPush({
         ...settings,
         fileContent,
@@ -264,18 +259,7 @@ class GitManager {
    * 执行Git推送操作 (私有方法) - 修复所有 fs/pfs
    */
   async _performGitPush(settings) {
-    const {
-      repoUrl,
-      userName,
-      password,
-      branchName = GIT_DEFAULT.BRANCH,
-      filePath = GIT_DEFAULT.FILE_PATH,
-      fileContent,
-      commitMessage
-    } = settings;
-
-    const auth = this._buildAuthObject(userName, password);
-    
+    const auth = this._buildAuthObject(settings.userName, settings.password);
     try {
       // 初始化仓库（加 pfs）
       try {
@@ -291,7 +275,7 @@ class GitManager {
           pfs: this.pfs,
           dir: GIT_DEFAULT.BROWSER_LOCAL_REPO_DIR,
           remote: 'origin',
-          url: repoUrl,
+          url: settings.repoUrl,
           force: true
         });
       } catch (remoteError) {
@@ -305,7 +289,7 @@ class GitManager {
         http: GitHttp,
         dir: GIT_DEFAULT.BROWSER_LOCAL_REPO_DIR,
         remote: 'origin',
-        ref: branchName,
+        ref: settings.branchName,
         ...auth
       });
 
@@ -318,16 +302,16 @@ class GitManager {
           fs: this.fs,
           pfs: this.pfs,
           dir: GIT_DEFAULT.BROWSER_LOCAL_REPO_DIR,
-          ref: branchName,
+          ref: settings.branchName,
           checkout: true
         });
       }
 
       // 写入文件 (用 pfs)
-      await this.pfs.writeFile(`${GIT_DEFAULT.BROWSER_LOCAL_REPO_DIR}/${filePath}`, fileContent);
+      await this.pfs.writeFile(`${GIT_DEFAULT.BROWSER_LOCAL_REPO_DIR}/${settings.filePath}`, settings.fileContent);
 
       // 添加文件到暂存区 (加 pfs)
-      await git.add({ fs: this.fs, pfs: this.pfs, dir: GIT_DEFAULT.BROWSER_LOCAL_REPO_DIR, filepath: filePath });
+      await git.add({ fs: this.fs, pfs: this.pfs, dir: GIT_DEFAULT.BROWSER_LOCAL_REPO_DIR, filepath: settings.filePath });
 
       // 创建提交 (加 pfs)
       const sha = await git.commit({
@@ -338,7 +322,7 @@ class GitManager {
           name: 'Extension Git Sync',
           email: 'exten.git@local'
         },
-        message: commitMessage
+        message: settings.commitMessage
       });
 
       console.log('Commit created:', sha);
@@ -350,7 +334,7 @@ class GitManager {
         http: GitHttp,
         dir: GIT_DEFAULT.BROWSER_LOCAL_REPO_DIR,
         remote: 'origin',
-        ref: { local: branchName, remote: branchName },
+        ref: { local: settings.branchName, remote: settings.branchName },
         ...auth
       });
 
