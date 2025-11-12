@@ -258,92 +258,151 @@ class GitManager {
   /**
    * 执行Git推送操作 (私有方法) - 修复所有 fs/pfs
    */
-  async _performGitPush(settings) {
-    const auth = this._buildAuthObject(settings.userName, settings.password);
+/**
+ * 执行Git推送操作 (私有方法) - 完全修复版
+ */
+async _performGitPush(settings) {
+  const auth = this._buildAuthObject(settings.userName, settings.password);
+  const repoDir = GIT_DEFAULT.BROWSER_LOCAL_REPO_DIR; // 例如 "/git-repo"
+  const filePath = settings.filePath || GIT_DEFAULT.FILE_PATH; // "extensions.json"
+  const fullFilePath = `${repoDir}/${filePath}`;
+
+  console.log('Performing Git push with settings:', settings);
+
+  try {
+    // === 1. 初始化仓库 ===
     try {
-      // 初始化仓库（加 pfs）
-      try {
-        await git.init({ fs: this.fs, pfs: this.pfs, dir: GIT_DEFAULT.BROWSER_LOCAL_REPO_DIR });
-      } catch (initError) {
-        console.log('Repository already initialized');
-      }
+      await git.init({ fs: this.fs, pfs: this.pfs, dir: repoDir });
+    } catch (initError) {
+      console.log('Repository already initialized');
+    }
 
-      // 添加远程仓库 (加 pfs)
-      try {
-        await git.addRemote({
-          fs: this.fs,
-          pfs: this.pfs,
-          dir: GIT_DEFAULT.BROWSER_LOCAL_REPO_DIR,
-          remote: 'origin',
-          url: settings.repoUrl,
-          force: true
-        });
-      } catch (remoteError) {
-        console.log('Remote already exists');
-      }
-
-      // 获取远程信息 (加 pfs 到 fetch)
-      await git.fetch({
+    // === 2. 添加远程仓库 ===
+    try {
+      await git.addRemote({
         fs: this.fs,
         pfs: this.pfs,
-        http: GitHttp,
-        dir: GIT_DEFAULT.BROWSER_LOCAL_REPO_DIR,
+        dir: repoDir,
         remote: 'origin',
-        ref: settings.branchName,
-        ...auth
+        url: settings.repoUrl,
+        force: true
       });
+    } catch (remoteError) {
+      console.log('Remote already exists');
+    }
 
-      // 检查本地分支是否存在 (加 pfs)
+    // === 3. 获取远程最新状态 ===
+    await git.fetch({
+      fs: this.fs,
+      pfs: this.pfs,
+      http: GitHttp,
+      dir: repoDir,
+      remote: 'origin',
+      ref: settings.branchName,
+      ...auth
+    });
+
+    // === 4. 确保本地分支存在并切换 ===
+    let currentBranch;
+    try {
+      currentBranch = await git.currentBranch({
+        fs: this.fs,
+        pfs: this.pfs,
+        dir: repoDir,
+        fullname: false
+      });
+    } catch (branchError) {
+      console.log('No current branch, will create one');
+    }
+
+    if (currentBranch !== settings.branchName) {
       try {
-        await git.currentBranch({ fs: this.fs, pfs: this.pfs, dir: GIT_DEFAULT.BROWSER_LOCAL_REPO_DIR, fullname: false });
-      } catch (branchError) {
-        // 创建并切换到该分支 (加 pfs)
+        await git.checkout({
+          fs: this.fs,
+          pfs: this.pfs,
+          dir: repoDir,
+          ref: settings.branchName
+        });
+      } catch (checkoutError) {
         await git.branch({
           fs: this.fs,
           pfs: this.pfs,
-          dir: GIT_DEFAULT.BROWSER_LOCAL_REPO_DIR,
+          dir: repoDir,
           ref: settings.branchName,
           checkout: true
         });
       }
-
-      // 写入文件 (用 pfs)
-      await this.pfs.writeFile(`${GIT_DEFAULT.BROWSER_LOCAL_REPO_DIR}/${settings.filePath}`, settings.fileContent);
-
-      // 添加文件到暂存区 (加 pfs)
-      await git.add({ fs: this.fs, pfs: this.pfs, dir: GIT_DEFAULT.BROWSER_LOCAL_REPO_DIR, filepath: settings.filePath });
-
-      // 创建提交 (加 pfs)
-      const sha = await git.commit({
-        fs: this.fs,
-        pfs: this.pfs,
-        dir: GIT_DEFAULT.BROWSER_LOCAL_REPO_DIR,
-        author: {
-          name: 'Extension Git Sync',
-          email: 'exten.git@local'
-        },
-        message: settings.commitMessage
-      });
-
-      console.log('Commit created:', sha);
-
-      // 推送到远程仓库 (加 pfs)
-      await git.push({
-        fs: this.fs,
-        pfs: this.pfs,
-        http: GitHttp,
-        dir: GIT_DEFAULT.BROWSER_LOCAL_REPO_DIR,
-        remote: 'origin',
-        ref: { local: settings.branchName, remote: settings.branchName },
-        ...auth
-      });
-
-      console.log('Push completed successfully');
-      return sha;
-    } catch (error) {
-      throw new Error(`Git push failed: ${error.message}`);
     }
+
+    // === 5. 确保仓库目录存在 ===
+    try {
+      await this.pfs.mkdir(repoDir, { recursive: true });
+    } catch (mkdirError) {
+      // 忽略已存在错误
+    }
+
+    // === 6. 首次推送：如果仓库为空，添加占位文件 ===
+    let files = [];
+    try {
+      files = await this.pfs.readdir(repoDir);
+    } catch (readError) {
+      console.log('Failed to read repo dir, assuming empty');
+    }
+
+    if (files.length === 0) {
+      console.log('Empty repository detected, adding README.md');
+      await this.pfs.writeFile(
+        `${repoDir}/README.md`,
+        '# Extension Git Sync Repository\n\nManaged by browser extension.\n'
+      );
+    }
+
+    // === 7. 写入目标文件 ===
+    const contentStr = JSON.stringify(settings.fileContent, null, 2);
+    await this.pfs.writeFile(fullFilePath, contentStr);
+    console.log(`File written: ${fullFilePath}`);
+
+    // === 8. 添加文件到暂存区（使用相对路径）===
+    await git.add({
+      fs: this.fs,
+      pfs: this.pfs,
+      dir: repoDir,
+      filepath: filePath  // 仅文件名或子路径
+    });
+
+    // === 9. 创建提交 ===
+    const sha = await git.commit({
+      fs: this.fs,
+      pfs: this.pfs,
+      dir: repoDir,
+      author: {
+        name: 'Extension Git Sync',
+        email: 'exten.git@local'
+      },
+      message: settings.commitMessage
+    });
+
+    console.log('Commit created:', sha);
+
+    // === 10. 推送到远程仓库 ===
+    await git.push({
+      fs: this.fs,
+      pfs: this.pfs,
+      http: GitHttp,
+      dir: repoDir,
+      remote: 'origin',
+      ref: { local: settings.branchName, remote: settings.branchName },
+      ...auth
+    });
+
+    console.log('Push completed successfully');
+    return sha;
+
+  } catch (error) {
+    console.error('Git push failed at step:', error);
+    throw new Error(`Git push failed: ${error.message}`);
   }
+}
 
   /**
    * 执行Git拉取操作 (私有方法) - 修复所有 fs/pfs
