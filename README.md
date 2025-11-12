@@ -80,6 +80,27 @@ Planned features and improvements:
 - **Scheduled Synchronization**: Implement more robust scheduled synchronization capabilities
 - **Browser Sync Settings**: Utilize browser's built-in sync functionality for storing settings across devices
 
+## Privacy declarative NetRequest: 
+### host permission: 
+- https://*/* , http://*/* (optional): Only requested dynamically via chrome.permissions.request when the user manually configures a custom Git server for syncing to a self-hosted repository. Users must explicitly grant permission and can revoke it at any time.
+
+### management: 
+Uses chrome.management.getAll() to read the ID, name, and version of installed extensions in order to generate the synchronized JSON manifest. It does not install, uninstall, enable, disable, or modify any extensions.
+
+### remote code: 
+This extension does not load or execute any remote code. All scripts are bundled locally within the extension package.
+
+### storage: 
+Uses chrome.storage.local to store:
+• User-entered Git repository URL and personal access token (PAT)
+• Sync toggle state
+• Last sync timestamp
+• Local cache of the extension manifest
+All data is stored locally on the user’s device only and can be cleared at any time via extension settings.
+
+### Single purpose: 
+The sole purpose of this extension is to synchronize the user’s currently installed Chrome extensions with a Git repository, enabling sharing of the same extension set across multiple devices and accounts.
+
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
