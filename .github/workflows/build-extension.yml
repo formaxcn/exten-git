@@ -67,3 +67,5 @@ jobs:
         draft: false
         prerelease: ${{ env.RELEASE_TYPE == 'prerelease' }}
         tag_name: ${{ env.VERSION }}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
