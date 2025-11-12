@@ -1,6 +1,6 @@
-# Extension Git Sync (exten-git)
+# exten-git
 
-A Chrome extension that allows you to synchronize your Chrome extensions with a Git repository. This tool helps you keep track of your installed extensions and easily replicate your setup across multiple accounts.
+[exten-git](https://github.com/formaxcn/exten-git) is a Chrome extension that allows you to synchronize your Chrome extensions with a Git repository. This tool helps you keep track of your installed extensions and easily replicate your setup across multiple accounts.
 
 ## Features
 
@@ -13,10 +13,22 @@ A Chrome extension that allows you to synchronize your Chrome extensions with a 
 
 ## Installation
 
+There are three ways to install this extension:
+
+### 1. Local Installation (Development)
 1. Clone or download this repository
 2. Open Chrome and navigate to `chrome://extensions/`
 3. Enable "Developer mode" in the top right corner
 4. Click "Load unpacked" and select the project directory
+
+### 2. CRX Package Installation
+1. Download the CRX package from the [Releases](https://github.com/formaxcn/exten-git/releases) page
+2. Open Chrome and navigate to `chrome://extensions/`
+3. Enable "Developer mode" in the top right corner
+4. Drag and drop the downloaded CRX file onto the extensions page
+
+### 3. Chrome Web Store Installation
+The extension is not yet available on the Chrome Web Store. Please stay tuned for updates!
 
 ## Configuration
 
