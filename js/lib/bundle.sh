@@ -25,24 +25,12 @@ import lightningFS from '@isomorphic-git/lightning-fs';
 import * as gitHttpWeb from 'isomorphic-git/http/web';
 import { Buffer } from 'buffer';
 
-// Polyfill
-if (typeof window !== 'undefined') {
-  window.Buffer = Buffer;
-}
-
 // Named exports：直接暴露模块
 export { isomorphicGit as git };  // 用 git 别名
 export { default as LightningFS } from '@isomorphic-git/lightning-fs';
 export { gitHttpWeb as http };
 export { Buffer };
 
-// 保持 GitLib（可选 fallback）
-export const GitLib = {
-  git: isomorphicGit,
-  LightningFS: lightningFS,  // 这里使用默认导出
-  http: gitHttpWeb,
-  // ... 其他函数
-};
 EOF
 
 # package.json scripts (ESM)

@@ -3,9 +3,7 @@
 // ES6模块导入isomorphic-git相关库
 // 注意：在Service Worker环境中需要正确配置这些依赖
 
-import git from '../lib/isomorphic-git.index.js';
-import LightningFS from '../lib/lightning-fs.min.js';
-import GitHttp from '../lib/isomorphic-git-http-web.index.js';
+import { git, LightningFS, http, Buffer } from '../lib/bundle.js';
 
 class GitManager {
   constructor() {
