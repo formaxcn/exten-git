@@ -3,6 +3,7 @@
 
 // 使用ES6模块导入替代importScripts
 import { MESSAGE_EVENTS,EXTENSION_ACTIONS } from '../util/constants.js';
+import { gitManager } from './git.js';
 
 class BackgroundManager {
   constructor() {
@@ -95,12 +96,12 @@ class BackgroundManager {
     try {
       switch (request.action) {
         case MESSAGE_EVENTS.PUSH_TO_GIT:
-          const pushResult = await this.gitManager.pushToGit({ message: request.message });
+          const pushResult = await gitManager.pushToGit({ message: request.message });
           sendResponse(pushResult);
           break;
 
         case MESSAGE_EVENTS.PULL_FROM_GIT:
-          const pullResult = await this.gitManager.pullFromGit();
+          const pullResult = await gitManager.pullFromGit();
           if (pullResult.status === 'success') {
             // 处理拉取到的数据
             this.processExtensionDiffData(pullResult.data);
@@ -114,7 +115,7 @@ class BackgroundManager {
           break;
 
         case MESSAGE_EVENTS.TEST_GIT_CONNECTION:
-          const testResult = await this.gitManager.testGitConnection(
+          const testResult = await gitManager.testGitConnection(
             request.repoUrl,
             request.userName,
             request.password

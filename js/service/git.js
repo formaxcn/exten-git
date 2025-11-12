@@ -546,3 +546,6 @@ class GitManager {
 
 // 使用ES6默认导出
 export default GitManager;
+
+// 创建并导出一个实例，供直接使用
+export const gitManager = new GitManager();
