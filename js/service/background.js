@@ -103,6 +103,7 @@ class BackgroundManager {
         case MESSAGE_EVENTS.PUSH_TO_GIT:
           const fileContent = await this.exportExtensionsData();
           const pushResult = await gitManager.pushToGit(fileContent);
+          this._calcGitDiff();
           sendResponse(pushResult);
           break;
 

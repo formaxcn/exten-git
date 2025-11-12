@@ -279,7 +279,8 @@ class OptionsManager {
       'browserSyncEnabled',
       'lastSyncTime',
       'lastCommitHash',
-      'todoExtensions'
+      'todoExtensions',
+      'gitDiff'
     ], (items) => {
       document.getElementById('repoUrl').value = items.repoUrl || '';
       document.getElementById('filePath').value = items.filePath || '';
@@ -334,6 +335,10 @@ class OptionsManager {
 
       if (items.todoExtensions) {
         this._updateBtnsDisplay(items.todoExtensions);
+      }
+
+      if (items.gitDiff) {
+        this._updateGitDiffDisplay();
       }
 
       // 保存默认值（如果尚未保存）
