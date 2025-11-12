@@ -121,7 +121,7 @@ class OptionsManager {
         if ("lastSyncTime" === areaName) {
           this._updateLastSyncTime();
         }
-        else if ("lastCommitHash" === areaName) {
+        else if ("lastCommitHash", "gitDiff" === areaName) {
           this._updateCommitHashDisplay();
         }
       });
@@ -132,7 +132,7 @@ class OptionsManager {
    * 更新commit hash显示
    */
   _updateCommitHashDisplay() {
-    chrome.storage.local.get(['lastCommitHash'], (result) => {
+    chrome.storage.local.get(['lastCommitHash', 'gitDiff'], (result) => {
       const commitHashDisplay = document.getElementById('commitHashValue');
       if (commitHashDisplay) {
         if (result.lastCommitHash) {
