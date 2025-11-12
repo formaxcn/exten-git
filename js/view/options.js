@@ -122,7 +122,7 @@ class OptionsManager {
         if (changes.lastSyncTime) {
           this._updateLastSyncTime();
         }
-        else if (changes.lastCommitHash || changes.gitDiff) {
+        else if (changes.lastCommitHash || changes.gitDiff ) {
           this._updateCommitHashDisplay();
         }
       });
