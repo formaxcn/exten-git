@@ -53,6 +53,7 @@ class ExtensionManager {
   _displayTodoExtensions(todoExtensions) {
     const todoContainer = document.getElementById('todoExtensionsContainer');
     const todoSectionHeader = document.querySelector('.todo-section-header');
+    const undoAllButton = document.getElementById('undoAllButton');
     
     // 清除现有的待办项目
     todoContainer.innerHTML = '';
@@ -60,11 +61,24 @@ class ExtensionManager {
     // 如果没有待办事项，隐藏标题并直接返回
     if (todoExtensions.length === 0) {
       todoSectionHeader.style.display = 'none';
+      undoAllButton.style.display = 'none';
       return;
     }
     
-    // 如果有待办事项，显示标题
+    // 如果有待办事项，显示标题和"全部撤销"按钮
     todoSectionHeader.style.display = 'block';
+    undoAllButton.style.display = 'inline-block';
+    
+    // 绑定"全部撤销"按钮事件
+    undoAllButton.onclick = () => {
+      // 清空待办事项列表
+      chrome.storage.local.remove('todoExtensions', () => {
+        AlertManager.showStatus('All actions reverted', STATUS_TYPES.INFO);
+        // 重新显示扩展列表
+        this._loadDisplayExtensions();
+        chrome.runtime.sendMessage({action: MESSAGE_EVENTS.LOCAL_SAVE_EXTENSIONS});
+      });
+    };
     
     // 显示每个待办事项
     for (let i = todoExtensions.length - 1; i >= 0; i--) {

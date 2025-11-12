@@ -199,6 +199,21 @@ button {
   margin-bottom: 10px;
 }
 
+.undo-all-button {
+  padding: 4px 12px;
+  background-color: #ff6b6b;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: normal;
+}
+
+.undo-all-button:hover {
+  background-color: #ff5252;
+}
+
 button:hover {
   /* 通用悬停效果会在各按钮类型中覆盖 */
   opacity: 0.9;
