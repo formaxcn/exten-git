@@ -30,7 +30,7 @@ class GitManager {
       if (!isTodoEmpty) {
         throw new Error('Cannot push: there are pending operations that need to be resolved first');
       }
-      
+
       const settings = await this._getGitSettings();
       if (!settings || !settings.repoUrl) {
         throw new Error('Git repository not configured');
@@ -43,9 +43,9 @@ class GitManager {
         fileContent,
         commitMessage
       });
-      
+
       await this._saveLastCommitHash(commitHash);
-      
+
       return { status: 'success', message: 'Push completed successfully' };
     } catch (error) {
       console.error('Git push error:', error);
@@ -64,18 +64,18 @@ class GitManager {
       }
 
       const result = await this._performGitPull(settings);
-      
+
       // 无论是否有新提交，都要更新commit hash（可能是第一次同步或者冲突情况）
       if (result.commitHash) {
         await this._saveLastCommitHash(result.commitHash);
       }
-      
+
       if (!result.hasNewCommit) {
         return { status: 'success', message: 'Already up to date', data: null };
       }
-      
+
       await this._processPulledData(result.data);
-      
+
       return { status: 'success', message: 'Pull completed successfully', data: result.data };
     } catch (error) {
       console.error('Git pull error:', error);
@@ -96,7 +96,7 @@ class GitManager {
 
       // 获取文件路径
       const filePath = await this._getFilePath();
-      
+
       // 读取文件内容 (用 pfs)
       let fileContent = null;
       try {
@@ -106,14 +106,14 @@ class GitManager {
         console.log('File does not exist in repository, treating as empty data');
         fileContent = { extensions: [] };
       }
-      
+
       // 获取当前commit hash
       let commitHash = await this._getLastCommitHash();
-      
-      return { 
-        status: 'success', 
-        data: fileContent, 
-        commitHash: commitHash 
+
+      return {
+        status: 'success',
+        data: fileContent,
+        commitHash: commitHash
       };
     } catch (error) {
       console.error('Get local head data error:', error);
@@ -121,11 +121,11 @@ class GitManager {
     }
   }
 
-  async diffExtensions(browserExtensionsData){
+  async diffExtensions(browserExtensionsData) {
     try {
       // 从Git仓库中读取最新的插件数据
       const filePath = await this._getFilePath();
-      
+
       let gitExtensionsData = { extensions: [] };
       try {
         const fileBuffer = await this.pfs.readFile(`${GIT_DEFAULT.BROWSER_LOCAL_REPO_DIR}/${filePath}`);
@@ -133,38 +133,38 @@ class GitManager {
       } catch (fileError) {
         console.log('File does not exist in repository, treating as empty data');
       }
-      
+
       // 提取插件ID集合
       const browserExtensionIds = new Set(browserExtensionsData.map(ext => ext.id));
       const gitExtensionIds = new Set(gitExtensionsData.extensions.map(ext => ext.id));
-      
+
       // 计算差异
       let addedCount = 0;  // 浏览器中有但Git中没有的插件数量（新增）
       let removedCount = 0; // Git中有但浏览器中没有的插件数量（移除）
-      
+
       // 计算新增的插件（在浏览器中但不在Git中）
       for (const extId of browserExtensionIds) {
         if (!gitExtensionIds.has(extId)) {
           addedCount++;
         }
       }
-      
+
       // 计算移除的插件（在Git中但不在浏览器中）
       for (const extId of gitExtensionIds) {
         if (!browserExtensionIds.has(extId)) {
           removedCount++;
         }
       }
-      
+
       // 构造diff结果对象
       const diffResult = {
         added: addedCount,
         removed: removedCount
       };
-      
+
       // 保存diff结果到localStorage
       await this._saveGitDiff(JSON.stringify(diffResult));
-      
+
       return diffResult;
     } catch (error) {
       console.error('Error calculating diff:', error);
@@ -178,7 +178,7 @@ class GitManager {
   async testGitConnection(repoUrl, userName, password) {
     try {
       const auth = this._buildAuthObject(userName, password);
-      
+
       // 修复：加 pfs 到 init
       try {
         await git.init({ fs: this.fs, pfs: this.pfs, dir: GIT_DEFAULT.BROWSER_LOCAL_REPO_DIR });
@@ -208,32 +208,32 @@ class GitManager {
       });
 
       if (remoteInfo && remoteInfo.refs) {
-        return {status: 'success', message: 'Connection successful! You have access to the repository.'};
+        return { status: 'success', message: 'Connection successful! You have access to the repository.' };
       } else {
-        return {status: 'error', message: 'Failed to retrieve repository information.'};
+        return { status: 'error', message: 'Failed to retrieve repository information.' };
       }
     } catch (error) {
       console.error('Git connection test error:', error);
-      
+
       // 根据错误类型返回相应的消息 (不变)
       if (error.code === 'HttpError') {
         if (error.statusCode === 401) {
-          return {status: 'error', message: 'Authentication failed. Please check your username and password or token.'};
+          return { status: 'error', message: 'Authentication failed. Please check your username and password or token.' };
         } else if (error.statusCode === 403) {
-          return {status: 'error', message: 'Access denied. You may not have the required permissions.'};
+          return { status: 'error', message: 'Access denied. You may not have the required permissions.' };
         } else if (error.statusCode === 404) {
-          return {status: 'error', message: 'Repository not found. Please check the repository URL.'};
+          return { status: 'error', message: 'Repository not found. Please check the repository URL.' };
         } else {
           const errorMessage = error.message || 'Unknown error';
-          return {status: 'error', message: `HTTP Error: ${error.statusCode} ${errorMessage}`};
+          return { status: 'error', message: `HTTP Error: ${error.statusCode} ${errorMessage}` };
         }
       } else if (error.code === 'NotFoundError') {
-        return {status: 'error', message: 'Repository not found. Please check the repository URL.'};
+        return { status: 'error', message: 'Repository not found. Please check the repository URL.' };
       } else if (error.code === 'GitUrlParseError') {
-        return {status: 'error', message: 'Invalid repository URL. Please check the URL format.'};
+        return { status: 'error', message: 'Invalid repository URL. Please check the URL format.' };
       } else {
         const errorMessage = error.message || 'Unknown error occurred';
-        return {status: 'error', message: `Connection test failed: ${errorMessage}`};
+        return { status: 'error', message: `Connection test failed: ${errorMessage}` };
       }
     }
   }
@@ -244,10 +244,10 @@ class GitManager {
   _getGitSettings() {
     return new Promise((resolve) => {
       chrome.storage.local.get([
-        'repoUrl', 
-        'userName', 
-        'password', 
-        'branchName', 
+        'repoUrl',
+        'userName',
+        'password',
+        'branchName',
         'filePath'
       ], (settings) => {
         resolve(settings);
@@ -259,151 +259,125 @@ class GitManager {
    * 执行Git推送操作 (私有方法) - 修复所有 fs/pfs
    */
 /**
- * 执行Git推送操作 (私有方法) - 完全修复版
+ * 执行 Git 推送（带详细日志版）
  */
 async _performGitPush(settings) {
   const auth = this._buildAuthObject(settings.userName, settings.password);
-  const repoDir = GIT_DEFAULT.BROWSER_LOCAL_REPO_DIR; // 例如 "/git-repo"
+  const repoDir = GIT_DEFAULT.BROWSER_LOCAL_REPO_DIR;          // "/git-repo"
   const filePath = settings.filePath || GIT_DEFAULT.FILE_PATH; // "extensions.json"
   const fullFilePath = `${repoDir}/${filePath}`;
+  const branch = settings.branchName || 'main';
 
-  console.log('Performing Git push with settings:', settings);
+  console.log('=== Git push 开始 ===');
+  console.log('Settings:', JSON.stringify(settings, null, 2));
+  console.log('Auth (username):', auth.username);               // 只打印用户名，密码不要泄露
+  console.log('Repo dir:', repoDir);
+  console.log('Target branch:', branch);
 
   try {
-    // === 1. 初始化仓库 ===
-    try {
-      await git.init({ fs: this.fs, pfs: this.pfs, dir: repoDir });
-    } catch (initError) {
-      console.log('Repository already initialized');
-    }
+    // 1. 初始化仓库（若已存在会抛错，捕获即可）
+    console.log('1. git.init');
+    await git.init({ fs: this.fs, pfs: this.pfs, dir: repoDir }).catch(() => console.log('  → 仓库已存在'));
 
-    // === 2. 添加远程仓库 ===
+    // 2. 添加/覆盖远程
+    console.log('2. git.addRemote');
+    await git.addRemote({
+      fs: this.fs, pfs: this.pfs, dir: repoDir,
+      remote: 'origin', url: settings.repoUrl, force: true
+    }).catch(() => console.log('  → remote 已存在'));
+
+    // 3. fetch 远程信息（关键！）
+    console.log('3. git.fetch (ref:', branch, ')');
+    let remoteRefs = [];
     try {
-      await git.addRemote({
-        fs: this.fs,
-        pfs: this.pfs,
-        dir: repoDir,
-        remote: 'origin',
-        url: settings.repoUrl,
-        force: true
+      const fetchResult = await git.fetch({
+        fs: this.fs, pfs: this.pfs, http: GitHttp,
+        dir: repoDir, remote: 'origin', ref: branch, ...auth
       });
-    } catch (remoteError) {
-      console.log('Remote already exists');
+      remoteRefs = await git.listBranches({ fs: this.fs, pfs: this.pfs, dir: repoDir, remote: 'origin' });
+      console.log('  → fetch 成功，远程分支列表:', remoteRefs);
+    } catch (e) {
+      console.log('  → fetch 失败（可能是空仓库）:', e.message);
     }
 
-    // === 3. 获取远程最新状态 ===
-    await git.fetch({
-      fs: this.fs,
-      pfs: this.pfs,
-      http: GitHttp,
-      dir: repoDir,
-      remote: 'origin',
-      ref: settings.branchName,
-      ...auth
-    });
-
-    // === 4. 确保本地分支存在并切换 ===
-    let currentBranch;
+    // 4. 切换/创建本地分支
+    console.log('4. 切换到本地分支', branch);
     try {
-      currentBranch = await git.currentBranch({
-        fs: this.fs,
-        pfs: this.pfs,
-        dir: repoDir,
-        fullname: false
+      await git.checkout({ fs: this.fs, pfs: this.pfs, dir: repoDir, ref: branch });
+      console.log('  → checkout 成功');
+    } catch {
+      console.log('  → checkout 失败，尝试创建新分支');
+      await git.branch({ fs: this.fs, pfs: this.pfs, dir: repoDir, ref: branch, checkout: true });
+      console.log('  → branch+checkout 成功');
+    }
+
+    // 5. 检查本地是否为空（必须有至少一次 commit）
+    console.log('5. 检查本地文件');
+    const localFiles = await this.pfs.readdir(repoDir).catch(() => []);
+    console.log('  → 本地文件:', localFiles);
+
+    if (localFiles.length === 0 || !localFiles.includes('README.md')) {
+      console.log('  → 本地为空，写入占位 README.md');
+      await this.pfs.writeFile(`${repoDir}/README.md`,
+        '# Extension Git Sync\nManaged by browser extension.\n');
+      await git.add({ fs: this.fs, pfs: this.pfs, dir: repoDir, filepath: 'README.md' });
+      await git.commit({
+        fs: this.fs, pfs: this.pfs, dir: repoDir,
+        author: { name: 'init', email: 'init@local' },
+        message: 'chore: init empty repo'
       });
-    } catch (branchError) {
-      console.log('No current branch, will create one');
+      console.log('  → 占位提交完成');
     }
 
-    if (currentBranch !== settings.branchName) {
-      try {
-        await git.checkout({
-          fs: this.fs,
-          pfs: this.pfs,
-          dir: repoDir,
-          ref: settings.branchName
-        });
-      } catch (checkoutError) {
-        await git.branch({
-          fs: this.fs,
-          pfs: this.pfs,
-          dir: repoDir,
-          ref: settings.branchName,
-          checkout: true
-        });
-      }
-    }
+    // 6. 写入业务文件
+    console.log('6. 写入业务文件', fullFilePath);
+    await this.pfs.writeFile(fullFilePath, JSON.stringify(settings.fileContent, null, 2));
+    await git.add({ fs: this.fs, pfs: this.pfs, dir: repoDir, filepath: filePath });
+    console.log('  → add 完成');
 
-    // === 5. 确保仓库目录存在 ===
-    try {
-      await this.pfs.mkdir(repoDir, { recursive: true });
-    } catch (mkdirError) {
-      // 忽略已存在错误
-    }
-
-    // === 6. 首次推送：如果仓库为空，添加占位文件 ===
-    let files = [];
-    try {
-      files = await this.pfs.readdir(repoDir);
-    } catch (readError) {
-      console.log('Failed to read repo dir, assuming empty');
-    }
-
-    if (files.length === 0) {
-      console.log('Empty repository detected, adding README.md');
-      await this.pfs.writeFile(
-        `${repoDir}/README.md`,
-        '# Extension Git Sync Repository\n\nManaged by browser extension.\n'
-      );
-    }
-
-    // === 7. 写入目标文件 ===
-    const contentStr = JSON.stringify(settings.fileContent, null, 2);
-    await this.pfs.writeFile(fullFilePath, contentStr);
-    console.log(`File written: ${fullFilePath}`);
-
-    // === 8. 添加文件到暂存区（使用相对路径）===
-    await git.add({
-      fs: this.fs,
-      pfs: this.pfs,
-      dir: repoDir,
-      filepath: filePath  // 仅文件名或子路径
-    });
-
-    // === 9. 创建提交 ===
+    // 7. 创建提交
+    console.log('7. git.commit');
     const sha = await git.commit({
-      fs: this.fs,
-      pfs: this.pfs,
-      dir: repoDir,
-      author: {
-        name: 'Extension Git Sync',
-        email: 'exten.git@local'
-      },
+      fs: this.fs, pfs: this.pfs, dir: repoDir,
+      author: { name: 'Extension Git Sync', email: 'ext@local' },
       message: settings.commitMessage
     });
+    console.log('  → Commit SHA:', sha);
 
-    console.log('Commit created:', sha);
-
-    // === 10. 推送到远程仓库 ===
+    // 8. 关键：push（完整 ref + force）
+    console.log('8. git.push →', 'force:', true);
     await git.push({
       fs: this.fs,
       pfs: this.pfs,
       http: GitHttp,
       dir: repoDir,
       remote: 'origin',
-      ref: { local: settings.branchName, remote: settings.branchName },
+      ref: branch,
+      force: true,
       ...auth
     });
+    console.log('Push 成功！');
 
-    console.log('Push completed successfully');
+    // 9. （可选）设置 upstream，防止下次再报错
+    if (!remoteRefs.includes(branch)) {
+      console.log('9. 设置 upstream');
+      await git.setConfig({ fs: this.fs, pfs: this.pfs, dir: repoDir,
+        path: `branch.${branch}.remote`, value: 'origin' });
+      await git.setConfig({ fs: this.fs, pfs: this.pfs, dir: repoDir,
+        path: `branch.${branch}.merge`, value: `refs/heads/${branch}` });
+    }
+
     return sha;
 
   } catch (error) {
-    console.error('Git push failed at step:', error);
+    console.error('Git push 失败，错误位置:', error);
+    console.error('完整错误堆栈:', error.stack);
     throw new Error(`Git push failed: ${error.message}`);
+  } finally {
+    console.log('=== Git push 结束 ===');
   }
 }
-
+  
   /**
    * 执行Git拉取操作 (私有方法) - 修复所有 fs/pfs
    */
@@ -417,7 +391,7 @@ async _performGitPush(settings) {
     } = settings;
 
     const auth = this._buildAuthObject(userName, password);
-    
+
     try {
       // 初始化仓库（加 pfs）
       try {
@@ -472,10 +446,10 @@ async _performGitPush(settings) {
       }
 
       console.log(`Remote commit hash: ${remoteCommitHash}`);
-      
+
       const lastCommitHash = await this._getLastCommitHash();
       console.log(`Last commit hash: ${lastCommitHash}`);
-      
+
       if (remoteCommitHash && remoteCommitHash === lastCommitHash) {
         return { hasNewCommit: false, commitHash: remoteCommitHash };
       }
@@ -490,14 +464,14 @@ async _performGitPush(settings) {
       try {
         const currentBranch = await git.currentBranch({ fs: this.fs, pfs: this.pfs, dir: GIT_DEFAULT.BROWSER_LOCAL_REPO_DIR });
         console.log('Current branch:', currentBranch);
-        
+
         if (currentBranch !== branchName) {
           try {
-            await git.checkout({ 
-              fs: this.fs, 
-              pfs: this.pfs, 
-              dir: GIT_DEFAULT.BROWSER_LOCAL_REPO_DIR, 
-              ref: branchName 
+            await git.checkout({
+              fs: this.fs,
+              pfs: this.pfs,
+              dir: GIT_DEFAULT.BROWSER_LOCAL_REPO_DIR,
+              ref: branchName
             });
           } catch (checkoutError) {
             await git.branch({
@@ -545,11 +519,11 @@ async _performGitPush(settings) {
         console.log('File does not exist in repository, treating as empty data');
         fileContent = { extensions: [] };
       }
-      
-      return { 
-        hasNewCommit: true, 
-        data: fileContent, 
-        commitHash: remoteCommitHash 
+
+      return {
+        hasNewCommit: true,
+        data: fileContent,
+        commitHash: remoteCommitHash
       };
     } catch (error) {
       throw new Error(`Git pull failed: ${error.message}`);
@@ -561,7 +535,7 @@ async _performGitPush(settings) {
    */
   _buildAuthObject(userName, password) {
     let auth = {};
-    
+
     if (userName && password) {
       if (userName.includes(':')) {
         auth.headers = {
@@ -577,7 +551,7 @@ async _performGitPush(settings) {
         'Authorization': `Bearer ${password}`
       };
     }
-    
+
     return auth;
   }
 
@@ -626,7 +600,7 @@ async _performGitPush(settings) {
       });
     });
   }
-  
+
   /**
    * 获取文件路径 (私有方法)
    */
@@ -637,7 +611,7 @@ async _performGitPush(settings) {
       });
     });
   }
-  
+
   /**
    * 保存Git diff结果 (私有方法)
    */
