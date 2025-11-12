@@ -206,10 +206,8 @@ class ExtensionManager {
   // 获取所有扩展
   _loadDisplayExtensions() {
     chrome.management.getAll((extensions) => {
-      // popupStatusElement.textContent = '';
-
       // 保存所有扩展到实例变量
-      this.allExtensions = extensions;
+      this.allExtensions = extensions.filter(ext => ext.type !== 'theme');
 
       // 从storage获取待办事项列表
       chrome.storage.local.get(['todoExtensions'], (result) => {
@@ -243,15 +241,12 @@ class ExtensionManager {
     activeContainer.innerHTML = '';
     inactiveContainer.innerHTML = '';
 
-    // 过滤掉主题类型的扩展，只保留普通扩展
-    const filteredExtensions = extensions.filter(ext => ext.type !== 'theme');
-
     // 获取待办事项中的扩展ID列表
     const todoExtensionIds = todoExtensions.map(ext => ext.id);
 
     // 分离启用和未启用的扩展，排除待办事项中的扩展
-    const enabledExtensions = filteredExtensions.filter(ext => ext.enabled && !todoExtensionIds.includes(ext.id));
-    const disabledExtensions = filteredExtensions.filter(ext => !ext.enabled && !todoExtensionIds.includes(ext.id));
+    const enabledExtensions = extensions.filter(ext => ext.enabled && !todoExtensionIds.includes(ext.id));
+    const disabledExtensions = extensions.filter(ext => !ext.enabled && !todoExtensionIds.includes(ext.id));
 
     // 添加启用的扩展
     if (enabledExtensions.length > 0) {

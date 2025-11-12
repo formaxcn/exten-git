@@ -427,6 +427,8 @@ class OptionsManager {
    */
   _syncChanges() {
     AlertManager.showStatus('Sync functionality needs to be implemented', STATUS_TYPES.ERROR);
+    this._pullChanges();
+    this._pushChanges();
   }
 
   /**

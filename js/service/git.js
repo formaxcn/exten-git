@@ -258,126 +258,130 @@ class GitManager {
   /**
    * 执行Git推送操作 (私有方法) - 修复所有 fs/pfs
    */
-/**
- * 执行 Git 推送（带详细日志版）
- */
-async _performGitPush(settings) {
-  const auth = this._buildAuthObject(settings.userName, settings.password);
-  const repoDir = GIT_DEFAULT.BROWSER_LOCAL_REPO_DIR;          // "/git-repo"
-  const filePath = settings.filePath || GIT_DEFAULT.FILE_PATH; // "extensions.json"
-  const fullFilePath = `${repoDir}/${filePath}`;
-  const branch = settings.branchName || 'main';
+  /**
+   * 执行 Git 推送（带详细日志版）
+   */
+  async _performGitPush(settings) {
+    const auth = this._buildAuthObject(settings.userName, settings.password);
+    const repoDir = GIT_DEFAULT.BROWSER_LOCAL_REPO_DIR;          // "/git-repo"
+    const filePath = settings.filePath || GIT_DEFAULT.FILE_PATH; // "extensions.json"
+    const fullFilePath = `${repoDir}/${filePath}`;
+    const branch = settings.branchName || 'main';
 
-  console.log('=== Git push 开始 ===');
-  console.log('Settings:', JSON.stringify(settings, null, 2));
-  console.log('Auth (username):', auth.username);               // 只打印用户名，密码不要泄露
-  console.log('Repo dir:', repoDir);
-  console.log('Target branch:', branch);
+    console.log('=== Git push 开始 ===');
+    console.log('Settings:', JSON.stringify(settings, null, 2));
+    console.log('Auth (username):', auth.username);               // 只打印用户名，密码不要泄露
+    console.log('Repo dir:', repoDir);
+    console.log('Target branch:', branch);
 
-  try {
-    // 1. 初始化仓库（若已存在会抛错，捕获即可）
-    console.log('1. git.init');
-    await git.init({ fs: this.fs, pfs: this.pfs, dir: repoDir }).catch(() => console.log('  → 仓库已存在'));
-
-    // 2. 添加/覆盖远程
-    console.log('2. git.addRemote');
-    await git.addRemote({
-      fs: this.fs, pfs: this.pfs, dir: repoDir,
-      remote: 'origin', url: settings.repoUrl, force: true
-    }).catch(() => console.log('  → remote 已存在'));
-
-    // 3. fetch 远程信息（关键！）
-    console.log('3. git.fetch (ref:', branch, ')');
-    let remoteRefs = [];
     try {
-      const fetchResult = await git.fetch({
-        fs: this.fs, pfs: this.pfs, http: GitHttp,
-        dir: repoDir, remote: 'origin', ref: branch, ...auth
-      });
-      remoteRefs = await git.listBranches({ fs: this.fs, pfs: this.pfs, dir: repoDir, remote: 'origin' });
-      console.log('  → fetch 成功，远程分支列表:', remoteRefs);
-    } catch (e) {
-      console.log('  → fetch 失败（可能是空仓库）:', e.message);
-    }
+      // 1. 初始化仓库（若已存在会抛错，捕获即可）
+      console.log('1. git.init');
+      await git.init({ fs: this.fs, pfs: this.pfs, dir: repoDir }).catch(() => console.log('  → 仓库已存在'));
 
-    // 4. 切换/创建本地分支
-    console.log('4. 切换到本地分支', branch);
-    try {
-      await git.checkout({ fs: this.fs, pfs: this.pfs, dir: repoDir, ref: branch });
-      console.log('  → checkout 成功');
-    } catch {
-      console.log('  → checkout 失败，尝试创建新分支');
-      await git.branch({ fs: this.fs, pfs: this.pfs, dir: repoDir, ref: branch, checkout: true });
-      console.log('  → branch+checkout 成功');
-    }
-
-    // 5. 检查本地是否为空（必须有至少一次 commit）
-    console.log('5. 检查本地文件');
-    const localFiles = await this.pfs.readdir(repoDir).catch(() => []);
-    console.log('  → 本地文件:', localFiles);
-
-    if (localFiles.length === 0 || !localFiles.includes('README.md')) {
-      console.log('  → 本地为空，写入占位 README.md');
-      await this.pfs.writeFile(`${repoDir}/README.md`,
-        '# Extension Git Sync\nManaged by browser extension.\n');
-      await git.add({ fs: this.fs, pfs: this.pfs, dir: repoDir, filepath: 'README.md' });
-      await git.commit({
+      // 2. 添加/覆盖远程
+      console.log('2. git.addRemote');
+      await git.addRemote({
         fs: this.fs, pfs: this.pfs, dir: repoDir,
-        author: { name: 'init', email: 'init@local' },
-        message: 'chore: init empty repo'
+        remote: 'origin', url: settings.repoUrl, force: true
+      }).catch(() => console.log('  → remote 已存在'));
+
+      // 3. fetch 远程信息（关键！）
+      console.log('3. git.fetch (ref:', branch, ')');
+      let remoteRefs = [];
+      try {
+        const fetchResult = await git.fetch({
+          fs: this.fs, pfs: this.pfs, http: GitHttp,
+          dir: repoDir, remote: 'origin', ref: branch, ...auth
+        });
+        remoteRefs = await git.listBranches({ fs: this.fs, pfs: this.pfs, dir: repoDir, remote: 'origin' });
+        console.log('  → fetch 成功，远程分支列表:', remoteRefs);
+      } catch (e) {
+        console.log('  → fetch 失败（可能是空仓库）:', e.message);
+      }
+
+      // 4. 切换/创建本地分支
+      console.log('4. 切换到本地分支', branch);
+      try {
+        await git.checkout({ fs: this.fs, pfs: this.pfs, dir: repoDir, ref: branch });
+        console.log('  → checkout 成功');
+      } catch {
+        console.log('  → checkout 失败，尝试创建新分支');
+        await git.branch({ fs: this.fs, pfs: this.pfs, dir: repoDir, ref: branch, checkout: true });
+        console.log('  → branch+checkout 成功');
+      }
+
+      // 5. 检查本地是否为空（必须有至少一次 commit）
+      console.log('5. 检查本地文件');
+      const localFiles = await this.pfs.readdir(repoDir).catch(() => []);
+      console.log('  → 本地文件:', localFiles);
+
+      if (localFiles.length === 0 || !localFiles.includes('README.md')) {
+        console.log('  → 本地为空，写入占位 README.md');
+        await this.pfs.writeFile(`${repoDir}/README.md`,
+          '# Extension Git Sync\nManaged by browser extension.\n');
+        await git.add({ fs: this.fs, pfs: this.pfs, dir: repoDir, filepath: 'README.md' });
+        await git.commit({
+          fs: this.fs, pfs: this.pfs, dir: repoDir,
+          author: { name: 'init', email: 'init@local' },
+          message: 'chore: init empty repo'
+        });
+        console.log('  → 占位提交完成');
+      }
+
+      // 6. 写入业务文件
+      console.log('6. 写入业务文件', fullFilePath);
+      await this.pfs.writeFile(fullFilePath, JSON.stringify(settings.fileContent, null, 2));
+      await git.add({ fs: this.fs, pfs: this.pfs, dir: repoDir, filepath: filePath });
+      console.log('  → add 完成');
+
+      // 7. 创建提交
+      console.log('7. git.commit');
+      const sha = await git.commit({
+        fs: this.fs, pfs: this.pfs, dir: repoDir,
+        author: { name: 'Extension Git Sync', email: 'ext@local' },
+        message: settings.commitMessage
       });
-      console.log('  → 占位提交完成');
+      console.log('  → Commit SHA:', sha);
+
+      // 8. 关键：push（完整 ref + force）
+      console.log('8. git.push →', 'force:', true);
+      await git.push({
+        fs: this.fs,
+        pfs: this.pfs,
+        http: GitHttp,
+        dir: repoDir,
+        remote: 'origin',
+        ref: branch,
+        force: true,
+        ...auth
+      });
+      console.log('Push 成功！');
+
+      // 9. （可选）设置 upstream，防止下次再报错
+      if (!remoteRefs.includes(branch)) {
+        console.log('9. 设置 upstream');
+        await git.setConfig({
+          fs: this.fs, pfs: this.pfs, dir: repoDir,
+          path: `branch.${branch}.remote`, value: 'origin'
+        });
+        await git.setConfig({
+          fs: this.fs, pfs: this.pfs, dir: repoDir,
+          path: `branch.${branch}.merge`, value: `refs/heads/${branch}`
+        });
+      }
+
+      return sha;
+
+    } catch (error) {
+      console.error('Git push 失败，错误位置:', error);
+      console.error('完整错误堆栈:', error.stack);
+      throw new Error(`Git push failed: ${error.message}`);
+    } finally {
+      console.log('=== Git push 结束 ===');
     }
-
-    // 6. 写入业务文件
-    console.log('6. 写入业务文件', fullFilePath);
-    await this.pfs.writeFile(fullFilePath, JSON.stringify(settings.fileContent, null, 2));
-    await git.add({ fs: this.fs, pfs: this.pfs, dir: repoDir, filepath: filePath });
-    console.log('  → add 完成');
-
-    // 7. 创建提交
-    console.log('7. git.commit');
-    const sha = await git.commit({
-      fs: this.fs, pfs: this.pfs, dir: repoDir,
-      author: { name: 'Extension Git Sync', email: 'ext@local' },
-      message: settings.commitMessage
-    });
-    console.log('  → Commit SHA:', sha);
-
-    // 8. 关键：push（完整 ref + force）
-    console.log('8. git.push →', 'force:', true);
-    await git.push({
-      fs: this.fs,
-      pfs: this.pfs,
-      http: GitHttp,
-      dir: repoDir,
-      remote: 'origin',
-      ref: branch,
-      force: true,
-      ...auth
-    });
-    console.log('Push 成功！');
-
-    // 9. （可选）设置 upstream，防止下次再报错
-    if (!remoteRefs.includes(branch)) {
-      console.log('9. 设置 upstream');
-      await git.setConfig({ fs: this.fs, pfs: this.pfs, dir: repoDir,
-        path: `branch.${branch}.remote`, value: 'origin' });
-      await git.setConfig({ fs: this.fs, pfs: this.pfs, dir: repoDir,
-        path: `branch.${branch}.merge`, value: `refs/heads/${branch}` });
-    }
-
-    return sha;
-
-  } catch (error) {
-    console.error('Git push 失败，错误位置:', error);
-    console.error('完整错误堆栈:', error.stack);
-    throw new Error(`Git push failed: ${error.message}`);
-  } finally {
-    console.log('=== Git push 结束 ===');
   }
-}
-  
+
   /**
    * 执行Git拉取操作 (私有方法) - 修复所有 fs/pfs
    */

@@ -240,16 +240,11 @@ class BackgroundManager {
   _getExtensionsData() {
     return new Promise((resolve, reject) => {
       chrome.management.getAll((extensions) => {
+        const filteredExtensions = extensions.filter(ext => ext.type !== 'theme');
         if (chrome.runtime.lastError) {
           reject(new Error(chrome.runtime.lastError.message));
           return;
         }
-
-        // 过滤掉当前扩展自身，只保留其他扩展
-        const filteredExtensions = extensions.filter(ext =>
-          ext.id !== chrome.runtime.id
-        );
-
         resolve(filteredExtensions);
       });
     });
