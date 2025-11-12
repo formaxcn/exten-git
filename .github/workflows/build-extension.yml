@@ -4,34 +4,36 @@ on:
   workflow_dispatch:
   push:
     tags:
-      - 'v*'
+      - '*'
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    
+
+    permissions:
+      contents: write   # 关键：允许创建 release
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-      
+
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
         node-version: '18'
-        
+
     - name: Get version from tag or use default
       id: get_version
       run: |
-        if [[ $GITHUB_REF_TYPE == 'tag' && $GITHUB_REF_NAME == v* ]]; then
+        if [[ "$GITHUB_REF_TYPE" == "tag" ]]; then
           echo "VERSION=${GITHUB_REF_NAME}" >> $GITHUB_ENV
           echo "RELEASE_TYPE=production" >> $GITHUB_ENV
         else
           echo "VERSION=$(date +'%Y%m%d-%H%M%S')" >> $GITHUB_ENV
           echo "RELEASE_TYPE=prerelease" >> $GITHUB_ENV
         fi
-        
+
     - name: Pack extension to ZIP
-      id: pack
       uses: cardinalby/webext-buildtools-pack-extension-dir-action@v1
       with:
         extensionDir: '.'
@@ -48,7 +50,7 @@ jobs:
         zipFilePath: ${{ steps.pack.outputs.zipFilePath }}
         crxFilePath: 'exten-git-${{ env.VERSION }}.crx'
         privateKey: ${{ secrets.CRXPEM }}
-      
+
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
       with:
@@ -56,9 +58,9 @@ jobs:
         path: |
           exten-git-*.zip
           exten-git-*.crx
-        
+
     - name: Create Release
-      if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
+      if: github.ref_type == 'tag' || github.event_name == 'workflow_dispatch'
       uses: softprops/action-gh-release@v1
       with:
         files: |
@@ -67,5 +69,4 @@ jobs:
         draft: false
         prerelease: ${{ env.RELEASE_TYPE == 'prerelease' }}
         tag_name: ${{ env.VERSION }}
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # 不需要传 token！默认用 GITHUB_TOKEN
