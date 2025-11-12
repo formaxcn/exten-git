@@ -196,24 +196,11 @@ class OptionsManager {
         } catch (e) {
           console.error('Error parsing git diff:', e);
           // 解析失败时隐藏diff显示
-          if (addedCountDisplay) addedCountDisplay.style.display = 'none';
-          if (removedCountDisplay) removedCountDisplay.style.display = 'none';
-          
-          // 同时隐藏revert按钮
-          const revertButton = document.getElementById('revertLocalChangesButton');
-          if (revertButton) {
-            revertButton.style.display = 'none';
-          }
+          if (gitDiffContainerDisplay) gitDiffContainerDisplay.style.display = 'none';
         }
       } else {
         // 没有diff信息时隐藏显示
-        if (addedCountDisplay) addedCountDisplay.style.display = 'none';
-        if (removedCountDisplay) removedCountDisplay.style.display = 'none';
-        
-        // 同时隐藏revert按钮
-        if (revertButton) {
-          revertButton.style.display = 'none';
-        }
+        if (gitDiffContainerDisplay) addedCountDisplay.style.display = 'none';  
       }
     });
   }
