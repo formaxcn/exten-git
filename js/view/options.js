@@ -138,7 +138,6 @@ class OptionsManager {
       const addedCountDisplay = document.getElementById('addedCount');
       const removedCountDisplay = document.getElementById('removedCount');
       const revertButton = document.getElementById('revertLocalChangesButton');
-      const gitDiffContainerDisplay = document.getElementById('gitDiffContainer');
 
       if (commitHashDisplay) {
         let displayText = '';
@@ -155,10 +154,11 @@ class OptionsManager {
         commitHashDisplay.textContent = displayText;
       }
 
+      var hideDiff = false;
       // 如果有todo项，直接进入else部分处理
       if (result.todoExtensions && result.todoExtensions.length > 0) {
         // 有todo项时隐藏diff显示
-        if (gitDiffContainerDisplay) gitDiffContainerDisplay.style.display = 'none';
+        hideDiff = true;
       }
       // 解析并显示diff信息
       else if (result.gitDiff && addedCountDisplay && removedCountDisplay) {
@@ -192,11 +192,19 @@ class OptionsManager {
         } catch (e) {
           console.error('Error parsing git diff:', e);
           // 解析失败时隐藏diff显示
-          if (gitDiffContainerDisplay) gitDiffContainerDisplay.style.display = 'none';
+          hideDiff = true;
         }
       } else {
         // 没有diff信息时隐藏显示
+        hideDiff = true;
+      }
+      const gitDiffContainerDisplay = document.getElementById('gitDiffContainer');
+      if (hideDiff){
         if (gitDiffContainerDisplay) gitDiffContainerDisplay.style.display = 'none';
+        chrome.storage.local.set({ gitDiff: null });
+      }
+      else{
+        if (gitDiffContainerDisplay) gitDiffContainerDisplay.style.display = 'block';
       }
     });
   }

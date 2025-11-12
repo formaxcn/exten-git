@@ -115,6 +115,7 @@ class BackgroundManager {
           const currentExtensions = await this._getExtensionsData();
           //TODO 先判断是否拉取过git
           await gitManager.diffExtensions(currentExtensions);
+          sendResponse({ status: 'success' });
           break;
         
         case MESSAGE_EVENTS.GIT_LOCAL_DIFF:
