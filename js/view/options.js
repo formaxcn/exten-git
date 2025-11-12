@@ -243,8 +243,8 @@ class OptionsManager {
    */
   _saveSettings() {
     const repoUrl = document.getElementById('repoUrl').value.trim();
-    const branchName = document.getElementById('branch').value.trim();
-    const filePath = document.getElementById('filePath').value.trim();
+    const branchName = document.getElementById('branch').value.trim() || 'main';
+    const filePath = document.getElementById('filePath').value.trim() || 'extensions.json';
     const userName = document.getElementById('userName').value.trim();
     const password = document.getElementById('password').value.trim();
     const syncInterval = document.getElementById('syncInterval').value;
