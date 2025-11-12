@@ -4,7 +4,7 @@
  */
 import FileManager from './persistence.js';
 import AlertManager from './alert.js';
-import { MESSAGE_EVENTS, STATUS_TYPES } from '../util/constants.js';
+import { GIT_DEFAULT, MESSAGE_EVENTS, STATUS_TYPES } from '../util/constants.js';
 
 class OptionsManager {
   /**
@@ -118,10 +118,11 @@ class OptionsManager {
       });
 
       chrome.storage.onChanged.addListener((changes, areaName) => {
-        if (areaName === "lastSyncTime") {
+        if (areaName !== 'local') return;
+        if (changes.lastSyncTime) {
           this._updateLastSyncTime();
         }
-        else if (areaName === "lastCommitHash" || areaName === "gitDiff") {
+        else if (changes.lastCommitHash || changes.gitDiff) {
           this._updateCommitHashDisplay();
         }
       });
@@ -252,8 +253,8 @@ class OptionsManager {
    */
   _saveSettings() {
     const repoUrl = document.getElementById('repoUrl').value.trim();
-    const branchName = document.getElementById('branch').value.trim() || 'main';
-    const filePath = document.getElementById('filePath').value.trim() || 'extensions.json';
+    const branchName = document.getElementById('branch').value.trim() || GIT_DEFAULT.BRANCH;
+    const filePath = document.getElementById('filePath').value.trim() || GIT_DEFAULT.FILE_PATH;
     const userName = document.getElementById('userName').value.trim();
     const password = document.getElementById('password').value.trim();
     const syncInterval = document.getElementById('syncInterval').value;

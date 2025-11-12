@@ -1,6 +1,7 @@
 // git.js - Git功能模块 (修复 FS + pfs)
 
 import { git, LightningFS, http as GitHttp, Buffer } from '../lib/bundle.js';
+import { GIT_DEFAULT } from '../util/constants.js';
 
 class GitManager {
   static localRepoDir = '/repo';
@@ -227,8 +228,8 @@ class GitManager {
       repoUrl,
       userName,
       password,
-      branchName = 'main',
-      filePath = 'extensions.json',
+      branchName = GIT_DEFAULT.BRANCH,
+      filePath = GIT_DEFAULT.FILE_PATH,
       fileContent,
       commitMessage
     } = settings;
@@ -328,8 +329,8 @@ class GitManager {
       repoUrl,
       userName,
       password,
-      branchName = 'main',
-      filePath = 'extensions.json'
+      branchName = GIT_DEFAULT.BRANCH,
+      filePath = GIT_DEFAULT.FILE_PATH
     } = settings;
 
     const auth = this._buildAuthObject(userName, password);
@@ -549,7 +550,7 @@ class GitManager {
   _getFilePath() {
     return new Promise((resolve) => {
       chrome.storage.local.get(['filePath'], (result) => {
-        resolve(result.filePath || 'extensions.json');
+        resolve(result.filePath || GIT_DEFAULT.FILE_PATH);
       });
     });
   }

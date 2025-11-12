@@ -42,9 +42,14 @@ class BackgroundManager {
 
     // 初始化存储监听器
     chrome.storage.onChanged.addListener((changes, areaName) => {
-      if (["todoExtensions","browserSyncEnabled","refreshInterval","autoSyncEnabled"].includes(areaName)) {
+      if (areaName !== 'local') return;
+      if (changes.refreshInterval || changes.autoSyncEnabled) {
         this._handleStorageChange(changes);
-      }
+      } else if (changes.todoExtensions){
+        this._extensionChanged(EXTENSION_ACTIONS.UNDO);
+      } else if (changes.browserSyncEnabled){
+
+      }  
     });
 
     // 初始化时从存储中加载待办事项
@@ -110,7 +115,7 @@ class BackgroundManager {
           break;
 
         case MESSAGE_EVENTS.LOCAL_SAVE_EXTENSIONS:
-          const currentExtensions = this._getExtensionsData();
+          const currentExtensions = await this._getExtensionsData();
           //TODO 先判断是否拉取过git
           await gitManager.diffExtensions(currentExtensions);
           break;
@@ -148,20 +153,12 @@ class BackgroundManager {
    */
   _handleStorageChange(changes) {
     // 检查是否有影响定时器的设置变化
-    ['autoSyncEnabled', 'refreshInterval'].forEach(key => {
-      if (changes[key]) {
-        this.settings[key] = changes[key].newValue;
-        this._restartRefreshInterval();
-      }
-    });
-
-    if(changes['browserSyncEnabled']){
-      //TODO
-    }
-
-    if (changes['todoExtensions']){
-      this._extensionChanged(EXTENSION_ACTIONS.UNDO);
-    }
+    // ['autoSyncEnabled', 'refreshInterval'].forEach(key => {
+    //   if (changes[key]) {
+    //     this.settings[key] = changes[key].newValue;
+    //     this._restartRefreshInterval();
+    //   }
+    // });
   }
 
   _extensionChanged(changeType,extensionId=null) {

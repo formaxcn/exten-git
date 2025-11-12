@@ -28,5 +28,10 @@ const STATUS_TYPES = {
   WARNING: 'warning'
 };
 
+const GIT_DEFAULT = {
+  BRANCH: 'main',
+  FILE_PATH: 'extensions.json'
+}
+
 // 添加ES6命名导出以支持Service Worker中使用ES模块
-export { MESSAGE_EVENTS, EXTENSION_ACTIONS, STATUS_TYPES };
+export { MESSAGE_EVENTS, EXTENSION_ACTIONS, STATUS_TYPES, GIT_DEFAULT };

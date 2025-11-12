@@ -168,11 +168,6 @@ class ExtensionManager {
       
       // 从待办列表中移除该项
       todoExtensions = todoExtensions.filter(ext => ext.id !== extensionId);
-
-      chrome.runtime.sendMessage({
-        type: MESSAGE_EVENTS.LOCAL_SAVE_EXTENSIONS,
-        extensionId: extensionId
-      });
       
       // 更新存储中的待办事项列表
       if (todoExtensions.length > 0) {
@@ -186,6 +181,7 @@ class ExtensionManager {
           AlertManager.showStatus('Action reverted', STATUS_TYPES.INFO);
           // 重新显示扩展列表
           this._loadDisplayExtensions();
+          chrome.runtime.sendMessage({action: MESSAGE_EVENTS.LOCAL_SAVE_EXTENSIONS});
         });
       }
     });
