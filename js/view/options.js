@@ -133,11 +133,12 @@ class OptionsManager {
    * 更新commit hash显示
    */
   _updateCommitHashDisplay() {
-    chrome.storage.local.get(['lastCommitHash', 'gitDiff'], (result) => {
+    chrome.storage.local.get(['lastCommitHash', 'gitDiff', 'todoExtensions'], (result) => {
       const commitHashDisplay = document.getElementById('commitHashValue');
       const addedCountDisplay = document.getElementById('addedCount');
       const removedCountDisplay = document.getElementById('removedCount');
       const revertButton = document.getElementById('revertLocalChangesButton');
+      const gitDiffContainerDisplay = document.getElementById('gitDiffContainer');
       
       if (commitHashDisplay) {
         let displayText = '';
@@ -180,7 +181,14 @@ class OptionsManager {
             revertButton.style.display = 'inline';
             // 为revert按钮添加点击事件
             revertButton.onclick = () => {
-              chrome.runtime.sendMessage({action: MESSAGE_EVENTS.GIT_LOCAL_DIFF});
+              chrome.runtime.sendMessage({action: MESSAGE_EVENTS.GIT_LOCAL_DIFF},(response)=>{
+                if (chrome.runtime.lastError) {
+                  console.error('Runtime error:', chrome.runtime.lastError);
+                  AlertManager.showStatus(`Runtime error: ${chrome.runtime.lastError.message}`, 'error');
+                  return;
+                }
+                this._updateCommitHashDisplay();
+              });
             };
           } else if (revertButton) {
             revertButton.style.display = 'none';
