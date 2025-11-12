@@ -4,7 +4,6 @@ import { git, LightningFS, http as GitHttp, Buffer } from '../lib/bundle.js';
 import { GIT_DEFAULT } from '../util/constants.js';
 
 class GitManager {
-  static localRepoDir = '/repo';
   constructor() {
     // 修复：分离 fs (回调) 和 pfs (promises)
     if (typeof LightningFS !== 'undefined') {
@@ -96,7 +95,7 @@ class GitManager {
       
       let gitExtensionsData = { extensions: [] };
       try {
-        const fileBuffer = await this.pfs.readFile(`${localRepoDir}/${filePath}`);
+        const fileBuffer = await this.pfs.readFile(`${GIT_DEFAULT.BROWSER_LOCAL_REPO_DIR}/${filePath}`);
         gitExtensionsData = JSON.parse(fileBuffer.toString('utf8'));
       } catch (fileError) {
         console.log('File does not exist in repository, treating as empty data');
@@ -146,7 +145,7 @@ class GitManager {
       
       // 修复：加 pfs 到 init
       try {
-        await git.init({ fs: this.fs, pfs: this.pfs, localRepoDir });
+        await git.init({ fs: this.fs, pfs: this.pfs, dir: GIT_DEFAULT.BROWSER_LOCAL_REPO_DIR });
       } catch (initError) {
         console.log('Test repository already initialized');
       }
@@ -156,7 +155,7 @@ class GitManager {
         await git.addRemote({
           fs: this.fs,
           pfs: this.pfs,
-          localRepoDir,
+          dir: GIT_DEFAULT.BROWSER_LOCAL_REPO_DIR,
           remote: 'origin',
           url: repoUrl,
           force: true
@@ -239,7 +238,7 @@ class GitManager {
     try {
       // 初始化仓库（加 pfs）
       try {
-        await git.init({ fs: this.fs, pfs: this.pfs, localRepoDir });
+        await git.init({ fs: this.fs, pfs: this.pfs, dir: GIT_DEFAULT.BROWSER_LOCAL_REPO_DIR });
       } catch (initError) {
         console.log('Repository already initialized');
       }
@@ -249,7 +248,7 @@ class GitManager {
         await git.addRemote({
           fs: this.fs,
           pfs: this.pfs,
-          localRepoDir,
+          dir: GIT_DEFAULT.BROWSER_LOCAL_REPO_DIR,
           remote: 'origin',
           url: repoUrl,
           force: true
@@ -263,7 +262,7 @@ class GitManager {
         fs: this.fs,
         pfs: this.pfs,
         http: GitHttp,
-        localRepoDir,
+        dir: GIT_DEFAULT.BROWSER_LOCAL_REPO_DIR,
         remote: 'origin',
         ref: branchName,
         ...auth
@@ -271,29 +270,29 @@ class GitManager {
 
       // 检查本地分支是否存在 (加 pfs)
       try {
-        await git.currentBranch({ fs: this.fs, pfs: this.pfs, localRepoDir, fullname: false });
+        await git.currentBranch({ fs: this.fs, pfs: this.pfs, dir: GIT_DEFAULT.BROWSER_LOCAL_REPO_DIR, fullname: false });
       } catch (branchError) {
         // 创建并切换到该分支 (加 pfs)
         await git.branch({
           fs: this.fs,
           pfs: this.pfs,
-          localRepoDir,
+          dir: GIT_DEFAULT.BROWSER_LOCAL_REPO_DIR,
           ref: branchName,
           checkout: true
         });
       }
 
       // 写入文件 (用 pfs)
-      await this.pfs.writeFile(`${localRepoDir}/${filePath}`, fileContent);
+      await this.pfs.writeFile(`${GIT_DEFAULT.BROWSER_LOCAL_REPO_DIR}/${filePath}`, fileContent);
 
       // 添加文件到暂存区 (加 pfs)
-      await git.add({ fs: this.fs, pfs: this.pfs, localRepoDir, filepath: filePath });
+      await git.add({ fs: this.fs, pfs: this.pfs, dir: GIT_DEFAULT.BROWSER_LOCAL_REPO_DIR, filepath: filePath });
 
       // 创建提交 (加 pfs)
       const sha = await git.commit({
         fs: this.fs,
         pfs: this.pfs,
-        localRepoDir,
+        dir: GIT_DEFAULT.BROWSER_LOCAL_REPO_DIR,
         author: {
           name: 'Extension Git Sync',
           email: 'exten.git@local'
@@ -308,7 +307,7 @@ class GitManager {
         fs: this.fs,
         pfs: this.pfs,
         http: GitHttp,
-        localRepoDir,
+        dir: GIT_DEFAULT.BROWSER_LOCAL_REPO_DIR,
         remote: 'origin',
         ref: { local: branchName, remote: branchName },
         ...auth
@@ -338,7 +337,7 @@ class GitManager {
     try {
       // 初始化仓库（加 pfs）
       try {
-        await git.init({ fs: this.fs, pfs: this.pfs, localRepoDir });
+        await git.init({ fs: this.fs, pfs: this.pfs, dir: GIT_DEFAULT.BROWSER_LOCAL_REPO_DIR });
       } catch (initError) {
         console.log('Repository already initialized');
       }
@@ -348,7 +347,7 @@ class GitManager {
         await git.addRemote({
           fs: this.fs,
           pfs: this.pfs,
-          localRepoDir,
+          dir: GIT_DEFAULT.BROWSER_LOCAL_REPO_DIR,
           remote: 'origin',
           url: repoUrl,
           force: true
@@ -362,7 +361,7 @@ class GitManager {
         fs: this.fs,
         pfs: this.pfs,
         http: GitHttp,
-        localRepoDir,
+        dir: GIT_DEFAULT.BROWSER_LOCAL_REPO_DIR,
         remote: 'origin',
         ref: branchName,
         ...auth
@@ -376,7 +375,7 @@ class GitManager {
           fs: this.fs,
           pfs: this.pfs,
           http: GitHttp,
-          localRepoDir,
+          dir: GIT_DEFAULT.BROWSER_LOCAL_REPO_DIR,
           remote: 'origin',
           ref: `origin/${branchName}`,
           ...auth,
@@ -405,7 +404,7 @@ class GitManager {
 
       // 确保本地分支存在并正确设置 (加 pfs)
       try {
-        const currentBranch = await git.currentBranch({ fs: this.fs, pfs: this.pfs, localRepoDir });
+        const currentBranch = await git.currentBranch({ fs: this.fs, pfs: this.pfs, dir: GIT_DEFAULT.BROWSER_LOCAL_REPO_DIR });
         console.log('Current branch:', currentBranch);
         
         if (currentBranch !== branchName) {
@@ -413,14 +412,14 @@ class GitManager {
             await git.checkout({ 
               fs: this.fs, 
               pfs: this.pfs, 
-              localRepoDir, 
+              dir: GIT_DEFAULT.BROWSER_LOCAL_REPO_DIR, 
               ref: branchName 
             });
           } catch (checkoutError) {
             await git.branch({
               fs: this.fs,
               pfs: this.pfs,
-              localRepoDir,
+              dir: GIT_DEFAULT.BROWSER_LOCAL_REPO_DIR,
               ref: branchName,
               checkout: true
             });
@@ -431,7 +430,7 @@ class GitManager {
         await git.branch({
           fs: this.fs,
           pfs: this.pfs,
-          localRepoDir,
+          dir: GIT_DEFAULT.BROWSER_LOCAL_REPO_DIR,
           ref: branchName,
           checkout: true
         });
@@ -442,7 +441,7 @@ class GitManager {
         fs: this.fs,
         pfs: this.pfs,
         http: GitHttp,
-        localRepoDir,
+        dir: GIT_DEFAULT.BROWSER_LOCAL_REPO_DIR,
         remote: 'origin',
         ref: branchName,
         ...auth,
@@ -456,7 +455,7 @@ class GitManager {
       // 读取文件内容 (用 pfs)
       let fileContent = null;
       try {
-        const fileBuffer = await this.pfs.readFile(`${localRepoDir}/${filePath}`);
+        const fileBuffer = await this.pfs.readFile(`${GIT_DEFAULT.BROWSER_LOCAL_REPO_DIR}/${filePath}`);
         fileContent = JSON.parse(fileBuffer.toString('utf8'));
       } catch (fileError) {
         console.log('File does not exist in repository, treating as empty data');

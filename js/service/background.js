@@ -48,7 +48,7 @@ class BackgroundManager {
       } else if (changes.todoExtensions){
         this._extensionChanged(EXTENSION_ACTIONS.UNDO);
       } else if (changes.browserSyncEnabled){
-
+        //TODO
       }  
     });
 

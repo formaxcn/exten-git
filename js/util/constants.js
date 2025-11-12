@@ -30,7 +30,8 @@ const STATUS_TYPES = {
 
 const GIT_DEFAULT = {
   BRANCH: 'main',
-  FILE_PATH: 'extensions.json'
+  FILE_PATH: 'extensions.json',
+  BROWSER_LOCAL_REPO_DIR: '/repo'
 }
 
 // 添加ES6命名导出以支持Service Worker中使用ES模块
