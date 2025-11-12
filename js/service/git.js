@@ -123,11 +123,14 @@ class GitManager {
         }
       }
       
-      // 构造diff结果字符串
-      const diffResult = `M +${addedCount} -${removedCount}`;
+      // 构造diff结果对象
+      const diffResult = {
+        added: addedCount,
+        removed: removedCount
+      };
       
       // 保存diff结果到localStorage
-      await this._saveGitDiff(diffResult);
+      await this._saveGitDiff(JSON.stringify(diffResult));
       
       return diffResult;
     } catch (error) {

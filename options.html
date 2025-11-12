@@ -100,7 +100,13 @@
           </div>
           <div class="sync-line">
             <label class="sync-label">local commit: </label>
-            <span id="commitHashValue" class="last-sync-time-value"></span>
+            <div class="commit-info-container">
+              <span id="commitHashValue" class="last-sync-time-value"></span>
+              <div class="diff-container">
+                <span id="addedCount" class="diff-added"></span>
+                <span id="removedCount" class="diff-removed"></span>
+              </div>
+            </div>
           </div>
         </div>
       </div>

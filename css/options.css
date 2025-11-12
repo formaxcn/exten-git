@@ -143,24 +143,49 @@ input[type="text"], input[type="password"] {
   margin-right: 5px;
 }
 
-.sync-info {
-  margin: 10px 0;
-}
-
 .sync-line {
   display: flex;
   align-items: center;
-  margin-bottom: 5px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
 }
 
 .sync-label {
-  font-weight: bold;
-  margin-right: 5px;
+  font-weight: 600;
+  color: var(--text-primary);
   min-width: 100px;
 }
 
 .last-sync-time-value {
+  color: var(--text-secondary);
+  font-family: 'Courier New', monospace;
+}
+
+.commit-info-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   flex: 1;
+  flex-wrap: wrap;
+}
+
+.diff-container {
+  display: flex;
+  gap: 8px;
+}
+
+.diff-added {
+  color: #28a745;
+  font-weight: bold;
+  font-family: 'Courier New', monospace;
+  display: none;
+}
+
+.diff-removed {
+  color: #dc3545;
+  font-weight: bold;
+  font-family: 'Courier New', monospace;
+  display: none;
 }
 
 /* 合并相同样式的按钮 */

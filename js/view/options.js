@@ -135,6 +135,9 @@ class OptionsManager {
   _updateCommitHashDisplay() {
     chrome.storage.local.get(['lastCommitHash', 'gitDiff'], (result) => {
       const commitHashDisplay = document.getElementById('commitHashValue');
+      const addedCountDisplay = document.getElementById('addedCount');
+      const removedCountDisplay = document.getElementById('removedCount');
+      
       if (commitHashDisplay) {
         let displayText = '';
         
@@ -147,12 +150,39 @@ class OptionsManager {
           commitHashDisplay.title = '';
         }
         
-        // 添加diff信息（如果有）
-        if (result.gitDiff) {
-          displayText += ' ' + result.gitDiff;
-        }
-        
         commitHashDisplay.textContent = displayText;
+      }
+      
+      // 解析并显示diff信息
+      if (result.gitDiff && addedCountDisplay && removedCountDisplay) {
+        try {
+          const diffObj = JSON.parse(result.gitDiff);
+          
+          // 显示添加的数量（大于0时才显示）
+          if (diffObj.added > 0) {
+            addedCountDisplay.textContent = `+${diffObj.added}`;
+            addedCountDisplay.style.display = 'inline';
+          } else {
+            addedCountDisplay.style.display = 'none';
+          }
+          
+          // 显示删除的数量（大于0时才显示）
+          if (diffObj.removed > 0) {
+            removedCountDisplay.textContent = `-${diffObj.removed}`;
+            removedCountDisplay.style.display = 'inline';
+          } else {
+            removedCountDisplay.style.display = 'none';
+          }
+        } catch (e) {
+          console.error('Error parsing git diff:', e);
+          // 解析失败时隐藏diff显示
+          if (addedCountDisplay) addedCountDisplay.style.display = 'none';
+          if (removedCountDisplay) removedCountDisplay.style.display = 'none';
+        }
+      } else {
+        // 没有diff信息时隐藏显示
+        if (addedCountDisplay) addedCountDisplay.style.display = 'none';
+        if (removedCountDisplay) removedCountDisplay.style.display = 'none';
       }
     });
   }
