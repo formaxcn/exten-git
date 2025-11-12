@@ -155,8 +155,13 @@ class OptionsManager {
         commitHashDisplay.textContent = displayText;
       }
       
+      // 如果有todo项，直接进入else部分处理
+      if (result.todoExtensions && result.todoExtensions.length > 0) {
+        // 有todo项时隐藏diff显示
+        if (gitDiffContainerDisplay) gitDiffContainerDisplay.style.display = 'none';
+      } 
       // 解析并显示diff信息
-      if (result.gitDiff && addedCountDisplay && removedCountDisplay) {
+      else if (result.gitDiff && addedCountDisplay && removedCountDisplay) {
         try {
           const diffObj = JSON.parse(result.gitDiff);
           
@@ -200,7 +205,7 @@ class OptionsManager {
         }
       } else {
         // 没有diff信息时隐藏显示
-        if (gitDiffContainerDisplay) addedCountDisplay.style.display = 'none';  
+        if (gitDiffContainerDisplay) gitDiffContainerDisplay.style.display = 'none';  
       }
     });
   }
