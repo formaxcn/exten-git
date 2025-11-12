@@ -7,7 +7,7 @@ class GitManager {
   constructor() {
     // 修复：分离 fs (回调) 和 pfs (promises)
     if (typeof LightningFS !== 'undefined') {
-      const fsInstance = new LightningFS('git-fs', { wipe: true });  // 非 promises
+      const fsInstance = new LightningFS('git-fs', { wipe: false });  // 非 promises
       this.fs = fsInstance;  // 回调式 FS
       this.pfs = fsInstance.promises;  // promises 式 FS
     } else if (typeof fs !== 'undefined') {
