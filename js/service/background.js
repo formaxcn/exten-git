@@ -315,7 +315,7 @@ class BackgroundManager {
         // 如果有待办事项，发送到storage；否则通知没有待办事项
         if (todoExtensions.length > 0) {
           // 发送待办事项到storage
-          chrome.storage.local.set({todoExtensions: todoExtensions}, () => {
+          chrome.storage.local.set({todoExtensions: todoExtensions, gitDiff: null}, () => {
             // 检查运行时是否有错误发生（例如，存储空间已满等极端情况）
             if (chrome.runtime.lastError) {
                 console.error('Error saving todo extensions to storage:', chrome.runtime.lastError);
