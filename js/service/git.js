@@ -1,23 +1,24 @@
-// git.js - Git功能模块
+// git.js - Git功能模块 (修复 FS + pfs)
 
-// ES6模块导入isomorphic-git相关库
-// 注意：在Service Worker环境中需要正确配置这些依赖
-
-import { git, LightningFS, http, Buffer } from '../lib/bundle.js';
+import { git, LightningFS, http as GitHttp, Buffer } from '../lib/bundle.js';
 
 class GitManager {
   constructor() {
-    // 初始化文件系统
+    // 修复：分离 fs (回调) 和 pfs (promises)
     if (typeof LightningFS !== 'undefined') {
-      this.fs = new LightningFS('git-fs').promises;
+      const fsInstance = new LightningFS('git-fs', { wipe: true });  // 非 promises
+      this.fs = fsInstance;  // 回调式 FS
+      this.pfs = fsInstance.promises;  // promises 式 FS
     } else if (typeof fs !== 'undefined') {
-      // 如果LightningFS不可用，尝试使用全局fs对象
+      // Fallback（不太可能）
       this.fs = fs;
+      this.pfs = fs.promises || fs;
     } else {
       console.error('No file system implementation found');
+      throw new Error('FS 初始化失败');
     }
+    console.log('GitManager FS 初始化:', { fs: this.fs, pfs: this.pfs });
   }
-
 
   /**
    * 推送到Git仓库 (公共方法)
@@ -27,34 +28,26 @@ class GitManager {
    */
   async pushToGit(options = {}) {
     try {
-      // 检查本地待办事项是否为空
       const isTodoEmpty = await this._checkTodoIsEmpty();
-      
       if (!isTodoEmpty) {
         throw new Error('Cannot push: there are pending operations that need to be resolved first');
       }
       
-      // 获取仓库配置
       const settings = await this._getGitSettings();
       if (!settings || !settings.repoUrl) {
         throw new Error('Git repository not configured');
       }
 
-      // 使用从options传入的数据，而不是通过消息获取
       const extensionsData = options.data;
       const fileContent = JSON.stringify(extensionsData, null, 2);
-      
-      // 生成提交信息
       const commitMessage = options.message || `Update extensions data ${new Date().toISOString()}`;
       
-      // 执行Git操作
       const commitHash = await this._performGitPush({
         ...settings,
         fileContent,
         commitMessage
       });
       
-      // 保存最新的commit hash
       await this._saveLastCommitHash(commitHash);
       
       return { status: 'success', message: 'Push completed successfully' };
@@ -69,24 +62,19 @@ class GitManager {
    */
   async pullFromGit() {
     try {
-      // 获取仓库配置
       const settings = await this._getGitSettings();
       if (!settings || !settings.repoUrl) {
         throw new Error('Git repository not configured');
       }
 
-      // 执行Git操作
       const result = await this._performGitPull(settings);
       
-      // 如果没有新的commit，则跳过处理
       if (!result.hasNewCommit) {
         return { status: 'success', message: 'Already up to date', data: null };
       }
       
-      // 处理拉取到的数据，进行与导入相同的操作
       await this._processPulledData(result.data);
       
-      // 保存最新的commit hash
       await this._saveLastCommitHash(result.commitHash);
       
       return { status: 'success', message: 'Pull completed successfully', data: result.data };
@@ -101,31 +89,27 @@ class GitManager {
    */
   async testGitConnection(repoUrl, userName, password) {
     try {
-      // 构造认证信息
       const auth = this._buildAuthObject(userName, password);
-      
-      // 仓库目录
       const dir = '/repo';
       
-      // 初始化临时仓库用于测试连接
+      // 修复：加 pfs 到 init
       try {
-        await git.init({ fs: this.fs, dir });
+        await git.init({ fs: this.fs, pfs: this.pfs, dir });
       } catch (initError) {
-        // 如果已经初始化，忽略错误
         console.log('Test repository already initialized');
       }
 
-      // 添加远程仓库
+      // 添加远程仓库 (加 pfs)
       try {
         await git.addRemote({
           fs: this.fs,
+          pfs: this.pfs,
           dir,
           remote: 'origin',
           url: repoUrl,
           force: true
         });
       } catch (remoteError) {
-        // 如果远程已存在，忽略错误
         console.log('Remote already exists in test');
       }
 
@@ -144,7 +128,7 @@ class GitManager {
     } catch (error) {
       console.error('Git connection test error:', error);
       
-      // 根据错误类型返回相应的消息
+      // 根据错误类型返回相应的消息 (不变)
       if (error.code === 'HttpError') {
         if (error.statusCode === 401) {
           return {status: 'error', message: 'Authentication failed. Please check your username and password or token.'};
@@ -153,7 +137,6 @@ class GitManager {
         } else if (error.statusCode === 404) {
           return {status: 'error', message: 'Repository not found. Please check the repository URL.'};
         } else {
-          // 特别处理错误信息，避免显示undefined
           const errorMessage = error.message || 'Unknown error';
           return {status: 'error', message: `HTTP Error: ${error.statusCode} ${errorMessage}`};
         }
@@ -162,7 +145,6 @@ class GitManager {
       } else if (error.code === 'GitUrlParseError') {
         return {status: 'error', message: 'Invalid repository URL. Please check the URL format.'};
       } else {
-        // 特别处理错误信息，避免显示undefined
         const errorMessage = error.message || 'Unknown error occurred';
         return {status: 'error', message: `Connection test failed: ${errorMessage}`};
       }
@@ -170,7 +152,7 @@ class GitManager {
   }
 
   /**
-   * 获取Git设置 (私有方法)
+   * 获取Git设置 (私有方法) (不变)
    */
   _getGitSettings() {
     return new Promise((resolve) => {
@@ -187,7 +169,7 @@ class GitManager {
   }
 
   /**
-   * 执行Git推送操作 (私有方法)
+   * 执行Git推送操作 (私有方法) - 修复所有 fs/pfs
    */
   async _performGitPush(settings) {
     const {
@@ -200,38 +182,35 @@ class GitManager {
       commitMessage
     } = settings;
 
-    // 构造认证信息
     const auth = this._buildAuthObject(userName, password);
-    
-    // 仓库目录
     const dir = '/repo';
     
     try {
-      // 初始化仓库（如果尚未初始化）
+      // 初始化仓库（加 pfs）
       try {
-        await git.init({ fs: this.fs, dir });
+        await git.init({ fs: this.fs, pfs: this.pfs, dir });
       } catch (initError) {
-        // 如果已经初始化，忽略错误
         console.log('Repository already initialized');
       }
 
-      // 添加远程仓库
+      // 添加远程仓库 (加 pfs)
       try {
         await git.addRemote({
           fs: this.fs,
+          pfs: this.pfs,
           dir,
           remote: 'origin',
           url: repoUrl,
           force: true
         });
       } catch (remoteError) {
-        // 如果远程已存在，忽略错误
         console.log('Remote already exists');
       }
 
-      // 获取远程信息
+      // 获取远程信息 (加 pfs 到 fetch)
       await git.fetch({
         fs: this.fs,
+        pfs: this.pfs,
         http: GitHttp,
         dir,
         remote: 'origin',
@@ -239,28 +218,30 @@ class GitManager {
         ...auth
       });
 
-      // 检查本地分支是否存在
+      // 检查本地分支是否存在 (加 pfs)
       try {
-        await git.currentBranch({ fs: this.fs, dir, fullname: false });
+        await git.currentBranch({ fs: this.fs, pfs: this.pfs, dir, fullname: false });
       } catch (branchError) {
-        // 如果分支不存在，创建并切换到该分支
+        // 创建并切换到该分支 (加 pfs)
         await git.branch({
           fs: this.fs,
+          pfs: this.pfs,
           dir,
           ref: branchName,
           checkout: true
         });
       }
 
-      // 写入文件
-      await this.fs.writeFile(`${dir}/${filePath}`, fileContent);
+      // 写入文件 (用 pfs)
+      await this.pfs.writeFile(`${dir}/${filePath}`, fileContent);
 
-      // 添加文件到暂存区
-      await git.add({ fs: this.fs, dir, filepath: filePath });
+      // 添加文件到暂存区 (加 pfs)
+      await git.add({ fs: this.fs, pfs: this.pfs, dir, filepath: filePath });
 
-      // 创建提交
+      // 创建提交 (加 pfs)
       const sha = await git.commit({
         fs: this.fs,
+        pfs: this.pfs,
         dir,
         author: {
           name: 'Extension Git Sync',
@@ -271,9 +252,10 @@ class GitManager {
 
       console.log('Commit created:', sha);
 
-      // 推送到远程仓库
+      // 推送到远程仓库 (加 pfs)
       await git.push({
         fs: this.fs,
+        pfs: this.pfs,
         http: GitHttp,
         dir,
         remote: 'origin',
@@ -289,7 +271,7 @@ class GitManager {
   }
 
   /**
-   * 执行Git拉取操作 (私有方法)
+   * 执行Git拉取操作 (私有方法) - 修复所有 fs/pfs
    */
   async _performGitPull(settings) {
     const {
@@ -300,38 +282,35 @@ class GitManager {
       filePath = 'extensions.json'
     } = settings;
 
-    // 构造认证信息
     const auth = this._buildAuthObject(userName, password);
-    
-    // 仓库目录
     const dir = '/repo';
     
     try {
-      // 初始化仓库（如果尚未初始化）
+      // 初始化仓库（加 pfs）
       try {
-        await git.init({ fs: this.fs, dir });
+        await git.init({ fs: this.fs, pfs: this.pfs, dir });
       } catch (initError) {
-        // 如果已经初始化，忽略错误
         console.log('Repository already initialized');
       }
 
-      // 添加远程仓库
+      // 添加远程仓库 (加 pfs)
       try {
         await git.addRemote({
           fs: this.fs,
+          pfs: this.pfs,
           dir,
           remote: 'origin',
           url: repoUrl,
           force: true
         });
       } catch (remoteError) {
-        // 如果远程已存在，忽略错误
         console.log('Remote already exists');
       }
 
-      // 获取远程信息
+      // 获取远程信息 (加 pfs)
       await git.fetch({
         fs: this.fs,
+        pfs: this.pfs,
         http: GitHttp,
         dir,
         remote: 'origin',
@@ -339,14 +318,14 @@ class GitManager {
         ...auth
       });
 
-      // 检查远程分支是否存在
-      let remoteBranchExists = true; // 默认假设分支存在
+      // 检查远程分支是否存在 (加 pfs/http 到 log)
+      let remoteBranchExists = true;
       try {
-        // 尝试直接获取远程日志，如果失败则说明分支不存在
         await git.log({
           fs: this.fs,
-          dir,
+          pfs: this.pfs,
           http: GitHttp,
+          dir,
           remote: 'origin',
           ref: `origin/${branchName}`,
           ...auth,
@@ -357,19 +336,19 @@ class GitManager {
         remoteBranchExists = false;
       }
 
-      // 如果远程分支不存在，则返回无新提交
       if (!remoteBranchExists) {
         console.log(`Remote branch '${branchName}' does not exist`);
         return { hasNewCommit: false };
       }
 
-      // 获取远程最新的commit hash
+      // 获取远程最新的commit hash (加 pfs)
       let remoteLog = [];
       try {
         remoteLog = await git.log({
           fs: this.fs,
-          dir,
+          pfs: this.pfs,
           http: GitHttp,
+          dir,
           remote: 'origin',
           ref: `origin/${branchName}`,
           ...auth,
@@ -377,40 +356,35 @@ class GitManager {
         });
       } catch (error) {
         console.error('Error getting remote log:', error);
-        // 即使无法获取远程日志，也继续执行pull操作
       }
       
       const remoteCommitHash = remoteLog[0]?.oid;
       console.log(`Remote commit hash: ${remoteCommitHash}`);
       
-      // 获取本地最后一次同步的commit hash
       const lastCommitHash = await this._getLastCommitHash();
       console.log(`Last commit hash: ${lastCommitHash}`);
       
-      // 如果远程commit hash与上次记录的相同，则无需处理
       if (remoteCommitHash && remoteCommitHash === lastCommitHash) {
         return { hasNewCommit: false };
       }
 
-      // 拉取更改
-      // 确保本地分支存在并正确设置
+      // 确保本地分支存在并正确设置 (加 pfs)
       try {
-        // 检查当前分支
-        const currentBranch = await git.currentBranch({ fs: this.fs, dir });
+        const currentBranch = await git.currentBranch({ fs: this.fs, pfs: this.pfs, dir });
         console.log('Current branch:', currentBranch);
         
-        // 如果当前分支不是目标分支，则切换或创建
         if (currentBranch !== branchName) {
           try {
             await git.checkout({ 
               fs: this.fs, 
+              pfs: this.pfs, 
               dir, 
               ref: branchName 
             });
           } catch (checkoutError) {
-            // 如果分支不存在，先创建再切换
             await git.branch({
               fs: this.fs,
+              pfs: this.pfs,
               dir,
               ref: branchName,
               checkout: true
@@ -419,17 +393,19 @@ class GitManager {
         }
       } catch (branchError) {
         console.log('Branch setup error, creating/checking out branch:', branchError);
-        // 如果有任何分支错误，尝试创建并切换到该分支
         await git.branch({
           fs: this.fs,
+          pfs: this.pfs,
           dir,
           ref: branchName,
           checkout: true
         });
       }
 
+      // 拉取更改 (加 pfs)
       await git.pull({
         fs: this.fs,
+        pfs: this.pfs,
         http: GitHttp,
         dir,
         remote: 'origin',
@@ -442,13 +418,12 @@ class GitManager {
         }
       });
 
-      // 读取文件内容
+      // 读取文件内容 (用 pfs)
       let fileContent = null;
       try {
-        const fileBuffer = await this.fs.readFile(`${dir}/${filePath}`);
+        const fileBuffer = await this.pfs.readFile(`${dir}/${filePath}`);
         fileContent = JSON.parse(fileBuffer.toString('utf8'));
       } catch (fileError) {
-        // 如果文件不存在，返回空数据而不是抛出错误
         console.log('File does not exist in repository, treating as empty data');
         fileContent = { extensions: [] };
       }
@@ -464,27 +439,22 @@ class GitManager {
   }
 
   /**
-   * 构建认证对象 (私有方法)
+   * 构建认证对象 (私有方法) (不变)
    */
   _buildAuthObject(userName, password) {
     let auth = {};
     
-    // 处理不同类型的认证
     if (userName && password) {
-      // 如果同时提供了用户名和密码
       if (userName.includes(':')) {
-        // 用户名包含冒号，可能是token形式
         auth.headers = {
           'Authorization': `Basic ${btoa(userName)}`
         };
       } else {
-        // 标准用户名/密码形式
         auth.headers = {
           'Authorization': `Basic ${btoa(`${userName}:${password}`)}`
         };
       }
     } else if (password && !userName) {
-      // 只提供了密码，可能是token
       auth.headers = {
         'Authorization': `Bearer ${password}`
       };
@@ -494,15 +464,14 @@ class GitManager {
   }
 
   /**
-   * 处理从Git拉取的数据，执行与导入相同的操作 (私有方法)
+   * 处理从Git拉取的数据，执行与导入相同的操作 (私有方法) (不变)
    */
   async _processPulledData(pulledData) {
-    // 直接返回数据而不是通过消息发送
     return { status: 'success', data: pulledData };
   }
 
   /**
-   * 检查待办事项是否为空 (私有方法)
+   * 检查待办事项是否为空 (私有方法) (不变)
    */
   _checkTodoIsEmpty() {
     return new Promise((resolve) => {
@@ -514,7 +483,7 @@ class GitManager {
   }
 
   /**
-   * 获取上次同步的commit hash (私有方法)
+   * 获取上次同步的commit hash (私有方法) (不变)
    */
   _getLastCommitHash() {
     return new Promise((resolve) => {
@@ -525,7 +494,7 @@ class GitManager {
   }
 
   /**
-   * 保存最新的commit hash (私有方法)
+   * 保存最新的commit hash (私有方法) (不变)
    */
   _saveLastCommitHash(commitHash) {
     return new Promise((resolve) => {
@@ -533,7 +502,6 @@ class GitManager {
         resolve();
       });
 
-      // 保存同步时间
       const now = new Date().getTime();
       chrome.storage.local.set({ lastSyncTime: now }, () => {
         // 可以添加其他同步逻辑
