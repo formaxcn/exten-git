@@ -482,7 +482,7 @@ class GitManager {
   }
 
   /**
-   * 保存最新的commit hash (私有方法) (不变)
+   * 保存最新的commit hash (私有方法)
    */
   _saveLastCommitHash(commitHash) {
     return new Promise((resolve) => {
@@ -490,7 +490,7 @@ class GitManager {
         resolve();
       });
 
-      const now = new Date().getTime();
+      const now = Date.now(); // 使用 Date.now() 更简洁
       chrome.storage.local.set({ lastSyncTime: now }, () => {
         // 可以添加其他同步逻辑
       });

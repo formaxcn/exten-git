@@ -155,7 +155,7 @@ class OptionsManager {
       // 可以添加其他同步逻辑    
       const lastSyncElement = document.getElementById('lastSyncTimeValue');
       if (lastSyncElement) { 
-        lastSyncElement.textContent = result.lastSyncTime.toLocaleString();
+        lastSyncElement.textContent = new Date(result.lastSyncTime).toLocaleString();
       }
     });
   }
