@@ -108,6 +108,7 @@ class BackgroundManager {
         case MESSAGE_EVENTS.PULL_FROM_GIT:
           await gitManager.pullFromGit();
           this._calcGitDiff();
+          sendResponse({ status: 'success' });
           break;
 
         case MESSAGE_EVENTS.LOCAL_SAVE_EXTENSIONS:
@@ -118,6 +119,7 @@ class BackgroundManager {
         
         case MESSAGE_EVENTS.GIT_LOCAL_DIFF:
           this._calcGitDiff();
+          sendResponse({ status: 'success' });
           break;
 
         case MESSAGE_EVENTS.IMPORT_EXTENSIONS_DATA:
@@ -149,7 +151,7 @@ class BackgroundManager {
   }
 
   _calcGitDiff(){
-    const localData = gitManager.getHeadData();
+    const localData = gitManager.getLocalHeadData();
     if (localData.status === 'success') {
       // 处理拉取到的数据
       this.processExtensionDiffData(localData.data);

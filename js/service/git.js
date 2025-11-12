@@ -88,8 +88,42 @@ class GitManager {
     }
   }
 
-  aysnc getHeadData(){
-    
+  /**
+   * 从本地Git仓库获取最新数据 (新增方法)
+   * @returns {Promise<Object>} 包含本地数据的对象
+   */
+  async getLocalHeadData() {
+    try {
+      const settings = await this._getGitSettings();
+      if (!settings || !settings.repoUrl) {
+        throw new Error('Git repository not configured');
+      }
+
+      // 获取文件路径
+      const filePath = await this._getFilePath();
+      
+      // 读取文件内容 (用 pfs)
+      let fileContent = null;
+      try {
+        const fileBuffer = await this.pfs.readFile(`${GIT_DEFAULT.BROWSER_LOCAL_REPO_DIR}/${filePath}`);
+        fileContent = JSON.parse(fileBuffer.toString('utf8'));
+      } catch (fileError) {
+        console.log('File does not exist in repository, treating as empty data');
+        fileContent = { extensions: [] };
+      }
+      
+      // 获取当前commit hash
+      let commitHash = await this._getLastCommitHash();
+      
+      return { 
+        status: 'success', 
+        data: fileContent, 
+        commitHash: commitHash 
+      };
+    } catch (error) {
+      console.error('Get local head data error:', error);
+      return { status: 'error', message: error.message };
+    }
   }
 
   async diffExtensions(browserExtensionsData){
