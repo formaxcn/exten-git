@@ -28,24 +28,32 @@ jobs:
           echo "VERSION=$(date +'%Y%m%d-%H%M%S')" >> $GITHUB_ENV
         fi
         
-    - name: Create distribution folder
-      run: |
-        # Create dist folder and copy all necessary files
-        mkdir -p dist
-        
-        # Copy all files and folders except .git, node_modules and dist
-        rsync -av --exclude='.git' --exclude='node_modules' --exclude='dist' --exclude='.github' . dist/
-        
-    - name: Zip extension files
-      run: |
-        cd dist
-        zip -r ../exten-git-${{ env.VERSION }}.zip .
+    - name: Pack extension to ZIP
+      id: pack
+      uses: cardinalby/webext-buildtools-pack-extension-dir-action@v1
+      with:
+        extensionDir: '.'
+        zipFilePath: 'exten-git-${{ env.VERSION }}.zip'
+        exclude: |
+          .git
+          .github
+          node_modules
+          dist
+
+    - name: Generate CRX
+      uses: cardinalby/webext-buildtools-chrome-crx-action@v2
+      with:
+        zipFilePath: ${{ steps.pack.outputs.zipFilePath }}
+        crxFilePath: 'exten-git-${{ env.VERSION }}.crx'
+        privateKey: ${{ secrets.CRXPEM }}
       
-    - name: Upload artifact
+    - name: Upload artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: exten-git-zip
-        path: exten-git-*.zip
+        name: exten-git-packages
+        path: |
+          exten-git-*.zip
+          exten-git-*.crx
         
     - name: Create Release
       if: startsWith(github.ref, 'refs/tags/')
@@ -53,5 +61,6 @@ jobs:
       with:
         files: |
           exten-git-*.zip
+          exten-git-*.crx
         draft: false
         prerelease: false
