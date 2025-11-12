@@ -150,8 +150,8 @@ class BackgroundManager {
     }
   }
 
-  _calcGitDiff(){
-    const localData = gitManager.getLocalHeadData();
+  async _calcGitDiff(){
+    const localData = await gitManager.getLocalHeadData();
     if (localData.status === 'success') {
       // 处理拉取到的数据
       this.processExtensionDiffData(localData.data);
