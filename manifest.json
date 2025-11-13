@@ -7,10 +7,7 @@
     "management",
     "storage"
   ],
-  "optional_host_permissions": [
-    "https://*/*",
-    "http://*/*"
-  ],
+  "optional_host_permissions": ["*://*/*"],
   "options_page": "options.html",
   "background": {
     "service_worker": "js/service/background.js",

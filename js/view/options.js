@@ -38,12 +38,16 @@ class OptionsManager {
 
       // 保存设置
       document.getElementById('saveBtn').addEventListener('click', () => {
-        this._saveSettings();
+        this._requestPermissionAndExecute(() => {
+          this._saveSettings();
+        });
       });
 
       // 测试连接
       document.getElementById('testBtn').addEventListener('click', () => {
-        this._testConnection();
+        this._requestPermissionAndExecute(() => {
+          this._testConnection();
+        });
       });
 
       // Sync操作
@@ -512,7 +516,36 @@ class OptionsManager {
     });
   }
 
+  /**
+   * 请求对应网站的权限并执行操作
+   * @param {Function} callback - 权限授予后要执行的回调函数
+   */
+  _requestPermissionAndExecute(callback) {
+    const repoUrl = document.getElementById('repoUrl').value.trim();
+    if (!repoUrl) {
+      AlertManager.showStatus('Please enter a repository URL first', STATUS_TYPES.ERROR);
+      return;
+    }
 
+    try {
+      // 从仓库URL构造origin
+      const url = new URL(repoUrl);
+      const origin = `${url.protocol}//${url.host}/*`;
+      
+      // 请求权限
+      chrome.permissions.request({
+        origins: [origin]
+      }, (granted) => {
+        if (granted) {
+          callback();
+        } else {
+          AlertManager.showStatus('Permission denied. Operation cancelled.', STATUS_TYPES.ERROR);
+        }
+      });
+    } catch (e) {
+      AlertManager.showStatus('Invalid repository URL format', STATUS_TYPES.ERROR);
+    }
+  }
 }
 
 export default OptionsManager;
