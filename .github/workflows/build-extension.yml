@@ -12,11 +12,14 @@ jobs:
     permissions:
       contents: write
 
+    env:
+      PRIVATE_KEY: ${{ secrets.CRXPEM }}
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # 确保 tag 可用
+          fetch-depth: 0
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -30,7 +33,7 @@ jobs:
         id: version
         run: |
           if [[ $GITHUB_REF_TYPE == 'tag' && $GITHUB_REF_NAME == v* ]]; then
-            VERSION="${GITHUB_REF_NAME#v}"  # 去掉 v 前缀
+            VERSION="${GITHUB_REF_NAME#v}"
             echo "version=$VERSION" >> $GITHUB_OUTPUT
             echo "tag=${GITHUB_REF_NAME}" >> $GITHUB_OUTPUT
             echo "prerelease=false" >> $GITHUB_OUTPUT
@@ -55,10 +58,12 @@ jobs:
             --exclude '*.crx' \
             --exclude extension-key.pem
 
-      - name: Write private key from secret
-        if: secrets.CRXPEM != ''
+      - name: Write private key to file (if exists)
+        if: env.PRIVATE_KEY != ''
         run: |
-          echo "${{ secrets.CRXPEM }}" > extension-key.pem
+          echo "$PRIVATE_KEY" > extension-key.pem
+        env:
+          PRIVATE_KEY: ${{ env.PRIVATE_KEY }}
 
       - name: Package as ZIP
         run: |
@@ -67,8 +72,8 @@ jobs:
             -x "*.git*" "*.github*" "docs/*" "node_modules/*" "dist/*"
           cd ..
 
-      - name: Package as CRX (if key exists)
-        if: secrets.CRXPEM != ''
+      - name: Package as CRX (only if key exists)
+        if: env.PRIVATE_KEY != ''
         run: |
           crx pack build \
             -o exten-git-${{ steps.version.outputs.version }}.crx \
@@ -84,7 +89,6 @@ jobs:
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
-        if: always()
         with:
           tag_name: ${{ steps.version.outputs.tag }}
           name: Exten Git ${{ steps.version.outputs.version }}
