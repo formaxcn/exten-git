@@ -39,9 +39,10 @@ jobs:
       with:
         extensionDir: '.'
         zipFilePath: 'exten-git-${{ env.VERSION }}.zip'
-        exclude: |
+        zipIgnore: |
           .git
           .github
+          docs
           node_modules
           dist
 
