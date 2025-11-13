@@ -14,9 +14,6 @@ jobs:
     permissions:
       contents: write
 
-    env:
-      PRIVATE_KEY: ${{ secrets.CRXPEM }}
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -27,9 +24,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-
-      - name: Install crx-cli locally
-        run: npm install crx-cli
 
       - name: Determine version and release type
         id: version
@@ -60,13 +54,6 @@ jobs:
             --exclude '*.crx' \
             --exclude extension-key.pem
 
-      - name: Write private key to file (if exists)
-        if: env.PRIVATE_KEY != ''
-        run: |
-          echo "$PRIVATE_KEY" > extension-key.pem
-        env:
-          PRIVATE_KEY: ${{ env.PRIVATE_KEY }}
-
       - name: Package as ZIP
         run: |
           cd build
@@ -74,20 +61,12 @@ jobs:
             -x "*.git*" "*.github*" "docs/*" "node_modules/*" "dist/*"
           cd ..
 
-      - name: Package as CRX (only if key exists)
-        if: env.PRIVATE_KEY != ''
-        run: |
-          npx crx pack build \
-            -o exten-git-${{ steps.version.outputs.version }}.crx \
-            -p extension-key.pem
-
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: exten-git-packages
           path: |
             exten-git-${{ steps.version.outputs.version }}.zip
-            exten-git-${{ steps.version.outputs.version }}.crx
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
@@ -99,4 +78,3 @@ jobs:
           generate_release_notes: true
           files: |
             exten-git-${{ steps.version.outputs.version }}.zip
-            exten-git-${{ steps.version.outputs.version }}.crx

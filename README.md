@@ -21,7 +21,13 @@ There are three ways to install this extension:
 3. Enable "Developer mode" in the top right corner
 4. Click "Load unpacked" and select the project directory
 
-### 2. Chrome Web Store Installation
+### 2. CRX Package Installation
+1. Download the CRX package from the [Releases](https://github.com/formaxcn/exten-git/releases) page
+2. Open Chrome and navigate to `chrome://extensions/`
+3. Enable "Developer mode" in the top right corner
+4. Drag and drop the downloaded CRX file onto the extensions page
+
+### 3. Chrome Web Store Installation
 The extension is not yet available on the Chrome Web Store. Please stay tuned for updates!
 
 ## Configuration
