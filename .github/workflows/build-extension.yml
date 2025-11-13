@@ -28,13 +28,8 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Install crx CLI globally
-        run: |
-          npm install -g crx-cli
-          echo "$(npm bin -g)" >> $GITHUB_PATH
-
-      - name: Verify crx command
-        run: which crx && crx --version
+      - name: Install crx-cli locally
+        run: npm install crx-cli
 
       - name: Determine version and release type
         id: version
@@ -82,7 +77,7 @@ jobs:
       - name: Package as CRX (only if key exists)
         if: env.PRIVATE_KEY != ''
         run: |
-          crx pack build \
+          npx crx pack build \
             -o exten-git-${{ steps.version.outputs.version }}.crx \
             -p extension-key.pem
 
