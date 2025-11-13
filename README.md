@@ -49,7 +49,7 @@ The extension is not yet available on the Chrome Web Store. Please stay tuned fo
 - **Automatic Sync**: Enable automatic synchronization at your preferred interval
 - **Import/Export**: Import or export extension data as needed
 
-![exten-git interface](docs\image.png)
+![exten-git interface](docs/image.png)
 
 ## Technical Details
 
