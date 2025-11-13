@@ -9,65 +9,88 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-
     permissions:
-      contents: write 
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '18'
-        
-    - name: Get version from tag or use default
-      id: get_version
-      run: |
-        if [[ $GITHUB_REF_TYPE == 'tag' && $GITHUB_REF_NAME == v* ]]; then
-          echo "VERSION=${GITHUB_REF_NAME}" >> $GITHUB_ENV
-          echo "RELEASE_TYPE=production" >> $GITHUB_ENV
-        else
-          echo "VERSION=$(date +'%Y%m%d-%H%M%S')" >> $GITHUB_ENV
-          echo "RELEASE_TYPE=prerelease" >> $GITHUB_ENV
-        fi
-        
-    - name: Pack extension to ZIP
-      id: pack
-      uses: cardinalby/webext-buildtools-pack-extension-dir-action@v1
-      with:
-        extensionDir: '.'
-        zipFilePath: 'exten-git-${{ env.VERSION }}.zip'
-        zipIgnore: |
-          .git
-          .github
-          docs
-          node_modules
-          dist
+      contents: write
 
-    - name: Generate CRX
-      uses: cardinalby/webext-buildtools-chrome-crx-action@v2
-      with:
-        zipFilePath: ${{ steps.pack.outputs.zipFilePath }}
-        crxFilePath: 'exten-git-${{ env.VERSION }}.crx'
-        privateKey: ${{ secrets.CRXPEM }}
-      
-    - name: Upload artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: exten-git-packages
-        path: |
-          exten-git-*.zip
-          exten-git-*.crx
-        
-    - name: Create Release
-      if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
-      uses: softprops/action-gh-release@v1
-      with:
-        files: |
-          exten-git-*.zip
-          exten-git-*.crx
-        draft: false
-        prerelease: ${{ env.RELEASE_TYPE == 'prerelease' }}
-        tag_name: ${{ env.VERSION }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # 确保 tag 可用
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install crx CLI
+        run: npm install -g crx-cli
+
+      - name: Determine version and release type
+        id: version
+        run: |
+          if [[ $GITHUB_REF_TYPE == 'tag' && $GITHUB_REF_NAME == v* ]]; then
+            VERSION="${GITHUB_REF_NAME#v}"  # 去掉 v 前缀
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
+            echo "tag=${GITHUB_REF_NAME}" >> $GITHUB_OUTPUT
+            echo "prerelease=false" >> $GITHUB_OUTPUT
+          else
+            VERSION="$(date +'%Y%m%d-%H%M%S')"
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
+            echo "tag=build-$VERSION" >> $GITHUB_OUTPUT
+            echo "prerelease=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create clean build directory
+        run: |
+          mkdir -p build
+          rsync -av --progress . build/ \
+            --exclude .git \
+            --exclude .github \
+            --exclude docs \
+            --exclude node_modules \
+            --exclude dist \
+            --exclude build \
+            --exclude '*.zip' \
+            --exclude '*.crx' \
+            --exclude extension-key.pem
+
+      - name: Write private key from secret
+        if: secrets.CRXPEM != ''
+        run: |
+          echo "${{ secrets.CRXPEM }}" > extension-key.pem
+
+      - name: Package as ZIP
+        run: |
+          cd build
+          zip -r ../exten-git-${{ steps.version.outputs.version }}.zip . \
+            -x "*.git*" "*.github*" "docs/*" "node_modules/*" "dist/*"
+          cd ..
+
+      - name: Package as CRX (if key exists)
+        if: secrets.CRXPEM != ''
+        run: |
+          crx pack build \
+            -o exten-git-${{ steps.version.outputs.version }}.crx \
+            -p extension-key.pem
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: exten-git-packages
+          path: |
+            exten-git-${{ steps.version.outputs.version }}.zip
+            exten-git-${{ steps.version.outputs.version }}.crx
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        if: always()
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: Exten Git ${{ steps.version.outputs.version }}
+          draft: false
+          prerelease: ${{ steps.version.outputs.prerelease == 'true' }}
+          generate_release_notes: true
+          files: |
+            exten-git-${{ steps.version.outputs.version }}.zip
+            exten-git-${{ steps.version.outputs.version }}.crx
