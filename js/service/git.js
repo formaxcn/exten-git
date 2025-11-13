@@ -358,6 +358,8 @@ class GitManager {
       });
       console.log('Push 成功！');
 
+      this._saveGitDiff(null);
+
       // 9. （可选）设置 upstream，防止下次再报错
       if (!remoteRefs.includes(branch)) {
         console.log('9. 设置 upstream');
