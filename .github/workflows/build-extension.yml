@@ -26,8 +26,13 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Install crx CLI
-        run: npm install -g crx-cli
+      - name: Install crx CLI globally
+        run: |
+          npm install -g crx-cli
+          echo "$(npm bin -g)" >> $GITHUB_PATH
+
+      - name: Verify crx command
+        run: which crx && crx --version
 
       - name: Determine version and release type
         id: version
