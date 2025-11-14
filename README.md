@@ -84,7 +84,7 @@ Planned features and improvements:
 
 ## Privacy declarative NetRequest: 
 ### host permission: 
-- https://*/* , http://*/* (optional): Only requested dynamically via chrome.permissions.request when the user manually configures a custom Git server for syncing to a self-hosted repository. Users must explicitly grant permission and can revoke it at any time.
+- *://*/* (optional): Only requested dynamically via chrome.permissions.request when the user manually configures a custom Git server for syncing to a self-hosted repository. Users must explicitly grant permission and can revoke it at any time.
 
 ### management: 
 Uses chrome.management.getAll() to read the ID, name, and version of installed extensions in order to generate the synchronized JSON manifest. It does not install, uninstall, enable, disable, or modify any extensions.
