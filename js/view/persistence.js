@@ -3,7 +3,7 @@
  * 负责处理文件的导入导出、扩展备份恢复等功能
  */
 import AlertManager from './alert.js';
-import OptionsManager, { optionsManager } from './options.js';
+import { optionsManager } from './options.js';
 import { MESSAGE_EVENTS, STATUS_TYPES } from '../util/constants.js';
 
 class PersistenceManager {
