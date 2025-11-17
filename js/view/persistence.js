@@ -4,7 +4,7 @@
  */
 import AlertManager from './alert.js';
 import { optionsManager } from './options.js';
-import { MESSAGE_EVENTS, STATUS_TYPES } from '../util/constants.js';
+import { MESSAGE_EVENTS, STATUS_TYPES, CONFIG_NAMES } from '../util/constants.js';
 
 class PersistenceManager {
   /**
@@ -12,15 +12,14 @@ class PersistenceManager {
    */
   static exportConfig() {
     chrome.storage.local.get([
-      'repoUrl', 
-      'filePath',
-      'userName',
-      'password', 
-      'branch', 
-      'syncInterval',
-      'syncStrategy',
-      'autoSyncEnabled',
-      'browserSyncEnabled'
+      CONFIG_NAMES.REPO_URL, 
+      CONFIG_NAMES.FILE_PATH,
+      CONFIG_NAMES.USER_NAME,
+      CONFIG_NAMES.PASSWORD, 
+      CONFIG_NAMES.BRANCH_NAME,
+      CONFIG_NAMES.AUTO_SYNC_ENABLED,
+      CONFIG_NAMES.SYNC_INTERVAL,
+      CONFIG_NAMES.BROWSER_SYNC_ENABLED
     ], (items) => {
       // 即使是空对象也要导出
       const configData = JSON.stringify(items || {}, null, 2);
@@ -62,15 +61,14 @@ class PersistenceManager {
           // 只保留Git和Sync相关的配置项
           const filteredConfig = {};
           const configKeys = [
-            'repoUrl', 
-            'filePath', 
-            'userName', 
-            'password', 
-            'branch', 
-            'syncInterval', 
-            'syncStrategy',
-            'autoSyncEnabled', 
-            'browserSyncEnabled'
+            CONFIG_NAMES.REPO_URL, 
+            CONFIG_NAMES.FILE_PATH,
+            CONFIG_NAMES.USER_NAME,
+            CONFIG_NAMES.PASSWORD, 
+            CONFIG_NAMES.BRANCH_NAME,
+            CONFIG_NAMES.AUTO_SYNC_ENABLED,
+            CONFIG_NAMES.SYNC_INTERVAL,
+            CONFIG_NAMES.BROWSER_SYNC_ENABLED
           ];
           
           configKeys.forEach(key => {

@@ -35,5 +35,24 @@ const GIT_DEFAULT = {
   BROWSER_LOCAL_REPO_DIR: '/repo'
 }
 
+const CONFIG_NAMES = {
+  REPO_URL: 'repoUrl',
+  FILE_PATH: 'filePath',
+  USER_NAME: 'userName',
+  PASSWORD: 'password',
+  BRANCH_NAME: 'branchName',
+  AUTO_SYNC_ENABLED: 'autoSyncEnabled',
+  SYNC_INTERVAL: 'syncInterval',
+  BROWSER_SYNC_ENABLED: 'browserSyncEnabled',
+  CONFIG_TIME: 'configTime'
+}
+
+const EXTENSION_NAMES ={
+  TODO_EXTENSIONS: 'todoExtensions',
+  LAST_COMMIT_HASH: 'lastCommitHash',
+  GIT_DIFF: 'gitDiff',
+  LAST_SYNC_TIME: 'lastSyncTime'
+}
+
 // 添加ES6命名导出以支持Service Worker中使用ES模块
-export { MESSAGE_EVENTS, EXTENSION_ACTIONS, STATUS_TYPES, GIT_DEFAULT };
+export { MESSAGE_EVENTS, EXTENSION_ACTIONS, STATUS_TYPES, GIT_DEFAULT, CONFIG_NAMES, EXTENSION_NAMES};

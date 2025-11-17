@@ -1,7 +1,7 @@
 // git.js - Git功能模块 (修复 FS + pfs)
 
 import { git, LightningFS, http as GitHttp, Buffer } from '../lib/bundle.js';
-import { GIT_DEFAULT } from '../util/constants.js';
+import { GIT_DEFAULT, CONFIG_NAMES, EXTENSION_NAMES } from '../util/constants.js';
 
 class GitManager {
   constructor() {
@@ -32,7 +32,7 @@ class GitManager {
       }
 
       const settings = await this._getGitSettings();
-      if (!settings || !settings.repoUrl) {
+      if (!settings || !settings[CONFIG_NAMES.REPO_URL]) {
         throw new Error('Git repository not configured');
       }
 
@@ -59,7 +59,7 @@ class GitManager {
   async pullFromGit() {
     try {
       const settings = await this._getGitSettings();
-      if (!settings || !settings.repoUrl) {
+      if (!settings || !settings[CONFIG_NAMES.REPO_URL]) {
         throw new Error('Git repository not configured');
       }
 
@@ -90,12 +90,12 @@ class GitManager {
   async getLocalHeadData() {
     try {
       const settings = await this._getGitSettings();
-      if (!settings || !settings.repoUrl) {
+      if (!settings || !settings[CONFIG_NAMES.REPO_URL]) {
         throw new Error('Git repository not configured');
       }
 
       // 获取文件路径
-      const filePath = await this._getFilePath();
+      const filePath = settings[CONFIG_NAMES.FILE_PATH];
 
       // 读取文件内容 (用 pfs)
       let fileContent = null;
@@ -124,7 +124,7 @@ class GitManager {
   async diffExtensions(browserExtensionsData) {
     try {
       // 从Git仓库中读取最新的插件数据
-      const filePath = await this._getFilePath();
+      const filePath = await this._getGitSettings()[CONFIG_NAMES.FILE_PATH];
 
       let gitExtensionsData = { extensions: [] };
       try {
@@ -244,11 +244,11 @@ class GitManager {
   _getGitSettings() {
     return new Promise((resolve) => {
       chrome.storage.local.get([
-        'repoUrl',
-        'userName',
-        'password',
-        'branchName',
-        'filePath'
+        CONFIG_NAMES.REPO_URL,
+        CONFIG_NAMES.USER_NAME,
+        CONFIG_NAMES.PASSWORD,
+        CONFIG_NAMES.BRANCH_NAME,
+        CONFIG_NAMES.FILE_PATH
       ], (settings) => {
         resolve(settings);
       });
@@ -573,7 +573,7 @@ class GitManager {
    */
   _checkTodoIsEmpty() {
     return new Promise((resolve) => {
-      chrome.storage.local.get(['todoExtensions'], (result) => {
+      chrome.storage.local.get([EXTENSION_NAMES.TODO_EXTENSIONS], (result) => {
         const todoExtensions = result.todoExtensions || [];
         resolve(todoExtensions.length === 0);
       });
@@ -585,7 +585,7 @@ class GitManager {
    */
   _getLastCommitHash() {
     return new Promise((resolve) => {
-      chrome.storage.local.get(['lastCommitHash'], (result) => {
+      chrome.storage.local.get([EXTENSION_NAMES.TODO_EXTENSIONS], (result) => {
         resolve(result.lastCommitHash || null);
       });
     });
@@ -596,24 +596,13 @@ class GitManager {
    */
   _saveLastCommitHash(commitHash) {
     return new Promise((resolve) => {
-      chrome.storage.local.set({ lastCommitHash: commitHash }, () => {
+      chrome.storage.local.set({ [EXTENSION_NAMES.lastCommitHash]: commitHash }, () => {
         resolve();
       });
 
       const now = Date.now(); // 使用 Date.now() 更简洁
-      chrome.storage.local.set({ lastSyncTime: now }, () => {
+      chrome.storage.local.set({ [EXTENSION_NAMES.LAST_SYNC_TIME]: now }, () => {
         // 可以添加其他同步逻辑
-      });
-    });
-  }
-
-  /**
-   * 获取文件路径 (私有方法)
-   */
-  _getFilePath() {
-    return new Promise((resolve) => {
-      chrome.storage.local.get(['filePath'], (result) => {
-        resolve(result.filePath || GIT_DEFAULT.FILE_PATH);
       });
     });
   }
@@ -623,7 +612,7 @@ class GitManager {
    */
   _saveGitDiff(diffResult) {
     return new Promise((resolve) => {
-      chrome.storage.local.set({ gitDiff: diffResult }, () => {
+      chrome.storage.local.set({ [EXTENSION_NAMES.GIT_DIFF]: diffResult }, () => {
         resolve();
       });
     });

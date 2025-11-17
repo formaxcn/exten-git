@@ -1,6 +1,6 @@
 // 从alert.js导入AlertManager
 import AlertManager from './alert.js';
-import { MESSAGE_EVENTS, STATUS_TYPES } from '../util/constants.js';
+import { MESSAGE_EVENTS, STATUS_TYPES, EXTENSION_NAMES } from '../util/constants.js';
 
 // 存储所有扩展的变量
 const defaultIcon = 'https://fonts.gstatic.com/s/i/productlogos/chrome_store/v7/192px.svg';
@@ -168,7 +168,7 @@ class ExtensionManager {
 
   _undoAllTodoActions() {
     // 清空待办事项列表
-    chrome.storage.local.remove('todoExtensions', () => {
+    chrome.storage.local.set({[EXTENSION_NAMES.TODO_EXTENSIONS]:null}, () => {
       AlertManager.showStatus('All actions reverted', STATUS_TYPES.INFO);
       // 重新显示扩展列表
       this._loadDisplayExtensions();
@@ -179,7 +179,7 @@ class ExtensionManager {
   // 撤销待办操作
   _revertTodoAction(extensionId) {
     // 从存储中获取待办列表
-    chrome.storage.local.get(['todoExtensions'], (result) => {
+    chrome.storage.local.get([EXTENSION_NAMES.TODO_EXTENSIONS], (result) => {
       let todoExtensions = result.todoExtensions || [];
 
       // 从待办列表中移除该项
@@ -187,13 +187,13 @@ class ExtensionManager {
 
       // 更新存储中的待办事项列表
       if (todoExtensions.length > 0) {
-        chrome.storage.local.set({ todoExtensions: todoExtensions }, () => {
+        chrome.storage.local.set({ [EXTENSION_NAMES.TODO_EXTENSIONS]: todoExtensions }, () => {
           AlertManager.showStatus('Action reverted', STATUS_TYPES.INFO);
           // 重新显示扩展列表
           this._loadDisplayExtensions();
         });
       } else {
-        chrome.storage.local.remove('todoExtensions', () => {
+        chrome.storage.local.set({[EXTENSION_NAMES.TODO_EXTENSIONS]:null}, () => {
           AlertManager.showStatus('Action reverted', STATUS_TYPES.INFO);
           // 重新显示扩展列表
           this._loadDisplayExtensions();
@@ -210,7 +210,7 @@ class ExtensionManager {
       this.allExtensions = extensions.filter(ext => ext.type !== 'theme');
 
       // 从storage获取待办事项列表
-      chrome.storage.local.get(['todoExtensions'], (result) => {
+      chrome.storage.local.get([EXTENSION_NAMES.TODO_EXTENSIONS], (result) => {
         const todoExtensions = result.todoExtensions || [];
 
         // 检查是否有搜索词，如果有则过滤，否则显示所有扩展

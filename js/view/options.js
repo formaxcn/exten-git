@@ -4,7 +4,7 @@
  */
 import FileManager from './persistence.js';
 import AlertManager from './alert.js';
-import { GIT_DEFAULT, MESSAGE_EVENTS, STATUS_TYPES } from '../util/constants.js';
+import { GIT_DEFAULT, MESSAGE_EVENTS, STATUS_TYPES, CONFIG_NAMES, EXTENSION_NAMES } from '../util/constants.js';
 
 class OptionsManager {
   /**
@@ -96,29 +96,19 @@ class OptionsManager {
       document.getElementById('syncInterval').addEventListener('change', (e) => {
         const index = parseInt(e.target.value);
         const syncInterval = this.syncIntervalOptions[index].value;
-        chrome.storage.local.set({ syncInterval: syncInterval });
+        chrome.storage.local.set({ [CONFIG_NAMES.SYNC_INTERVAL]: syncInterval });
       });
 
       // 自动同步开关事件
       document.getElementById('autoSyncToggle').addEventListener('change', (e) => {
         // 自动保存开关状态
-        chrome.storage.local.set({ autoSyncEnabled: e.target.checked });
+        chrome.storage.local.set({ [CONFIG_NAMES.AUTO_SYNC_ENABLED]: e.target.checked });
       });
 
       // 浏览器同步开关事件
       document.getElementById('browserSyncCheckbox').addEventListener('change', (e) => {
         // 自动保存开关状态
-        chrome.storage.local.set({ browserSyncEnabled: e.target.checked });
-      });
-
-      // 同步策略变更后自动保存
-      const syncStrategyInputs = document.querySelectorAll('input[name="syncStrategy"]');
-      syncStrategyInputs.forEach(input => {
-        input.addEventListener('change', (e) => {
-          if (e.target.checked) {
-            chrome.storage.local.set({ syncStrategy: e.target.value });
-          }
-        });
+        chrome.storage.local.set({ [CONFIG_NAMES.BROWSER_SYNC_ENABLED]: e.target.checked });
       });
 
       chrome.storage.onChanged.addListener((changes, areaName) => {
@@ -154,7 +144,7 @@ class OptionsManager {
   }
 
   _updateGitDiffDisplay() { 
-    chrome.storage.local.get(['gitDiff', 'todoExtensions'], (result) => {
+    chrome.storage.local.get([EXTENSION_NAMES.GIT_DIFF, EXTENSION_NAMES.TODO_EXTENSIONS], (result) => {
       const addedCountDisplay = document.getElementById('addedCount');
       const removedCountDisplay = document.getElementById('removedCount');
       const revertButton = document.getElementById('revertLocalChangesButton');
@@ -205,7 +195,7 @@ class OptionsManager {
       const gitDiffContainerDisplay = document.getElementById('gitDiffContainer');
       if (hideDiff) {
         if (gitDiffContainerDisplay) gitDiffContainerDisplay.style.display = 'none';
-        chrome.storage.local.set({ gitDiff: null });
+        chrome.storage.local.set({ [EXTENSION_NAMES.GIT_DIFF]: null });
       }
       else {
         if (gitDiffContainerDisplay) gitDiffContainerDisplay.style.display = 'block';
@@ -219,7 +209,7 @@ class OptionsManager {
    * 更新commit hash显示
    */
   _updateCommitHashDisplay() {
-    chrome.storage.local.get(['lastCommitHash'], (result) => {
+    chrome.storage.local.get([EXTENSION_NAMES.LAST_COMMIT_HASH], (result) => {
       const commitHashDisplay = document.getElementById('commitHashValue');
 
       if (commitHashDisplay) {
@@ -258,7 +248,7 @@ class OptionsManager {
    * 更新上次同步时间显示
    */
   _updateLastSyncTime() {
-    chrome.storage.local.get(["lastSyncTime"], (result) => {
+    chrome.storage.local.get([EXTENSION_NAMES.LAST_SYNC_TIME], (result) => {
       // 可以添加其他同步逻辑    
       const lastSyncElement = document.getElementById('lastSyncTimeValue');
       if (lastSyncElement) {
@@ -272,19 +262,18 @@ class OptionsManager {
    */
   _loadSettings() {
     chrome.storage.local.get([
-      'repoUrl',
-      'filePath',
-      'userName',
-      'password',
-      'branchName',
-      'syncInterval',
-      'syncStrategy',
-      'autoSyncEnabled',
-      'browserSyncEnabled',
-      'lastSyncTime',
-      'lastCommitHash',
-      'todoExtensions',
-      'gitDiff'
+      CONFIG_NAMES.REPO_URL,
+      CONFIG_NAMES.FILE_PATH,
+      CONFIG_NAMES.USER_NAME,
+      CONFIG_NAMES.PASSWORD,
+      CONFIG_NAMES.BRANCH_NAME,
+      CONFIG_NAMES.AUTO_SYNC_ENABLED,
+      CONFIG_NAMES.SYNC_INTERVAL,
+      CONFIG_NAMES.BROWSER_SYNC_ENABLED,
+      EXTENSION_NAMES.LAST_SYNC_TIME,
+      EXTENSION_NAMES.LAST_COMMIT_HASH,
+      EXTENSION_NAMES.TODO_EXTENSIONS,
+      EXTENSION_NAMES.GIT_DIFF
     ], (items) => {
       document.getElementById('repoUrl').value = items.repoUrl || '';
       document.getElementById('filePath').value = items.filePath || '';
@@ -312,11 +301,6 @@ class OptionsManager {
 
       document.getElementById('syncInterval').value = selectedIndex;
       document.getElementById('syncIntervalValue').textContent = this.syncIntervalOptions[selectedIndex].label;
-
-      // 设置同步策略
-      if (items.syncStrategy) {
-        document.getElementById(items.syncStrategy + 'Strategy').checked = true;
-      }
 
       // 设置自动同步开关
       if (items.autoSyncEnabled !== undefined) {
@@ -348,9 +332,7 @@ class OptionsManager {
       // 保存默认值（如果尚未保存）
       if (!items.syncInterval) {
         const defaultSyncInterval = this.syncIntervalOptions[selectedIndex].value;
-        chrome.storage.local.set({
-          syncInterval: defaultSyncInterval
-        });
+        chrome.storage.local.set({[CONFIG_NAMES.SYNC_INTERVAL]: defaultSyncInterval});
       }
     });
   }
@@ -373,13 +355,13 @@ class OptionsManager {
     }
 
     const settings = {
-      repoUrl: repoUrl,
-      branchName: branchName,
-      filePath: filePath,
-      userName: userName,
-      password: password,
-      syncInterval: parseInt(syncInterval),
-      autoSync: autoSync
+      [CONFIG_NAMES.REPO_URL]: repoUrl,
+      [CONFIG_NAMES.BRANCH_NAME]: branchName,
+      [CONFIG_NAMES.FILE_PATH]: filePath,
+      [CONFIG_NAMES.USER_NAME]: userName,
+      [CONFIG_NAMES.PASSWORD]: password,
+      [CONFIG_NAMES.SYNC_INTERVAL]: parseInt(syncInterval),
+      [CONFIG_NAMES.AUTO_SYNC_ENABLED]: autoSync
     };
 
     chrome.storage.local.set(settings, () => {
@@ -467,7 +449,7 @@ class OptionsManager {
     AlertManager.showStatus('Checking todo items...', STATUS_TYPES.INFO);
 
     // 检查待办事项是否为空
-    chrome.storage.local.get(['todoExtensions'], (result) => {
+    chrome.storage.local.get([EXTENSION_NAMES.TODO_EXTENSIONS], (result) => {
       const todoExtensions = result.todoExtensions || [];
       if (todoExtensions.length > 0) {
         AlertManager.showStatus('Cannot push: there are pending operations that need to be resolved first', STATUS_TYPES.ERROR);

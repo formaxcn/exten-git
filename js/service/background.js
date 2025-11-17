@@ -2,7 +2,7 @@
 // 负责处理扩展的核心功能，包括Git同步、数据管理和消息传递
 
 // 使用ES6模块导入替代importScripts
-import { MESSAGE_EVENTS,EXTENSION_ACTIONS } from '../util/constants.js';
+import { MESSAGE_EVENTS,EXTENSION_ACTIONS,CONFIG_NAMES,EXTENSION_NAMES } from '../util/constants.js';
 import { gitManager } from './git.js';
 
 class BackgroundManager {
@@ -65,7 +65,7 @@ class BackgroundManager {
    * 从存储中加载待办事项 (私有方法)
    */
   _loadTodoExtensionsFromStorage() {
-    chrome.storage.local.get(['todoExtensions'], (result) => {
+    chrome.storage.local.get([EXTENSION_NAMES.TODO_EXTENSIONS], (result) => {
       if (result.todoExtensions) {
         this.todoExtensions = result.todoExtensions;
       }
@@ -78,19 +78,20 @@ class BackgroundManager {
   async _loadSettings() {
     try {
       const result = await chrome.storage.local.get([
-        'repoUrl',
-        'userName',
-        'password',
-        'branchName',
-        'commitPrefix',
-        'autoSyncEnabled',
-        'browserSyncEnabled',
+        CONFIG_NAMES.REPO_URL,
+        CONFIG_NAMES.USER_NAME,
+        CONFIG_NAMES.FILE_PATH,
+        CONFIG_NAMES.BRANCH_NAME,
+        CONFIG_NAMES.PASSWORD,
+        CONFIG_NAMES.AUTO_SYNC_ENABLED,
+        CONFIG_NAMES.SYNC_INTERVAL,
+        CONFIG_NAMES.BROWSER_SYNC_ENABLED,
       ]);
 
       this.settings = result;
 
       // 如果启用了自动推送或拉取，则设置定时器
-      if (result.autoSyncEnabled || result.browserSyncEnabled) {
+      if (result.autoSyncEnabled) {
         this._startRefreshInterval();
       }
     } catch (error) {
@@ -178,7 +179,7 @@ class BackgroundManager {
   _extensionChanged(changeType,extensionId=null) {
     // 如果 extensionId 不为空，从 todoExtensions 中删除对应项
     if (extensionId) {
-      chrome.storage.local.get(['todoExtensions'], (result) => {
+      chrome.storage.local.get([EXTENSION_NAMES.TODO_EXTENSIONS], (result) => {
         if (result.todoExtensions && Array.isArray(result.todoExtensions)) {
           // 过滤掉匹配 extensionId 的项
           const updatedTodoExtensions = result.todoExtensions.filter(
@@ -186,7 +187,7 @@ class BackgroundManager {
           );
           
           // 更新存储中的 todoExtensions
-          chrome.storage.local.set({ todoExtensions: updatedTodoExtensions }, () => {
+          chrome.storage.local.set({ [EXTENSION_ACTIONS.TODO_EXTENSIONS]: updatedTodoExtensions }, () => {
             if (chrome.runtime.lastError) {
               console.error('Error updating todo extensions:', chrome.runtime.lastError);
             }
@@ -314,7 +315,7 @@ class BackgroundManager {
         // 如果有待办事项，发送到storage；否则通知没有待办事项
         if (todoExtensions.length > 0) {
           // 发送待办事项到storage
-          chrome.storage.local.set({todoExtensions: todoExtensions, gitDiff: null}, () => {
+          chrome.storage.local.set({[EXTENSION_NAMES.TODO_EXTENSIONS]: todoExtensions, gitDiff: null}, () => {
             // 检查运行时是否有错误发生（例如，存储空间已满等极端情况）
             if (chrome.runtime.lastError) {
                 console.error('Error saving todo extensions to storage:', chrome.runtime.lastError);
