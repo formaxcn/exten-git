@@ -1,4 +1,4 @@
-import { CONFIG_NAMES } from "../util/constants";
+import { CONFIG_NAMES } from "../util/constants.js";
 
 class BrowserManager { 
   // 需要同步的配置项列表，除了BROWSER_SYNC_ENABLED
@@ -70,6 +70,7 @@ class BrowserManager {
     if (change.newValue === true) {
       // 当开启浏览器同步时，执行首次同步
       await this._performInitialSync();
+      await chrome.storage.local.set({ [CONFIG_NAMES.BROWSER_SYNC_ENABLED]: true });
     } else if (change.newValue === false) {
       // 当关闭浏览器同步时，将本地的BROWSER_SYNC_ENABLED设为false
       await chrome.storage.local.set({ [CONFIG_NAMES.BROWSER_SYNC_ENABLED]: false });

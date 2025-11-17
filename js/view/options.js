@@ -309,7 +309,7 @@ class OptionsManager {
 
       // 设置浏览器同步开关
       if (items.browserSyncEnabled !== undefined) {
-        document.getElementById('browserSyncToggle').checked = items.browserSyncEnabled;
+        document.getElementById('browserSyncCheckbox').checked = items.browserSyncEnabled;
       }
 
       // 显示上次同步时间
