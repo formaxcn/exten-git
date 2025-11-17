@@ -4,6 +4,7 @@
 // 使用ES6模块导入替代importScripts
 import { MESSAGE_EVENTS,EXTENSION_ACTIONS,CONFIG_NAMES,EXTENSION_NAMES } from '../util/constants.js';
 import { gitManager } from './git.js';
+import { browserManager } from './browser.js'; 
 
 class BackgroundManager {
   constructor() {
@@ -42,7 +43,10 @@ class BackgroundManager {
 
     // 初始化存储监听器
     chrome.storage.onChanged.addListener((changes, areaName) => {
-      if (areaName !== 'local') return;
+      if (areaName === 'sync') {
+        browserManager.handlerSyncChanges(changes);
+        return;
+      }
       if (changes.refreshInterval || changes.autoSyncEnabled) {
         this._handleStorageChange(changes);
       }
@@ -50,8 +54,9 @@ class BackgroundManager {
         this._extensionChanged(EXTENSION_ACTIONS.UNDO);
       } 
       if (changes.browserSyncEnabled){
-        //TODO: browser sync
-      }  
+        browserManager.handlerLocalBrowserSyncEnable(changes.browserSyncEnabled);
+      }
+      browserManager.handlerLocalChanges(changes);
     });
 
     // 初始化时从存储中加载待办事项
