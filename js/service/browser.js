@@ -10,7 +10,8 @@ class BrowserManager {
       CONFIG_NAMES.PASSWORD,
       CONFIG_NAMES.BRANCH_NAME,
       CONFIG_NAMES.AUTO_SYNC_ENABLED,
-      CONFIG_NAMES.SYNC_INTERVAL
+      CONFIG_NAMES.SYNC_INTERVAL,
+      CONFIG_NAMES.CONFIG_TIME
     ];
   }
 
@@ -20,14 +21,21 @@ class BrowserManager {
     const isEnabled = await this._isBrowserSyncEnabled();
     if (!isEnabled) return;
 
-    // 检查是否有我们需要同步的键发生变化
-    const hasRelevantChanges = Object.keys(changes).some(key => 
-      this.syncKeys.includes(key) && key !== CONFIG_NAMES.BROWSER_SYNC_ENABLED
+    const relevantChanges = Object.fromEntries(
+      Object.entries(changes).filter(([key]) => 
+        this.syncKeys.includes(key)
+      )
     );
 
-    if (hasRelevantChanges) {
+    // 如果没有相关变化，返回 null
+    const keys = Object.keys(relevantChanges);
+    if (keys.length === 0 || (keys.length === 1 && keys[0] === CONFIG_NAMES.CONFIG_TIME)) {
+      relevantChanges = null;
+    }
+
+    if (relevantChanges) {
       // 将云端变化同步到本地
-      await this._syncFromCloudToLocal(changes);
+      await this._syncFromCloudToLocal(relevantChanges);
     }
   }
 
@@ -37,10 +45,17 @@ class BrowserManager {
     const isEnabled = await this._isBrowserSyncEnabled();
     if (!isEnabled) return;
 
-    // 检查是否有我们需要同步的键发生变化
-    const hasRelevantChanges = Object.keys(changes).some(key => 
-      this.syncKeys.includes(key) && key !== CONFIG_NAMES.BROWSER_SYNC_ENABLED
+    const relevantChanges = Object.fromEntries(
+      Object.entries(changes).filter(([key]) => 
+        this.syncKeys.includes(key)
+      )
     );
+
+    // 如果没有相关变化，返回 null
+    const keys = Object.keys(relevantChanges);
+    if (keys.length === 0 || (keys.length === 1 && keys[0] === CONFIG_NAMES.CONFIG_TIME)) {
+      relevantChanges = null;
+    }
 
     if (hasRelevantChanges) {
       // 在同步到云端之前，更新本地的CONFIG_TIME为当前时间
@@ -52,7 +67,7 @@ class BrowserManager {
       
       // 更新changes对象中的CONFIG_TIME值
       const updatedChanges = {
-        ...changes,
+        ...relevantChanges,
         [CONFIG_NAMES.CONFIG_TIME]: {
           oldValue: localResult[CONFIG_NAMES.CONFIG_TIME],
           newValue: newConfigTime
