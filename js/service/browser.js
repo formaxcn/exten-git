@@ -57,7 +57,7 @@ class BrowserManager {
       relevantChanges = null;
     }
 
-    if (hasRelevantChanges) {
+    if (relevantChanges) {
       // 在同步到云端之前，更新本地的CONFIG_TIME为当前时间
       const localResult = await chrome.storage.local.get(CONFIG_NAMES.CONFIG_TIME);
       const newConfigTime = Date.now();
