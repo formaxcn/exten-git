@@ -21,7 +21,7 @@ class BrowserManager {
     const isEnabled = await this._isBrowserSyncEnabled();
     if (!isEnabled) return;
 
-    const relevantChanges = Object.fromEntries(
+    let relevantChanges = Object.fromEntries(
       Object.entries(changes).filter(([key]) => 
         this.syncKeys.includes(key)
       )
@@ -45,7 +45,7 @@ class BrowserManager {
     const isEnabled = await this._isBrowserSyncEnabled();
     if (!isEnabled) return;
 
-    const relevantChanges = Object.fromEntries(
+    let relevantChanges = Object.fromEntries(
       Object.entries(changes).filter(([key]) => 
         this.syncKeys.includes(key)
       )
