@@ -193,8 +193,6 @@ class BrowserManager {
       
       // 场景3: local有, sync没有, 此时需要将local同步到sync
       if (hasLocalData && !hasSyncData) {
-        // 更新本地CONFIG_TIME为当前时间
-        localData[CONFIG_NAMES.CONFIG_TIME] = Date.now();
         const dataToSync = { ...localData };
         await chrome.storage.sync.set(dataToSync);
         return;
