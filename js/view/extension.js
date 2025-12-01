@@ -8,6 +8,7 @@ const defaultIcon = 'https://fonts.gstatic.com/s/i/productlogos/chrome_store/v7/
 class ExtensionManager {
   constructor() {
     this.allExtensions = [];
+    this.todoExtensions = [];
     this._init();
   }
 
@@ -17,14 +18,20 @@ class ExtensionManager {
       this._loadDisplayExtensions();
 
       // 搜索框事件
-      document.getElementById('extensionSearch').addEventListener('input', () => {
-        this._filterExtensions();
-      });
+      const searchInput = document.getElementById('extensionSearch');
+      if (searchInput) {
+        searchInput.addEventListener('input', () => {
+          this._filterExtensions();
+        });
+      }
 
       // 清除搜索按钮事件
-      document.getElementById('clearSearch').addEventListener('click', () => {
-        this._clearSearch();
-      });
+      const clearButton = document.getElementById('clearSearch');
+      if (clearButton) {
+        clearButton.addEventListener('click', () => {
+          this._clearSearch();
+        });
+      }
 
       chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         if (request.action === MESSAGE_EVENTS.DIFF_EXTENSIONS_VIEW) {
@@ -168,7 +175,7 @@ class ExtensionManager {
 
   _undoAllTodoActions() {
     // 清空待办事项列表
-    chrome.storage.local.set({[EXTENSION_NAMES.TODO_EXTENSIONS]:null}, () => {
+    chrome.storage.local.set({ [EXTENSION_NAMES.TODO_EXTENSIONS]: null }, () => {
       AlertManager.showStatus('All actions reverted', STATUS_TYPES.INFO);
       // 重新显示扩展列表
       this._loadDisplayExtensions();
@@ -193,7 +200,7 @@ class ExtensionManager {
           this._loadDisplayExtensions();
         });
       } else {
-        chrome.storage.local.set({[EXTENSION_NAMES.TODO_EXTENSIONS]:null}, () => {
+        chrome.storage.local.set({ [EXTENSION_NAMES.TODO_EXTENSIONS]: null }, () => {
           AlertManager.showStatus('Action reverted', STATUS_TYPES.INFO);
           // 重新显示扩展列表
           this._loadDisplayExtensions();
@@ -211,19 +218,20 @@ class ExtensionManager {
 
       // 从storage获取待办事项列表
       chrome.storage.local.get([EXTENSION_NAMES.TODO_EXTENSIONS], (result) => {
-        const todoExtensions = result.todoExtensions || [];
+        this.todoExtensions = result.todoExtensions || [];
 
         // 检查是否有搜索词，如果有则过滤，否则显示所有扩展
-        const searchTerm = document.getElementById('extensionSearch').value.toLowerCase();
+        const searchInput = document.getElementById('extensionSearch');
+        const searchTerm = searchInput ? searchInput.value.toLowerCase() : '';
         if (searchTerm) {
-          const filteredExtensions = extensions.filter(ext =>
+          const filteredExtensions = this.allExtensions.filter(ext =>
             ext.name.toLowerCase().includes(searchTerm) ||
             (ext.description && ext.description.toLowerCase().includes(searchTerm))
           );
-          this._displayExtensions(filteredExtensions, todoExtensions);
+          this._displayExtensions(filteredExtensions, this.todoExtensions);
         } else {
           // 显示所有扩展
-          this._displayExtensions(extensions, todoExtensions);
+          this._displayExtensions(this.allExtensions, this.todoExtensions);
         }
       });
     });
@@ -389,17 +397,20 @@ class ExtensionManager {
     extensionItem.appendChild(icon);
     extensionItem.appendChild(name);
     extensionItem.appendChild(buttonContainer);
-    
+
     return extensionItem;
   }
 
   // 过滤扩展
   _filterExtensions() {
-    const searchTerm = document.getElementById('extensionSearch').value.toLowerCase();
+    const searchInput = document.getElementById('extensionSearch');
+    if (!searchInput) return;
+
+    const searchTerm = searchInput.value.toLowerCase();
 
     if (!searchTerm) {
       // 如果搜索框为空，显示所有扩展
-      this._displayExtensions(this.allExtensions);
+      this._displayExtensions(this.allExtensions, this.todoExtensions);
       return;
     }
 
@@ -410,14 +421,17 @@ class ExtensionManager {
     );
 
     // 显示过滤后的扩展
-    this._displayExtensions(filteredExtensions);
+    this._displayExtensions(filteredExtensions, this.todoExtensions);
   }
 
   // 清除搜索
   _clearSearch() {
-    document.getElementById('extensionSearch').value = '';
-    this._displayExtensions(this.allExtensions);
-    document.getElementById('extensionSearch').focus();
+    const searchInput = document.getElementById('extensionSearch');
+    if (!searchInput) return;
+
+    searchInput.value = '';
+    this._displayExtensions(this.allExtensions, this.todoExtensions);
+    searchInput.focus();
   }
 }
 
