@@ -251,97 +251,7 @@ class ExtensionManager {
     // 添加启用的扩展
     if (enabledExtensions.length > 0) {
       enabledExtensions.forEach((extension) => {
-        const extensionItem = document.createElement('div');
-        extensionItem.className = 'extension-item';
-        extensionItem.dataset.extensionId = extension.id;
-
-        const icon = document.createElement('img');
-        icon.className = 'extension-icon';
-        icon.src = extension.icons ? extension.icons[extension.icons.length - 1].url : defaultIcon;
-        icon.alt = extension.name;
-
-        const name = document.createElement('div');
-        name.className = 'extension-name';
-
-        // 限制标题最多20个字符
-        if (extension.name.length > 20) {
-          name.textContent = extension.name.substring(0, 20) + '...';
-          name.title = extension.name; // 使用title属性作为tooltip
-        } else {
-          name.textContent = extension.name;
-        }
-
-        // 创建按钮容器
-        const buttonContainer = document.createElement('div');
-        buttonContainer.className = 'extension-buttons';
-
-        // 第一行按钮容器
-        const firstRow = document.createElement('div');
-        firstRow.className = 'button-row';
-
-        // 第二行按钮容器
-        const secondRow = document.createElement('div');
-        secondRow.className = 'button-row';
-
-        // Store按钮
-        const storePageButton = document.createElement('button');
-        storePageButton.className = 'extension-button';
-        storePageButton.innerHTML = '<i class="fas fa-store"></i> Store';
-        storePageButton.addEventListener('click', () => {
-          if (extension.updateUrl && extension.updateUrl.includes('google.com')) {
-            // 对于Chrome Web Store扩展，构造URL
-            const webStoreUrl = `https://chromewebstore.google.com/detail/${extension.id}`;
-            chrome.tabs.create({ url: webStoreUrl });
-          } else {
-            AlertManager.showStatus('No store page available for this extension', STATUS_TYPES.ERROR);
-          }
-        });
-
-        // Options按钮
-        const optionsButton = document.createElement('button');
-        optionsButton.className = 'extension-button';
-        optionsButton.innerHTML = '<i class="fas fa-cog"></i> Options';
-        optionsButton.addEventListener('click', () => {
-          chrome.tabs.create({ url: 'chrome://extensions/?id=' + extension.id });
-        });
-
-        // 启用/禁用按钮
-        const toggleButton = document.createElement('button');
-        toggleButton.className = 'extension-button toggle-button';
-        toggleButton.innerHTML = '<i class="fas fa-power-off"></i> Disable';
-        toggleButton.addEventListener('click', () => {
-          chrome.management.setEnabled(extension.id, false, () => {
-            if (chrome.runtime.lastError) {
-              AlertManager.showStatus('Error disabling extension: ' + chrome.runtime.lastError.message, STATUS_TYPES.ERROR);
-            } else {
-              AlertManager.showStatus('Extension disabled successfully', STATUS_TYPES.SUCCESS);
-              // 重新加载扩展列表
-              this._loadDisplayExtensions();
-            }
-          });
-        });
-
-        // 卸载按钮
-        const uninstallButton = document.createElement('button');
-        uninstallButton.className = 'extension-button uninstall-button';
-        uninstallButton.innerHTML = '<i class="fas fa-trash-alt"></i> Uninstall';
-        uninstallButton.addEventListener('click', () => {
-          this._uninstallExtension(extension.id, extension.name);
-        });
-
-        // 将按钮添加到行中
-        firstRow.appendChild(storePageButton);
-        firstRow.appendChild(optionsButton);
-        secondRow.appendChild(toggleButton);
-        secondRow.appendChild(uninstallButton);
-
-        // 将行添加到按钮容器
-        buttonContainer.appendChild(firstRow);
-        buttonContainer.appendChild(secondRow);
-
-        extensionItem.appendChild(icon);
-        extensionItem.appendChild(name);
-        extensionItem.appendChild(buttonContainer);
+        const extensionItem = this._createExtensionItem(extension, true);
         activeContainer.appendChild(extensionItem);
       });
     }
@@ -349,91 +259,7 @@ class ExtensionManager {
     // 添加未启用的扩展
     if (disabledExtensions.length > 0) {
       disabledExtensions.forEach((extension) => {
-        const extensionItem = document.createElement('div');
-        extensionItem.className = 'extension-item disabled';
-        extensionItem.dataset.extensionId = extension.id;
-
-        const icon = document.createElement('img');
-        icon.className = 'extension-icon';
-        icon.src = extension.icons ? extension.icons[extension.icons.length - 1].url : defaultIcon;
-        icon.alt = extension.name;
-
-        const name = document.createElement('div');
-        name.className = 'extension-name';
-
-        // 限制标题最多20个字符
-        if (extension.name.length > 20) {
-          name.textContent = extension.name.substring(0, 20) + '...';
-          name.title = extension.name; // 使用title属性作为tooltip
-        } else {
-          name.textContent = extension.name;
-        }
-
-        // 创建按钮容器
-        const buttonContainer = document.createElement('div');
-        buttonContainer.className = 'extension-buttons';
-
-        // 第一行按钮容器
-        const firstRow = document.createElement('div');
-        firstRow.className = 'button-row';
-
-        // 第二行按钮容器
-        const secondRow = document.createElement('div');
-        secondRow.className = 'button-row';
-
-        // Store按钮
-        const storePageButton = document.createElement('button');
-        storePageButton.className = 'extension-button';
-        storePageButton.innerHTML = '<i class="fas fa-store"></i> Store';
-        storePageButton.addEventListener('click', () => {
-          chrome.tabs.create({ url: `https://chrome.google.com/webstore/detail/${extension.id}` });
-        });
-
-        // Options按钮
-        const optionsButton = document.createElement('button');
-        optionsButton.className = 'extension-button';
-        optionsButton.innerHTML = '<i class="fas fa-cog"></i> Options';
-        optionsButton.addEventListener('click', () => {
-          chrome.tabs.create({ url: 'chrome://extensions/?id=' + extension.id });
-        });
-
-        // 启用/禁用按钮 (对于已禁用的扩展是启用)
-        const toggleButton = document.createElement('button');
-        toggleButton.className = 'extension-button toggle-button yellow';
-        toggleButton.innerHTML = '<i class="fas fa-power-off"></i> Enable';
-        toggleButton.addEventListener('click', () => {
-          chrome.management.setEnabled(extension.id, true, () => {
-            if (chrome.runtime.lastError) {
-              AlertManager.showStatus('Error enabling extension: ' + chrome.runtime.lastError.message, STATUS_TYPES.ERROR);
-            } else {
-              AlertManager.showStatus('Extension enabled successfully', STATUS_TYPES.SUCCESS);
-              // 重新加载扩展列表
-              this._loadDisplayExtensions();
-            }
-          });
-        });
-
-        // 卸载按钮
-        const uninstallButton = document.createElement('button');
-        uninstallButton.className = 'extension-button uninstall-button';
-        uninstallButton.innerHTML = '<i class="fas fa-trash-alt"></i> Uninstall';
-        uninstallButton.addEventListener('click', () => {
-          this._uninstallExtension(extension.id, extension.name);
-        });
-
-        // 将按钮添加到行中
-        firstRow.appendChild(storePageButton);
-        firstRow.appendChild(optionsButton);
-        secondRow.appendChild(toggleButton);
-        secondRow.appendChild(uninstallButton);
-
-        // 将行添加到按钮容器
-        buttonContainer.appendChild(firstRow);
-        buttonContainer.appendChild(secondRow);
-
-        extensionItem.appendChild(icon);
-        extensionItem.appendChild(name);
-        extensionItem.appendChild(buttonContainer);
+        const extensionItem = this._createExtensionItem(extension, false);
         inactiveContainer.appendChild(extensionItem);
       });
     }
@@ -445,6 +271,126 @@ class ExtensionManager {
     } else {
       divider.style.display = 'none';
     }
+  }
+
+  /**
+   * 创建扩展项元素
+   * @param {Object} extension - 扩展对象
+   * @param {boolean} isEnabled - 是否启用
+   * @returns {HTMLElement} 扩展项DOM元素
+   */
+  _createExtensionItem(extension, isEnabled) {
+    const extensionItem = document.createElement('div');
+    extensionItem.className = isEnabled ? 'extension-item' : 'extension-item disabled';
+    extensionItem.dataset.extensionId = extension.id;
+
+    const icon = document.createElement('img');
+    icon.className = 'extension-icon';
+    icon.src = extension.icons ? extension.icons[extension.icons.length - 1].url : defaultIcon;
+    icon.alt = extension.name;
+
+    const name = document.createElement('div');
+    name.className = 'extension-name';
+
+    // 限制标题最多20个字符
+    if (extension.name.length > 20) {
+      name.textContent = extension.name.substring(0, 20) + '...';
+      name.title = extension.name; // 使用title属性作为tooltip
+    } else {
+      name.textContent = extension.name;
+    }
+
+    // 创建按钮容器
+    const buttonContainer = document.createElement('div');
+    buttonContainer.className = 'extension-buttons';
+
+    // 第一行按钮容器
+    const firstRow = document.createElement('div');
+    firstRow.className = 'button-row';
+
+    // 第二行按钮容器
+    const secondRow = document.createElement('div');
+    secondRow.className = 'button-row';
+
+    // Store按钮
+    const storePageButton = document.createElement('button');
+    storePageButton.className = 'extension-button';
+    storePageButton.innerHTML = '<i class="fas fa-store"></i> Store';
+    storePageButton.addEventListener('click', () => {
+      if (extension.updateUrl && extension.updateUrl.includes('google.com')) {
+        // 对于Chrome Web Store扩展，构造URL
+        const webStoreUrl = `https://chromewebstore.google.com/detail/${extension.id}`;
+        chrome.tabs.create({ url: webStoreUrl });
+      } else {
+        // 尝试使用通用链接或提示
+        const webStoreUrl = `https://chromewebstore.google.com/detail/${extension.id}`;
+        chrome.tabs.create({ url: webStoreUrl });
+      }
+    });
+
+    // Options按钮
+    const optionsButton = document.createElement('button');
+    optionsButton.className = 'extension-button';
+    optionsButton.innerHTML = '<i class="fas fa-cog"></i> Options';
+    optionsButton.addEventListener('click', () => {
+      chrome.tabs.create({ url: 'chrome://extensions/?id=' + extension.id });
+    });
+
+    // 启用/禁用按钮
+    const toggleButton = document.createElement('button');
+    if (isEnabled) {
+      toggleButton.className = 'extension-button toggle-button';
+      toggleButton.innerHTML = '<i class="fas fa-power-off"></i> Disable';
+      toggleButton.addEventListener('click', () => {
+        chrome.management.setEnabled(extension.id, false, () => {
+          if (chrome.runtime.lastError) {
+            AlertManager.showStatus('Error disabling extension: ' + chrome.runtime.lastError.message, STATUS_TYPES.ERROR);
+          } else {
+            AlertManager.showStatus('Extension disabled successfully', STATUS_TYPES.SUCCESS);
+            // 重新加载扩展列表
+            this._loadDisplayExtensions();
+          }
+        });
+      });
+    } else {
+      toggleButton.className = 'extension-button toggle-button yellow';
+      toggleButton.innerHTML = '<i class="fas fa-power-off"></i> Enable';
+      toggleButton.addEventListener('click', () => {
+        chrome.management.setEnabled(extension.id, true, () => {
+          if (chrome.runtime.lastError) {
+            AlertManager.showStatus('Error enabling extension: ' + chrome.runtime.lastError.message, STATUS_TYPES.ERROR);
+          } else {
+            AlertManager.showStatus('Extension enabled successfully', STATUS_TYPES.SUCCESS);
+            // 重新加载扩展列表
+            this._loadDisplayExtensions();
+          }
+        });
+      });
+    }
+
+    // 卸载按钮
+    const uninstallButton = document.createElement('button');
+    uninstallButton.className = 'extension-button uninstall-button';
+    uninstallButton.innerHTML = '<i class="fas fa-trash-alt"></i> Uninstall';
+    uninstallButton.addEventListener('click', () => {
+      this._uninstallExtension(extension.id, extension.name);
+    });
+
+    // 将按钮添加到行中
+    firstRow.appendChild(storePageButton);
+    firstRow.appendChild(optionsButton);
+    secondRow.appendChild(toggleButton);
+    secondRow.appendChild(uninstallButton);
+
+    // 将行添加到按钮容器
+    buttonContainer.appendChild(firstRow);
+    buttonContainer.appendChild(secondRow);
+
+    extensionItem.appendChild(icon);
+    extensionItem.appendChild(name);
+    extensionItem.appendChild(buttonContainer);
+    
+    return extensionItem;
   }
 
   // 过滤扩展

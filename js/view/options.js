@@ -133,7 +133,7 @@ class OptionsManager {
   _updateBtnsDisplay(todoItems) {
     const pushBtn = document.getElementById('pushBtn');
     const syncBtn = document.getElementById('syncBtn');
-    
+
     if (todoItems && todoItems.length > 0) {
       pushBtn.disabled = true;
       syncBtn.disabled = true;
@@ -143,15 +143,17 @@ class OptionsManager {
     }
   }
 
-  _updateGitDiffDisplay() { 
+  _updateGitDiffDisplay() {
     chrome.storage.local.get([EXTENSION_NAMES.GIT_DIFF, EXTENSION_NAMES.TODO_EXTENSIONS], (result) => {
       const addedCountDisplay = document.getElementById('addedCount');
       const removedCountDisplay = document.getElementById('removedCount');
       const revertButton = document.getElementById('revertLocalChangesButton');
-      var hideDiff = false;
-      // 如果有todo项，直接进入else部分处理
+      const gitDiffContainerDisplay = document.getElementById('gitDiffContainer');
+
+      let hideDiff = false;
+
+      // 如果有todo项，直接隐藏diff显示
       if (result.todoExtensions && result.todoExtensions.length > 0) {
-        // 有todo项时隐藏diff显示
         hideDiff = true;
       }
       // 解析并显示diff信息
@@ -176,7 +178,8 @@ class OptionsManager {
           }
 
           // 如果有任何更改，显示revert按钮
-          if ((diffObj.added > 0 || diffObj.removed > 0) && revertButton) {
+          const hasChanges = diffObj.added > 0 || diffObj.removed > 0;
+          if (hasChanges && revertButton) {
             revertButton.style.display = 'inline';
             // 为revert按钮添加点击事件
             revertButton.onclick = this._discardChanges.bind(this);
@@ -185,25 +188,25 @@ class OptionsManager {
           }
         } catch (e) {
           console.error('Error parsing git diff:', e);
-          // 解析失败时隐藏diff显示
           hideDiff = true;
         }
       } else {
         // 没有diff信息时隐藏显示
         hideDiff = true;
       }
-      const gitDiffContainerDisplay = document.getElementById('gitDiffContainer');
+
       if (hideDiff) {
         if (gitDiffContainerDisplay) gitDiffContainerDisplay.style.display = 'none';
-        chrome.storage.local.set({ [EXTENSION_NAMES.GIT_DIFF]: null });
+        // 只有当gitDiff不为null时才清除，避免重复触发onChanged
+        if (result.gitDiff !== null && result.gitDiff !== undefined) {
+          chrome.storage.local.set({ [EXTENSION_NAMES.GIT_DIFF]: null });
+        }
       }
       else {
         if (gitDiffContainerDisplay) gitDiffContainerDisplay.style.display = 'block';
       }
     });
   }
-
-
 
   /**
    * 更新commit hash显示
@@ -332,7 +335,7 @@ class OptionsManager {
       // 保存默认值（如果尚未保存）
       if (!items.syncInterval) {
         const defaultSyncInterval = this.syncIntervalOptions[selectedIndex].value;
-        chrome.storage.local.set({[CONFIG_NAMES.SYNC_INTERVAL]: defaultSyncInterval});
+        chrome.storage.local.set({ [CONFIG_NAMES.SYNC_INTERVAL]: defaultSyncInterval });
       }
     });
   }
@@ -513,7 +516,7 @@ class OptionsManager {
       // 从仓库URL构造origin
       const url = new URL(repoUrl);
       const origin = `${url.protocol}//${url.host}/*`;
-      
+
       // 请求权限
       chrome.permissions.request({
         origins: [origin]
